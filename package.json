@@ -21,7 +21,9 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": ["dmg"]
+      "target": [
+        "dmg"
+      ]
     },
     "dmg": {
       "title": "Handwerker-Software",
@@ -31,7 +33,9 @@
       ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -41,7 +45,9 @@
       "shortcutName": "Handwerker-Software"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Office"
     }
   },
