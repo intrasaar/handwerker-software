@@ -1204,3 +1204,90 @@ async function rechnungZuBuchung(rechnungId) {
     alert('Buchung existiert bereits oder Rechnung nicht bezahlt.');
   }
 }
+
+// ============ Copyright ============
+document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+// ============ Lizenz-System ============
+async function checkLicenseOnStartup() {
+  const result = await api.checkLicense();
+  const statusEl = document.getElementById('license-status');
+  const modal = document.getElementById('activation-modal');
+
+  if (result.valid) {
+    if (result.tageRest <= 7) {
+      statusEl.className = 'license-status trial';
+      statusEl.textContent = `Trial: noch ${result.tageRest} Tage`;
+    } else {
+      statusEl.className = 'license-status active';
+      statusEl.textContent = `Aktiviert bis ${result.ablaufDatum}`;
+    }
+    modal.style.display = 'none';
+    document.body.classList.remove('locked');
+  } else {
+    statusEl.className = 'license-status inactive';
+    statusEl.textContent = result.grund || 'Nicht aktiviert';
+    modal.style.display = 'flex';
+    document.body.classList.add('locked');
+    const fp = await api.getFingerprint();
+    document.getElementById('fingerprint-display').textContent = fp;
+  }
+}
+
+// Aktivierungs-Button
+document.getElementById('btn-activate').addEventListener('click', async () => {
+  const key = document.getElementById('license-key-input').value.trim();
+  const errorEl = document.getElementById('license-error');
+  const successEl = document.getElementById('license-success');
+
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (!key) {
+    errorEl.textContent = 'Bitte geben Sie einen Lizenzschlüssel ein.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const result = await api.activateLicense(key);
+  if (result.valid) {
+    successEl.textContent = `Aktiviert! Gültig bis ${result.ablaufDatum} (${result.tageRest} Tage)`;
+    successEl.style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('activation-modal').style.display = 'none';
+      document.body.classList.remove('locked');
+      checkLicenseOnStartup();
+    }, 1500);
+  } else {
+    errorEl.textContent = result.grund;
+    errorEl.style.display = 'block';
+  }
+});
+
+// Enter-Taste im Lizenzfeld
+document.getElementById('license-key-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-activate').click();
+});
+
+// ============ Menu-Navigation ============
+if (api.onNavigate) {
+  api.onNavigate((page) => navigateTo(page));
+}
+if (api.onShowLicense) {
+  api.onShowLicense(() => {
+    document.getElementById('activation-modal').style.display = 'flex';
+    api.getFingerprint().then(fp => {
+      document.getElementById('fingerprint-display').textContent = fp;
+    });
+  });
+}
+if (api.onToggleSidebar) {
+  api.onToggleSidebar(() => {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
+  });
+}
+
+// ============ Startup ============
+checkLicenseOnStartup();
+loadDashboard();

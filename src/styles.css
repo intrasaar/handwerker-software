@@ -774,3 +774,27 @@ body {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Copyright & License */
+.copyright {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 4px;
+}
+
+.license-status {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.license-status.active {
+  color: var(--accent-green);
+}
+
+.license-status.inactive {
+  color: var(--accent-red);
+}
+
+.license-status.trial {
+  color: var(--accent-orange);
+}

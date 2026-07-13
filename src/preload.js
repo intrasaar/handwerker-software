@@ -56,5 +56,16 @@ contextBridge.exposeInMainWorld('api', {
   // Einstellungen
   getEinstellungen: () => ipcRenderer.invoke('get-einstellungen'),
   saveEinstellungen: (settings) => ipcRenderer.invoke('save-einstellungen', settings),
-  getNaechsteNummer: (prefix) => ipcRenderer.invoke('get-naechste-nummer', prefix)
+  getNaechsteNummer: (prefix) => ipcRenderer.invoke('get-naechste-nummer', prefix),
+
+  // Lizenz
+  getFingerprint: () => ipcRenderer.invoke('get-fingerprint'),
+  checkLicense: () => ipcRenderer.invoke('check-license'),
+  activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
+  getAppInfo: () => ipcRenderer.invoke('get-app-info'),
+
+  // Navigation (Menu)
+  onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
+  onShowLicense: (callback) => ipcRenderer.on('show-license', () => callback()),
+  onToggleSidebar: (callback) => ipcRenderer.on('toggle-sidebar', () => callback())
 });

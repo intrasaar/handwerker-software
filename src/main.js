@@ -1,7 +1,14 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const Database = require('better-sqlite3');
 const fs = require('fs');
+const crypto = require('crypto');
+const os = require('os');
+
+const APP_VERSION = '1.0.0';
+const APP_NAME = 'Handwerker-Software';
+const COMPANY = 'Handwerker Software';
+const LICENSE_SECRET = 'HW-K3y-2024-mN7pQ9xL';
 
 let mainWindow;
 let db;
@@ -9,6 +16,79 @@ let db;
 const dataDir = path.join(app.getPath('userData'), 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// ============ Lizenz-System ============
+
+function getHardwareFingerprint() {
+  const networkInterfaces = os.networkInterfaces();
+  let mac = '';
+  for (const name of Object.keys(networkInterfaces)) {
+    for (const iface of networkInterfaces[name]) {
+      if (!iface.internal && iface.mac && iface.mac !== '00:00:00:00:00:00') {
+        mac = iface.mac;
+        break;
+      }
+    }
+    if (mac) break;
+  }
+  const hostname = os.hostname();
+  const platform = os.platform();
+  const cpus = os.cpus();
+  const cpuModel = cpus.length > 0 ? cpus[0].model : 'unknown';
+  const raw = `${hostname}|${mac}|${platform}|${cpuModel}`;
+  return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 32);
+}
+
+function generateLicenseKey(fingerprint, tage) {
+  const now = Date.now();
+  const ablauf = now + (tage || 30) * 24 * 60 * 60 * 1000;
+  const payload = `${fingerprint}|${ablauf}`;
+  const hmac = crypto.createHmac('sha256', LICENSE_SECRET).update(payload).digest('hex').substring(0, 16);
+  return `HW-${Buffer.from(payload).toString('base64').replace(/[=+/]/g, '')}.${hmac}`;
+}
+
+function validateLicenseKey(key, fingerprint) {
+  try {
+    if (!key || !key.startsWith('HW-')) return { valid: false, grund: 'Ungültiger Lizenzschlüssel' };
+    const parts = key.substring(3).split('.');
+    if (parts.length !== 2) return { valid: false, grund: 'Ungültiges Format' };
+
+    const payload = Buffer.from(parts[0], 'base64').toString('utf-8');
+    const hmac = parts[1];
+
+    const payloadHmac = crypto.createHmac('sha256', LICENSE_SECRET).update(payload).digest('hex').substring(0, 16);
+    if (hmac !== payloadHmac) return { valid: false, grund: 'Lizenzschlüssel manipuliert' };
+
+    const [keyFingerprint, ablaufStr] = payload.split('|');
+    if (keyFingerprint !== fingerprint) return { valid: false, grund: 'Lizenz ist an einen anderen Computer gebunden' };
+
+    const ablauf = parseInt(ablaufStr);
+    if (Date.now() > ablauf) {
+      const diff = Math.ceil((Date.now() - ablauf) / (1000 * 60 * 60 * 24));
+      return { valid: false, grund: `Lizenz abgelaufen seit ${diff} Tag(en)` };
+    }
+
+    const tageRest = Math.ceil((ablauf - Date.now()) / (1000 * 60 * 60 * 24));
+    return { valid: true, tageRest, ablaufDatum: new Date(ablauf).toLocaleDateString('de-DE') };
+  } catch (e) {
+    return { valid: false, grund: 'Lizenzschlüssel ungültig' };
+  }
+}
+
+function getLicenseData() {
+  const licensePath = path.join(dataDir, 'license.dat');
+  if (fs.existsSync(licensePath)) {
+    try {
+      return JSON.parse(fs.readFileSync(licensePath, 'utf-8'));
+    } catch { }
+  }
+  return { key: '', aktiviert: false };
+}
+
+function saveLicenseData(data) {
+  const licensePath = path.join(dataDir, 'license.dat');
+  fs.writeFileSync(licensePath, JSON.stringify(data, null, 2));
 }
 
 function initDatabase() {
@@ -135,6 +215,123 @@ function initDatabase() {
   `);
 }
 
+function createMenu() {
+  const template = [
+    {
+      label: 'Datei',
+      submenu: [
+        {
+          label: 'Neues Angebot',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => mainWindow.webContents.send('navigate', 'angebote')
+        },
+        {
+          label: 'Neue Rechnung',
+          accelerator: 'CmdOrCtrl+Shift+N',
+          click: () => mainWindow.webContents.send('navigate', 'rechnungen')
+        },
+        { type: 'separator' },
+        {
+          label: 'CSV-Import...',
+          click: () => mainWindow.webContents.send('navigate', 'import')
+        },
+        { type: 'separator' },
+        {
+          label: 'Einstellungen',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => mainWindow.webContents.send('navigate', 'einstellungen')
+        },
+        { type: 'separator' },
+        {
+          label: 'Beenden',
+          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Alt+F4',
+          click: () => app.quit()
+        }
+      ]
+    },
+    {
+      label: 'Bearbeiten',
+      submenu: [
+        { label: 'Rückgängig', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: 'Wiederholen', accelerator: 'CmdOrCtrl+Shift+Z', role: 'redo' },
+        { type: 'separator' },
+        { label: 'Ausschneiden', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: 'Kopieren', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: 'Einfügen', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: 'Alles auswählen', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'Ansicht',
+      submenu: [
+        { label: 'Neu laden', accelerator: 'CmdOrCtrl+R', role: 'reload' },
+        { label: 'Entwickler-Tools', accelerator: 'F12', role: 'toggleDevTools' },
+        { type: 'separator' },
+        { label: 'Vergrößern', accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
+        { label: 'Verkleinern', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+        { label: 'Standardgröße', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { type: 'separator' },
+        { label: 'Vollbild', accelerator: 'F11', role: 'togglefullscreen' },
+        { type: 'separator' },
+        { label: 'Seitenleiste ein/aus', accelerator: 'CmdOrCtrl+B', click: () => mainWindow.webContents.send('toggle-sidebar') }
+      ]
+    },
+    {
+      label: 'Fenster',
+      submenu: [
+        { label: 'Minimieren', accelerator: 'CmdOrCtrl+M', role: 'minimize' },
+        { label: 'Schließen', accelerator: 'CmdOrCtrl+W', role: 'close' },
+        { type: 'separator' },
+        { label: 'Neues Fenster', accelerator: 'CmdOrCtrl+Shift+N', role: 'newWindow' }
+      ]
+    },
+    {
+      label: 'Hilfe',
+      submenu: [
+        {
+          label: `${APP_NAME} Hilfe`,
+          click: () => shell.openExternal('https://handwerker-software.de/hilfe')
+        },
+        { type: 'separator' },
+        {
+          label: 'Lizenz anzeigen',
+          click: () => mainWindow.webContents.send('show-license')
+        },
+        {
+          label: 'Über ' + APP_NAME,
+          click: () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: `Über ${APP_NAME}`,
+              message: APP_NAME,
+              detail: `Version: ${APP_VERSION}\n${COMPANY}\n© ${new Date().getFullYear()} ${COMPANY}. Alle Rechte vorbehalten.\n\nLizenzierte Software. Weitergabe verboten.`
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  if (process.platform === 'darwin') {
+    template.unshift({
+      label: APP_NAME,
+      submenu: [
+        { label: `Über ${APP_NAME}`, role: 'about' },
+        { type: 'separator' },
+        { label: 'Einstellungen', accelerator: 'Cmd+,', click: () => mainWindow.webContents.send('navigate', 'einstellungen') },
+        { type: 'separator' },
+        { label: `${APP_NAME} ausblenden`, accelerator: 'Cmd+H', role: 'hide' },
+        { label: 'Alle ausblenden', accelerator: 'Cmd+Alt+H', role: 'hideOthers' },
+        { type: 'separator' },
+        { label: 'Beenden', accelerator: 'Cmd+Q', click: () => app.quit() }
+      ]
+    });
+  }
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -146,11 +343,12 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     },
-    titleBarStyle: 'hidden',
+    titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
     backgroundColor: '#0f0f23'
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  createMenu();
 }
 
 app.whenReady().then(() => {
@@ -799,4 +997,32 @@ ipcMain.handle('rechnung-zu-buchung', (event, rechnungId) => {
     .run('einnahme', 'Rechnung', rechnung.betrag_brutto, rechnung.bezahlt_am || rechnung.erstellt.split(' ')[0], `Rechnung ${rechnung.nummer}`, rechnung.nummer, rechnung.mwst_satz, rechnung.betrag_brutto - rechnung.betrag_netto, rechnung.kunden_id, rechnungId);
   
   return true;
+});
+
+// ============ Lizenz IPC ============
+
+ipcMain.handle('get-fingerprint', () => {
+  return getHardwareFingerprint();
+});
+
+ipcMain.handle('check-license', () => {
+  const license = getLicenseData();
+  if (!license.key || !license.aktiviert) {
+    return { valid: false, grund: 'Nicht aktiviert' };
+  }
+  const fp = getHardwareFingerprint();
+  return validateLicenseKey(license.key, fp);
+});
+
+ipcMain.handle('activate-license', (event, key) => {
+  const fp = getHardwareFingerprint();
+  const result = validateLicenseKey(key, fp);
+  if (result.valid) {
+    saveLicenseData({ key, aktiviert: true, aktiviertAm: new Date().toISOString() });
+  }
+  return result;
+});
+
+ipcMain.handle('get-app-info', () => {
+  return { version: APP_VERSION, name: APP_NAME, company: COMPANY };
 });

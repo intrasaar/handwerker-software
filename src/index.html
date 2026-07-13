@@ -59,7 +59,9 @@
         </li>
       </ul>
       <div class="sidebar-footer">
-        <span class="version">v1.0.0</span>
+        <div class="copyright">&copy; <span id="copyright-year"></span> Handwerker Software</div>
+        <div class="version">v1.0.0</div>
+        <div class="license-status" id="license-status"></div>
       </div>
     </nav>
 
@@ -454,6 +456,36 @@
       <div class="modal-body" id="modal-body">
       </div>
       <div class="modal-footer" id="modal-footer">
+      </div>
+    </div>
+  </div>
+
+  <!-- Aktivierungs-Modal -->
+  <div class="modal-overlay" id="activation-modal" style="display:none;">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>🔧 Software aktivieren</h2>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:16px;color:var(--text-secondary);">
+          Bitte geben Sie Ihren Lizenzschlüssel ein, um die Software zu aktivieren.
+        </p>
+        <div class="form-group">
+          <label>Lizenzschlüssel</label>
+          <input type="text" id="license-key-input" placeholder="HW-..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:monospace;">
+        </div>
+        <div id="license-error" style="color:var(--accent-red);margin-top:8px;font-size:13px;display:none;"></div>
+        <div id="license-success" style="color:var(--accent-green);margin-top:8px;font-size:13px;display:none;"></div>
+        <div style="margin-top:12px;">
+          <details style="font-size:12px;color:var(--text-light);">
+            <summary style="cursor:pointer;">Hardware-ID anzeigen</summary>
+            <code id="fingerprint-display" style="display:block;margin-top:8px;padding:8px;background:var(--bg-hover);border-radius:4px;font-size:11px;word-break:break-all;"></code>
+          </details>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('activation-modal').style.display='none'">Später</button>
+        <button class="btn btn-primary" id="btn-activate">Aktivieren</button>
       </div>
     </div>
   </div>
