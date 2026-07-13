@@ -21,10 +21,7 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "icon": "src/icon.icns",
-      "target": [
-        "dmg"
-      ]
+      "target": ["dmg"]
     },
     "dmg": {
       "title": "Handwerker-Software",
@@ -34,25 +31,17 @@
       ]
     },
     "win": {
-      "icon": "src/icon.ico",
-      "target": [
-        "nsis"
-      ]
+      "target": ["nsis"]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "src/icon.ico",
-      "uninstallerIcon": "src/icon.ico",
-      "installerHeaderIcon": "src/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Handwerker-Software"
     },
     "linux": {
-      "target": [
-        "AppImage"
-      ],
+      "target": ["AppImage"],
       "category": "Office"
     }
   },
