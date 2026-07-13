@@ -27,11 +27,23 @@ function loadPage(page) {
     case 'kunden': loadKunden(); break;
     case 'angebote': loadAngebote(); break;
     case 'rechnungen': loadRechnungen(); break;
+    case 'eingangsrechnungen': loadEingangsrechnungen(); break;
+    case 'lieferanten': loadLieferanten(); break;
+    case 'mahnungen': loadMahnungen(); break;
     case 'termine': loadKalender(); break;
     case 'auftraege': loadAuftraege(); break;
+    case 'aufmasse': loadAufmasse(); break;
+    case 'artikel': loadArtikel(); break;
+    case 'kasse': loadKasse(); break;
+    case 'subunternehmer': loadSubunternehmer(); break;
     case 'einstellungen': loadEinstellungen(); break;
     case 'buchungen': loadBuchungen(); break;
     case 'ust': loadUstVoranmeldung(); break;
+    case 'datev': loadDatev(); break;
+    case 'regeln': loadRegeln(); break;
+    case 'aufgaben': ladeAufgaben(); ladeKontenrahmen(); break;
+    case 'doppelbuchfuehrung': ladeBuchungenSH(); ladeKontenrahmen(); break;
+    case 'branchen': break;
     case 'import': break;
   }
 }
@@ -587,8 +599,18 @@ async function viewRechnung(id) {
   document.getElementById('modal-footer').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
     <button class="btn btn-primary" onclick="closeModal(); exportRechnungPdf(${r.id})">📄 PDF Export</button>
+    <button class="btn btn-primary" onclick="exportERechnung(${r.id})" style="background:var(--accent-orange);">⚡ E-Rechnung</button>
   `;
   openModal();
+}
+
+async function exportERechnung(id) {
+  const result = await api.exportEREchnung(id);
+  if (result && result.success) {
+    alert('E-Rechnung exportiert:\n' + result.path);
+  } else {
+    alert('Fehler beim Export: ' + (result ? result.error : 'Unbekannt'));
+  }
 }
 
 async function exportRechnungPdf(id) {
@@ -875,6 +897,136 @@ async function loadEinstellungen() {
   document.getElementById('set-ust').value = s.ust_id || '';
   document.getElementById('set-iban').value = s.iban || '';
   document.getElementById('set-bic').value = s.bic || '';
+  loadServerEinstellungen();
+  ladeLizenzStatus();
+}
+
+// ============ Lizenz in Einstellungen ============
+
+async function ladeLizenzStatus() {
+  const result = await api.checkLicense();
+  const statusBox = document.getElementById('set-license-status');
+  const icon = document.getElementById('set-license-icon');
+  const text = document.getElementById('set-license-text');
+  const detail = document.getElementById('set-license-detail');
+  const fp = await api.getFingerprint();
+  const fpEl = document.getElementById('set-license-fp');
+  if (fpEl) fpEl.textContent = fp;
+
+  if (result.valid) {
+    statusBox.style.borderColor = result.tageRest <= 7 ? 'var(--accent-orange)' : 'var(--accent-green)';
+    icon.textContent = result.tageRest <= 7 ? '⚠️' : '✅';
+    text.textContent = result.tageRest <= 7 ? `Trial: noch ${result.tageRest} Tage` : 'Lizenz aktiv';
+    detail.textContent = result.tageRest <= 7
+      ? `Trial läuft ab am ${result.ablaufDatum}`
+      : `Gültig bis ${result.ablaufDatum} · ${result.tageRest} Tage verbleibend`;
+  } else {
+    statusBox.style.borderColor = 'var(--accent-red)';
+    icon.textContent = '❌';
+    text.textContent = 'Nicht lizenziert';
+    detail.textContent = result.grund || 'Bitte Lizenzschlüssel eingeben';
+  }
+}
+
+async function aktiviereLizenz() {
+  const key = document.getElementById('set-license-key').value.trim();
+  const msg = document.getElementById('set-license-msg');
+  msg.style.display = 'block';
+  if (!key) {
+    msg.style.color = 'var(--accent-red)';
+    msg.textContent = 'Bitte Lizenzschlüssel eingeben.';
+    return;
+  }
+  const result = await api.activateLicense(key);
+  if (result.valid) {
+    msg.style.color = 'var(--accent-green)';
+    msg.textContent = `✅ Aktiviert! Gültig bis ${result.ablaufDatum} (${result.tageRest} Tage)`;
+    document.getElementById('set-license-key').value = '';
+    ladeLizenzStatus();
+    checkLicenseOnStartup();
+  } else {
+    msg.style.color = 'var(--accent-red)';
+    msg.textContent = `❌ ${result.grund}`;
+  }
+}
+
+async function deaktiviereLizenz() {
+  if (!confirm('Lizenz wirklich deaktivieren? Die Software wird danach im Trial-Modus weitergearbeitet.')) return;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(require('electron').remote?.app?.getPath('userData') || '.', 'data');
+    const licFile = path.join(dataPath, 'license.json');
+    if (fs.existsSync(licFile)) {
+      fs.unlinkSync(licFile);
+    }
+    document.getElementById('set-license-msg').style.display = 'block';
+    document.getElementById('set-license-msg').style.color = 'var(--accent-orange)';
+    document.getElementById('set-license-msg').textContent = 'Lizenz deaktiviert. Bitte App neu starten.';
+    ladeLizenzStatus();
+  } catch (err) {
+    document.getElementById('set-license-msg').style.display = 'block';
+    document.getElementById('set-license-msg').style.color = 'var(--accent-red)';
+    document.getElementById('set-license-msg').textContent = `Fehler: ${err.message}`;
+  }
+}
+
+// ============ Updates in Einstellungen ============
+
+async function pruefeUpdates() {
+  const msg = document.getElementById('set-update-msg');
+  const text = document.getElementById('set-update-text');
+  const detail = document.getElementById('set-update-detail');
+  const icon = document.getElementById('set-update-icon');
+
+  msg.style.display = 'block';
+  msg.style.color = 'var(--text-secondary)';
+  msg.textContent = '🔍 Suche läuft...';
+
+  try {
+    const response = await fetch('https://api.github.com/repos/intrasaar/handwerker-software/releases/latest', {
+      headers: { 'Accept': 'application/vnd.github.v3+json' },
+    });
+
+    if (!response.ok) throw new Error('Keine Verbindung zum Server');
+
+    const release = await response.json();
+    const remoteVersion = release.tag_name?.replace('v', '') || '';
+    const localVersion = (await api.getAppInfo()).version;
+
+    detail.textContent = `Letzte Prüfung: ${new Date().toLocaleString('de-DE')}`;
+
+    // Version vergleichen: nur als Update melden wenn remote NEUER ist
+    const remoteParts = remoteVersion.split('.').map(Number);
+    const localParts = localVersion.split('.').map(Number);
+    let remoteNeuer = false;
+    for (let i = 0; i < 3; i++) {
+      const r = remoteParts[i] || 0;
+      const l = localParts[i] || 0;
+      if (r > l) { remoteNeuer = true; break; }
+      if (r < l) break;
+    }
+
+    if (remoteNeuer) {
+      msg.style.color = 'var(--accent-green)';
+      msg.textContent = `📥 Update verfügbar: v${remoteVersion}`;
+      icon.textContent = '📥';
+
+      const downloadUrl = release.assets?.[0]?.browser_download_url;
+      if (downloadUrl) {
+        msg.innerHTML += `<br><a href="${downloadUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); require('electron').shell.openExternal('${downloadUrl}')">Herunterladen</a>`;
+      }
+    } else {
+      msg.style.color = 'var(--accent-green)';
+      msg.textContent = `✅ Aktuelle Version (v${localVersion})`;
+      icon.textContent = '✅';
+    }
+  } catch (err) {
+    msg.style.color = 'var(--accent-orange)';
+    msg.textContent = `⚠️ Update-Check fehlgeschlagen: ${err.message}`;
+    icon.textContent = '⚠️';
+    detail.textContent = `Letzte Prüfung: ${new Date().toLocaleString('de-DE')}`;
+  }
 }
 
 async function saveEinstellungen() {
@@ -1286,6 +1438,918 @@ if (api.onToggleSidebar) {
     const sidebar = document.querySelector('.sidebar');
     sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
   });
+}
+
+// ============ Eingangsrechnungen ============
+async function loadEingangsrechnungen() {
+  const data = await api.getEingangsrechnungen();
+  document.getElementById('eingangsrechnungen-tbody').innerHTML = data.map(e => `
+    <tr>
+      <td><strong>${escHtml(e.nummer)}</strong></td>
+      <td>${escHtml(e.lieferant_name || '-')}</td>
+      <td>${escHtml(e.titel || '-')}</td>
+      <td>${formatEuro(e.betrag_brutto)}</td>
+      <td><span class="status-badge status-${e.status}">${e.status}</span></td>
+      <td>${e.faellig_am || '-'}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editEingangsrechnung(${e.id})">✏️</button>
+          ${e.status !== 'bezahlt' ? `<button class="btn btn-success btn-small" onclick="eingangsrechnungBezahlt(${e.id})">✅</button>` : ''}
+          <button class="btn btn-danger btn-small" onclick="deleteEingangsrechnung(${e.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showEingangsrechnungForm(ein = null) {
+  const title = ein ? 'Eingangsrechnung bearbeiten' : 'Neue Eingangsrechnung';
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Nr. *</label><input type="text" id="er-nummer" value="${escHtml(ein?.nummer || '')}"></div>
+      <div class="form-group"><label>Lieferant *</label><select id="er-lieferant"></select></div>
+    </div>
+    <div class="form-group"><label>Titel</label><input type="text" id="er-titel" value="${escHtml(ein?.titel || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Netto</label><input type="number" step="0.01" id="er-netto" value="${ein?.betrag_netto || 0}"></div>
+      <div class="form-group"><label>MwSt %</label><input type="number" step="0.01" id="er-mwst" value="${ein?.mwst_satz || 19}"></div>
+      <div class="form-group"><label>Brutto</label><input type="number" step="0.01" id="er-brutto" value="${ein?.betrag_brutto || 0}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Status</label><select id="er-status"><option value="offen"${ein?.status==='offen'?' selected':''}>Offen</option><option value="bezahlt"${ein?.status==='bezahlt'?' selected':''}>Bezahlt</option></select></div>
+      <div class="form-group"><label>Fällig am</label><input type="date" id="er-faellig" value="${ein?.faellig_am || ''}"></div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveEingangsrechnung(${ein?.id || 'null'})">Speichern</button>`;
+  openModal();
+  api.getLieferanten().then(lf => {
+    const sel = document.getElementById('er-lieferant');
+    sel.innerHTML = lf.map(l => `<option value="${l.id}"${ein?.lieferanten_id===l.id?' selected':''}>${escHtml(l.name)}</option>`).join('');
+  });
+}
+
+async function saveEingangsrechnung(id) {
+  const data = {
+    id, nummer: document.getElementById('er-nummer').value,
+    lieferanten_id: parseInt(document.getElementById('er-lieferant').value),
+    titel: document.getElementById('er-titel').value,
+    betrag_netto: parseFloat(document.getElementById('er-netto').value) || 0,
+    mwst_satz: parseFloat(document.getElementById('er-mwst').value) || 19,
+    mwst_betrag: 0, betrag_brutto: parseFloat(document.getElementById('er-brutto').value) || 0,
+    status: document.getElementById('er-status').value,
+    faellig_am: document.getElementById('er-faellig').value || null
+  };
+  data.mwst_betrag = data.betrag_brutto - data.betrag_netto;
+  await api.saveEingangsrechnung(data);
+  closeModal(); loadEingangsrechnungen();
+}
+
+function editEingangsrechnung(id) { api.getEingangsrechnung(id).then(e => showEingangsrechnungForm(e)); }
+async function deleteEingangsrechnung(id) { if (confirm('Löschen?')) { await api.deleteEingangsrechnung(id); loadEingangsrechnungen(); } }
+async function eingangsrechnungBezahlt(id) { await api.eingangsrechnungZuBuchung(id); loadEingangsrechnungen(); }
+
+// ============ Lieferanten ============
+async function loadLieferanten() {
+  const data = await api.getLieferanten();
+  document.getElementById('lieferanten-tbody').innerHTML = data.map(l => `
+    <tr>
+      <td><strong>${escHtml(l.name)}</strong></td>
+      <td>${escHtml(l.ansprechpartner || '-')}</td>
+      <td>${escHtml(l.strasse || '')} ${escHtml(l.plz || '')} ${escHtml(l.ort || '')}</td>
+      <td>${escHtml(l.telefon || '-')}</td>
+      <td>${escHtml(l.email || '-')}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editLieferant(${l.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteLieferant(${l.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showLieferantForm(l = null) {
+  document.getElementById('modal-title').textContent = l ? 'Lieferant bearbeiten' : 'Neuer Lieferant';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-group"><label>Name *</label><input type="text" id="lf-name" value="${escHtml(l?.name || '')}"></div>
+    <div class="form-group"><label>Ansprechpartner</label><input type="text" id="lf-ansprechpartner" value="${escHtml(l?.ansprechpartner || '')}"></div>
+    <div class="form-group"><label>Straße & Nr.</label><input type="text" id="lf-strasse" value="${escHtml(l?.strasse || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>PLZ</label><input type="text" id="lf-plz" value="${escHtml(l?.plz || '')}"></div>
+      <div class="form-group"><label>Ort</label><input type="text" id="lf-ort" value="${escHtml(l?.ort || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Telefon</label><input type="text" id="lf-telefon" value="${escHtml(l?.telefon || '')}"></div>
+      <div class="form-group"><label>E-Mail</label><input type="text" id="lf-email" value="${escHtml(l?.email || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>IBAN</label><input type="text" id="lf-iban" value="${escHtml(l?.iban || '')}"></div>
+      <div class="form-group"><label>USt-IdNr.</label><input type="text" id="lf-ust" value="${escHtml(l?.ust_id || '')}"></div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveLieferant(${l?.id || 'null'})">Speichern</button>`;
+  openModal();
+}
+
+async function saveLieferant(id) {
+  await api.saveLieferant({ id, name: document.getElementById('lf-name').value, ansprechpartner: document.getElementById('lf-ansprechpartner').value, strasse: document.getElementById('lf-strasse').value, plz: document.getElementById('lf-plz').value, ort: document.getElementById('lf-ort').value, telefon: document.getElementById('lf-telefon').value, email: document.getElementById('lf-email').value, iban: document.getElementById('lf-iban').value, ust_id: document.getElementById('lf-ust').value, notizen: '' });
+  closeModal(); loadLieferanten();
+}
+
+function editLieferant(id) { api.getLieferant(id).then(l => showLieferantForm(l)); }
+async function deleteLieferant(id) { if (confirm('Löschen?')) { await api.deleteLieferant(id); loadLieferanten(); } }
+
+// ============ Mahnwesen ============
+async function loadMahnungen() {
+  const data = await api.getMahnungen();
+  document.getElementById('mahnungen-tbody').innerHTML = data.map(m => `
+    <tr>
+      <td>${escHtml(m.rechnung_nummer || '-')}</td>
+      <td>${escHtml(m.kunden_name || '-')}</td>
+      <td><strong>Stufe ${m.mahnstufe}</strong></td>
+      <td>${formatEuro(m.betrag)}</td>
+      <td>${formatEuro(m.gebuehr)}</td>
+      <td>${m.faellig_bis || '-'}</td>
+      <td><span class="status-badge status-${m.status}">${m.status}</span></td>
+      <td>
+        ${m.status !== 'bezahlt' ? `<button class="btn btn-success btn-small" onclick="mahnungBezahlt(${m.id})">✅ Bezahlt</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function mahnungBezahlt(id) { await api.mahnungBezahlen(id); loadMahnungen(); }
+
+// ============ Aufmaß ============
+async function loadAufmasse() {
+  const data = await api.getAufmasse();
+  document.getElementById('aufmasse-tbody').innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${escHtml(a.titel)}</strong></td>
+      <td>${escHtml(a.kunden_name || '-')}</td>
+      <td>${escHtml(a.auftrag_titel || '-')}</td>
+      <td>${a.datum}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editAufmass(${a.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteAufmass(${a.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showAufmassForm(af = null) {
+  document.getElementById('modal-title').textContent = af ? 'Aufmaß bearbeiten' : 'Neues Aufmaß';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-group"><label>Titel *</label><input type="text" id="am-titel" value="${escHtml(af?.titel || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Kunde</label><select id="am-kunde"></select></div>
+      <div class="form-group"><label>Auftrag</label><select id="am-auftrag"></select></div>
+    </div>
+    <div class="form-group"><label>Datum</label><input type="date" id="am-datum" value="${af?.datum || new Date().toISOString().split('T')[0]}"></div>
+    <div class="form-group"><label>Notizen</label><textarea id="am-notizen" rows="3">${escHtml(af?.notizen || '')}</textarea></div>
+    <h4 style="margin-top:16px;">Positionen</h4>
+    <div id="am-positionen"></div>
+    <button class="btn btn-secondary btn-small" onclick="addAufmassPosition()" style="margin-top:8px;">+ Position</button>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveAufmass(${af?.id || 'null'})">Speichern</button>`;
+  openModal();
+  api.getKunden().then(kl => {
+    document.getElementById('am-kunde').innerHTML = kl.map(k => `<option value="${k.id}"${af?.kunden_id===k.id?' selected':''}>${escHtml(k.name)}</option>`).join('');
+  });
+  api.getAuftraege().then(al => {
+    document.getElementById('am-auftrag').innerHTML = `<option value="">Kein Auftrag</option>` + al.map(a => `<option value="${a.id}"${af?.auftraege_id===a.id?' selected':''}>${escHtml(a.titel)}</option>`).join('');
+  });
+  window._amPositions = af?.positionen || [];
+  renderAufmassPositionen();
+}
+
+function renderAufmassPositionen() {
+  const container = document.getElementById('am-positionen');
+  if (!container) return;
+  container.innerHTML = (window._amPositions || []).map((p, i) => `
+    <div class="form-row" style="align-items:end; margin-bottom:8px;">
+      <div class="form-group" style="flex:2;"><input type="text" placeholder="Beschreibung" value="${escHtml(p.beschreibung || '')}" onchange="window._amPositions[${i}].beschreibung=this.value"></div>
+      <div class="form-group" style="flex:0.5;"><input type="number" placeholder="Menge" value="${p.menge || 1}" onchange="window._amPositions[${i}].menge=+this.value"></div>
+      <div class="form-group" style="flex:0.5;"><input type="text" placeholder="Einheit" value="${escHtml(p.einheit || 'm')}" onchange="window._amPositions[${i}].einheit=this.value"></div>
+      <div class="form-group" style="flex:0.5;"><input type="number" step="0.01" placeholder="Breite" value="${p.breite || 0}" onchange="window._amPositions[${i}].breite=+this.value"></div>
+      <div class="form-group" style="flex:0.5;"><input type="number" step="0.01" placeholder="Höhe" value="${p.hoehe || 0}" onchange="window._amPositions[${i}].hoehe=+this.value"></div>
+      <div class="form-group" style="flex:0.5;"><input type="number" step="0.01" placeholder="Preis" value="${p.einzelpreis || 0}" onchange="window._amPositions[${i}].einzelpreis=+this.value"></div>
+      <button class="btn btn-danger btn-small" onclick="window._amPositions.splice(${i},1);renderAufmassPositionen()">×</button>
+    </div>
+  `).join('');
+}
+
+function addAufmassPosition() {
+  window._amPositions = window._amPositions || [];
+  window._amPositions.push({ beschreibung: '', menge: 1, einheit: 'm', breite: 0, hoehe: 0, flaeche: 0, einzelpreis: 0, gesamt: 0 });
+  renderAufmassPositionen();
+}
+
+async function saveAufmass(id) {
+  const positionen = (window._amPositions || []).map((p, i) => ({ ...p, position: i + 1, flaeche: p.breite * p.hoehe * p.menge, gesamt: p.einzelpreis * p.menge * (p.breite * p.hoehe || 1) }));
+  await api.saveAufmass({ aufmass: { id, titel: document.getElementById('am-titel').value, kunden_id: parseInt(document.getElementById('am-kunde').value) || null, auftraege_id: parseInt(document.getElementById('am-auftrag').value) || null, datum: document.getElementById('am-datum').value, notizen: document.getElementById('am-notizen').value }, positionen });
+  closeModal(); loadAufmasse();
+}
+
+function editAufmass(id) { api.getAufmassEinzel(id).then(a => showAufmassForm(a)); }
+async function deleteAufmass(id) { if (confirm('Löschen?')) { await api.deleteAufmass(id); loadAufmasse(); } }
+
+// ============ Artikel / Lager ============
+async function loadArtikel() {
+  const data = await api.getArtikel();
+  document.getElementById('artikel-tbody').innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${escHtml(a.name)}</strong></td>
+      <td>${escHtml(a.sku || '-')}</td>
+      <td>${a.bestand} ${escHtml(a.einheit)}</td>
+      <td>${a.mindestbestand}</td>
+      <td>${formatEuro(a.einkaufspreis)}</td>
+      <td>${formatEuro(a.verkaufspreis)}</td>
+      <td>${escHtml(a.lagerplatz || '-')}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="showLagerbewegungForm(${a.id})">📦</button>
+          <button class="btn btn-secondary btn-small" onclick="editArtikel(${a.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteArtikel(${a.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  const warns = await api.mindestbestandWarnung();
+  const warnEl = document.getElementById('mindestbestand-warnung');
+  if (warns.length > 0) {
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `<strong>⚠️ Mindestbestand erreicht:</strong> ${warns.map(w => `${w.name} (${w.bestand} ${w.einheit})`).join(', ')}`;
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+
+function showArtikelForm(a = null) {
+  document.getElementById('modal-title').textContent = a ? 'Artikel bearbeiten' : 'Neuer Artikel';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div class="form-group" style="flex:2;"><label>Name *</label><input type="text" id="at-name" value="${escHtml(a?.name || '')}"></div>
+      <div class="form-group"><label>SKU</label><input type="text" id="at-sku" value="${escHtml(a?.sku || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Einheit</label><select id="at-einheit"><option value="Stk"${a?.einheit==='Stk'?' selected':''}>Stk</option><option value="m"${a?.einheit==='m'?' selected':''}>m</option><option value="m²"${a?.einheit==='m²'?' selected':''}>m²</option><option value="kg"${a?.einheit==='kg'?' selected':''}>kg</option><option value="l"${a?.einheit==='l'?' selected':''}>l</option><option value="Paar"${a?.einheit==='Paar'?' selected':''}>Paar</option></select></div>
+      <div class="form-group"><label>Barcode</label><input type="text" id="at-barcode" value="${escHtml(a?.barcode || '')}"></div>
+      <div class="form-group"><label>Kategorie</label><input type="text" id="at-kategorie" value="${escHtml(a?.kategorie || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Einkaufspreis</label><input type="number" step="0.01" id="at-ek" value="${a?.einkaufspreis || 0}"></div>
+      <div class="form-group"><label>Verkaufspreis</label><input type="number" step="0.01" id="at-vk" value="${a?.verkaufspreis || 0}"></div>
+      <div class="form-group"><label>MwSt %</label><input type="number" step="0.01" id="at-mwst" value="${a?.mwst_satz || 19}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Bestand</label><input type="number" id="at-bestand" value="${a?.bestand || 0}"></div>
+      <div class="form-group"><label>Mindestbestand</label><input type="number" id="at-min" value="${a?.mindestbestand || 0}"></div>
+      <div class="form-group"><label>Lagerplatz</label><input type="text" id="at-lager" value="${escHtml(a?.lagerplatz || '')}"></div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveArtikel(${a?.id || 'null'})">Speichern</button>`;
+  openModal();
+}
+
+async function saveArtikel(id) {
+  await api.saveArtikel({ id, name: document.getElementById('at-name').value, sku: document.getElementById('at-sku').value, einheit: document.getElementById('at-einheit').value, einkaufspreis: parseFloat(document.getElementById('at-ek').value) || 0, verkaufspreis: parseFloat(document.getElementById('at-vk').value) || 0, mwst_satz: parseFloat(document.getElementById('at-mwst').value) || 19, bestand: parseInt(document.getElementById('at-bestand').value) || 0, mindestbestand: parseInt(document.getElementById('at-min').value) || 0, lagerplatz: document.getElementById('at-lager').value, barcode: document.getElementById('at-barcode').value, kategorie: document.getElementById('at-kategorie').value, notizen: '' });
+  closeModal(); loadArtikel();
+}
+
+function editArtikel(id) { api.getArtikelEinzel(id).then(a => showArtikelForm(a)); }
+async function deleteArtikel(id) { if (confirm('Löschen?')) { await api.deleteArtikel(id); loadArtikel(); } }
+
+function showLagerbewegungForm(artikelId) {
+  document.getElementById('modal-title').textContent = 'Lagerbewegung';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Typ</label><select id="lb-typ"><option value="eingang">Wareneingang</option><option value="ausgang">Warenausgang</option><option value="korrektur">Korrektur</option></select></div>
+      <div class="form-group"><label>Menge</label><input type="number" id="lb-menge" value="1"></div>
+    </div>
+    <div class="form-group"><label>Grund</label><input type="text" id="lb-grund" placeholder="z.B. Lieferung, Reparatur..."></div>
+    <div class="form-group"><label>Mitarbeiter</label><input type="text" id="lb-mitarbeiter"></div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveLagerbewegung(${artikelId})">Speichern</button>`;
+  openModal();
+}
+
+async function saveLagerbewegung(artikelId) {
+  const now = new Date();
+  await api.lagerbewegung({ artikel_id: artikelId, typ: document.getElementById('lb-typ').value, menge: parseInt(document.getElementById('lb-menge').value) || 0, datum: now.toISOString().split('T')[0], uhrzeit: now.toTimeString().split(' ')[0], grund: document.getElementById('lb-grund').value, mitarbeiter: document.getElementById('lb-mitarbeiter').value });
+  closeModal(); loadArtikel();
+}
+
+// ============ Kassenbuch ============
+async function loadKasse() {
+  const data = await api.getKasse({});
+  const stand = await api.kasseStand();
+  document.getElementById('kasse-einnahmen').textContent = formatEuro(stand.einnahmen);
+  document.getElementById('kasse-ausgaben').textContent = formatEuro(stand.ausgaben);
+  document.getElementById('kasse-stand').textContent = formatEuro(stand.kassenstand);
+  document.getElementById('kasse-tbody').innerHTML = data.map(k => `
+    <tr>
+      <td>${k.datum}</td>
+      <td>${k.uhrzeit || '-'}</td>
+      <td><span class="status-badge status-${k.typ === 'einnahme' ? 'bezahlt' : 'offen'}">${k.typ}</span></td>
+      <td>${escHtml(k.kategorie || '-')}</td>
+      <td>${escHtml(k.beschreibung || '-')}</td>
+      <td>${formatEuro(k.betrag)}</td>
+      <td>${escHtml(k.mitarbeiter || '-')}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editKasse(${k.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteKasse(${k.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showKasseForm(e = null) {
+  document.getElementById('modal-title').textContent = e ? 'Eintrag bearbeiten' : 'Neuer Kassen-Eintrag';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>Typ *</label><select id="ka-typ"><option value="einnahme"${e?.typ==='einnahme'?' selected':''}>Einnahme</option><option value="ausgabe"${e?.typ==='ausgabe'?' selected':''}>Ausgabe</option></select></div>
+      <div class="form-group"><label>Betrag *</label><input type="number" step="0.01" id="ka-betrag" value="${e?.betrag || ''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Datum *</label><input type="date" id="ka-datum" value="${e?.datum || new Date().toISOString().split('T')[0]}"></div>
+      <div class="form-group"><label>Uhrzeit</label><input type="time" id="ka-uhrzeit" value="${e?.uhrzeit || new Date().toTimeString().split(' ')[0].substring(0,5)}"></div>
+    </div>
+    <div class="form-group"><label>Kategorie</label><input type="text" id="ka-kategorie" value="${escHtml(e?.kategorie || '')}"></div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="ka-beschreibung" value="${escHtml(e?.beschreibung || '')}"></div>
+    <div class="form-group"><label>Mitarbeiter</label><input type="text" id="ka-mitarbeiter" value="${escHtml(e?.mitarbeiter || '')}"></div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveKasse(${e?.id || 'null'})">Speichern</button>`;
+  openModal();
+}
+
+async function saveKasse(id) {
+  await api.saveKasse({ id, typ: document.getElementById('ka-typ').value, betrag: parseFloat(document.getElementById('ka-betrag').value) || 0, datum: document.getElementById('ka-datum').value, uhrzeit: document.getElementById('ka-uhrzeit').value, kategorie: document.getElementById('ka-kategorie').value, beschreibung: document.getElementById('ka-beschreibung').value, mitarbeiter: document.getElementById('ka-mitarbeiter').value });
+  closeModal(); loadKasse();
+}
+
+function editKasse(id) { api.getKasse({}).then(data => { const e = data.find(x => x.id === id); if (e) showKasseForm(e); }); }
+async function deleteKasse(id) { if (confirm('Löschen?')) { await api.deleteKasse(id); loadKasse(); } }
+
+// ============ Subunternehmer ============
+async function loadSubunternehmer() {
+  const data = await api.getSubunternehmer();
+  document.getElementById('subunternehmer-tbody').innerHTML = data.map(s => `
+    <tr>
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td>${escHtml(s.ansprechpartner || '-')}</td>
+      <td>${formatEuro(s.stundensatz)}/h</td>
+      <td>${escHtml(s.telefon || '-')}</td>
+      <td>${escHtml(s.email || '-')}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editSubunternehmer(${s.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteSubunternehmer(${s.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showSubunternehmerForm(s = null) {
+  document.getElementById('modal-title').textContent = s ? 'Subunternehmer bearbeiten' : 'Neuer Subunternehmer';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-group"><label>Name *</label><input type="text" id="su-name" value="${escHtml(s?.name || '')}"></div>
+    <div class="form-group"><label>Ansprechpartner</label><input type="text" id="su-ansprechpartner" value="${escHtml(s?.ansprechpartner || '')}"></div>
+    <div class="form-group"><label>Straße & Nr.</label><input type="text" id="su-strasse" value="${escHtml(s?.strasse || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>PLZ</label><input type="text" id="su-plz" value="${escHtml(s?.plz || '')}"></div>
+      <div class="form-group"><label>Ort</label><input type="text" id="su-ort" value="${escHtml(s?.ort || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Telefon</label><input type="text" id="su-telefon" value="${escHtml(s?.telefon || '')}"></div>
+      <div class="form-group"><label>E-Mail</label><input type="text" id="su-email" value="${escHtml(s?.email || '')}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>IBAN</label><input type="text" id="su-iban" value="${escHtml(s?.iban || '')}"></div>
+      <div class="form-group"><label>USt-IdNr.</label><input type="text" id="su-ust" value="${escHtml(s?.ust_id || '')}"></div>
+    </div>
+    <div class="form-group"><label>Stundensatz (€/h)</label><input type="number" step="0.01" id="su-satz" value="${s?.stundensatz || 0}"></div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveSubunternehmer(${s?.id || 'null'})">Speichern</button>`;
+  openModal();
+}
+
+async function saveSubunternehmer(id) {
+  await api.saveSubunternehmer({ id, name: document.getElementById('su-name').value, ansprechpartner: document.getElementById('su-ansprechpartner').value, strasse: document.getElementById('su-strasse').value, plz: document.getElementById('su-plz').value, ort: document.getElementById('su-ort').value, telefon: document.getElementById('su-telefon').value, email: document.getElementById('su-email').value, iban: document.getElementById('su-iban').value, ust_id: document.getElementById('su-ust').value, stundensatz: parseFloat(document.getElementById('su-satz').value) || 0, notizen: '' });
+  closeModal(); loadSubunternehmer();
+}
+
+function editSubunternehmer(id) { api.getSubunternehmerEinzel(id).then(s => showSubunternehmerForm(s)); }
+async function deleteSubunternehmer(id) { if (confirm('Löschen?')) { await api.deleteSubunternehmer(id); loadSubunternehmer(); } }
+
+// ============ DATEV-Export ============
+function loadDatev() {
+  const now = new Date();
+  document.getElementById('datev-monat').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function exportDatev() {
+  const monat = document.getElementById('datev-monat').value;
+  if (!monat) { alert('Bitte Monat wählen'); return; }
+  await api.exportDatev(monat);
+}
+
+async function exportUstXml() {
+  const monat = document.getElementById('datev-monat').value;
+  if (!monat) { alert('Bitte Monat wählen'); return; }
+  await api.exportUstVoranmeldung(monat);
+}
+
+// ============ Automatisierung / Regeln ============
+async function loadRegeln() {
+  const data = await api.getRegeln();
+  document.getElementById('regeln-tbody').innerHTML = data.map(r => `
+    <tr>
+      <td><strong>${escHtml(r.name)}</strong></td>
+      <td>${escHtml(r.typ)}</td>
+      <td>${escHtml(r.bedingung)}</td>
+      <td>${escHtml(r.aktion)}</td>
+      <td>${r.aktiv ? '✅' : '❌'}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-small" onclick="editRegel(${r.id})">✏️</button>
+          <button class="btn btn-danger btn-small" onclick="deleteRegel(${r.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showRegelForm(r = null) {
+  document.getElementById('modal-title').textContent = r ? 'Regel bearbeiten' : 'Neue Regel';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-group"><label>Name *</label><input type="text" id="rg-name" value="${escHtml(r?.name || '')}"></div>
+    <div class="form-group"><label>Typ</label><select id="rg-typ"><option value="rechnung-erstellt"${r?.typ==='rechnung-erstellt'?' selected':''}>Rechnung erstellt</option><option value="rechnung-offen"${r?.typ==='rechnung-offen'?' selected':''}>Rechnung offen > 30 Tage</option><option value="mindestbestand"${r?.typ==='mindestbestand'?' selected':''}>Mindestbestand erreicht</option><option value="auftrag-erstellt"${r?.typ==='auftrag-erstellt'?' selected':''}>Auftrag erstellt</option></select></div>
+    <div class="form-group"><label>Bedingung</label><input type="text" id="rg-bedingung" value="${escHtml(r?.bedingung || '')}" placeholder="z.B. betrag > 1000"></div>
+    <div class="form-group"><label>Aktion</label><input type="text" id="rg-aktion" value="${escHtml(r?.aktion || '')}" placeholder="z.B. mahnung-erstellen"></div>
+    <div class="form-group"><label><input type="checkbox" id="rg-aktiv" ${r?.aktiv !== 0 ? 'checked' : ''}> Aktiv</label></div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" onclick="saveRegel(${r?.id || 'null'})">Speichern</button>`;
+  openModal();
+}
+
+async function saveRegel(id) {
+  await api.saveRegel({ id, name: document.getElementById('rg-name').value, typ: document.getElementById('rg-typ').value, bedingung: document.getElementById('rg-bedingung').value, aktion: document.getElementById('rg-aktion').value, aktiv: document.getElementById('rg-aktiv').checked ? 1 : 0 });
+  closeModal(); loadRegeln();
+}
+
+function editRegel(id) { api.getRegeln().then(data => { const r = data.find(x => x.id === id); if (r) showRegelForm(r); }); }
+async function deleteRegel(id) { if (confirm('Löschen?')) { await api.deleteRegel(id); loadRegeln(); } }
+
+// ============ Server-Einstellungen ============
+async function saveServerEinstellungen() {
+  const modus = document.getElementById('set-modus').value;
+  const serverUrl = document.getElementById('set-server-url').value;
+  const serverKey = document.getElementById('set-server-key').value;
+  const clientId = document.getElementById('set-client-id').value;
+  localStorage.setItem('hw-modus', modus);
+  localStorage.setItem('hw-server-url', serverUrl);
+  localStorage.setItem('hw-server-key', serverKey);
+  localStorage.setItem('hw-client-id', clientId);
+  showServerStatus('Einstellungen gespeichert.', 'success');
+}
+
+function loadServerEinstellungen() {
+  document.getElementById('set-modus').value = localStorage.getItem('hw-modus') || 'lokal';
+  document.getElementById('set-server-url').value = localStorage.getItem('hw-server-url') || '';
+  document.getElementById('set-server-key').value = localStorage.getItem('hw-server-key') || '';
+  document.getElementById('set-client-id').value = localStorage.getItem('hw-client-id') || '';
+}
+
+async function testServerVerbindung() {
+  const url = document.getElementById('set-server-url').value;
+  const key = document.getElementById('set-server-key').value;
+  if (!url) { showServerStatus('Bitte Server-URL eingeben.', 'error'); return; }
+  showServerStatus('Verbindung wird getestet...', 'pending');
+  try {
+    const response = await fetch(`${url}/api/health`, { headers: { 'X-API-Key': key } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    showServerStatus(`Verbunden! Server: v${data.version}, Uptime: ${Math.round(data.uptime)}s, Clients: ${data.clients}`, 'success');
+  } catch (err) {
+    showServerStatus(`Verbindung fehlgeschlagen: ${err.message}`, 'error');
+  }
+}
+
+function showServerStatus(msg, type) {
+  const el = document.getElementById('server-status');
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? '#d1fae5' : type === 'error' ? '#fee2e2' : '#e0e7ff';
+  el.style.color = type === 'success' ? '#065f46' : type === 'error' ? '#991b1b' : '#3730a3';
+  el.textContent = msg;
+}
+
+// Patch loadEinstellungen um auch Server-Werte zu laden
+const _origLoadEinstellungen = typeof loadEinstellungen === 'function' ? loadEinstellungen : null;
+
+// ============ Branchen-Schnittstellen ============
+let gaebDaten = null;
+
+function switchBranchenTab(tab) {
+  document.querySelectorAll('.branchen-tab').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`branchen-${tab}`).style.display = 'block';
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab === 'ids') loadIDSConnect();
+}
+
+// DATANORM
+async function importDatanorm() {
+  const result = await api.importDatanorm();
+  if (!result) return;
+  const el = document.getElementById('datanorm-ergebnis');
+  el.style.display = 'block';
+  el.style.background = '#d1fae5';
+  el.style.color = '#065f46';
+  el.textContent = `Import abgeschlossen: ${result.importiert} neue, ${result.aktualisiert} aktualisierte Artikel (gesamt: ${result.gesamt}, Lieferant: ${result.lieferant || 'Unbekannt'})`;
+}
+
+async function exportDatanorm() {
+  await api.exportDatanorm();
+}
+
+// GAEB
+async function importGaeb85() {
+  const result = await api.importGaeb85();
+  if (!result) return;
+  gaebDaten = result;
+  showGaebVorschau(result);
+}
+
+async function importGaeb90() {
+  const result = await api.importGaeb90();
+  if (!result) return;
+  gaebDaten = result;
+  showGaebVorschau(result);
+}
+
+function showGaebVorschau(daten) {
+  const el = document.getElementById('gaeb-ergebnis');
+  el.style.display = 'block';
+  el.style.background = '#dbeafe';
+  el.style.color = '#1e40af';
+  el.textContent = `Importiert: ${daten.leistungen.length} Positionen — ${daten.kopf.titel || daten.kopf.projekt || 'Kein Titel'}`;
+
+  const tbody = document.getElementById('gaeb-vorschau-tbody');
+  tbody.innerHTML = daten.leistungen.map(l => `
+    <tr>
+      <td>${l.position}</td>
+      <td>${escHtml(l.text)}</td>
+      <td>${l.menge}</td>
+      <td>${escHtml(l.einheit)}</td>
+      <td>${l.preis !== null ? formatEuro(l.preis) : '-'}</td>
+      <td>${l.gesamt ? formatEuro(l.gesamt) : '-'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('gaeb-vorschau').style.display = 'block';
+}
+
+async function gaebZuAngebot() {
+  if (!gaebDaten) return;
+  const angebot = await api.gaebZuAngebot(gaebDaten);
+  alert(`Angebot erstellt: ${angebot.titel}\nNetto: ${formatEuro(angebot.betrag_netto)}\nBrutto: ${formatEuro(angebot.betrag_brutto)}\n\nWird in Angebote gespeichert.`);
+}
+
+async function exportGaeb85() {
+  const kopf = { vergabenummer: '', titel: 'Leistungsverzeichnis', ersteller: '' };
+  const leistungen = [];
+  await api.exportGaeb85(kopf, leistungen);
+}
+
+// IDS-Connect
+async function loadIDSConnect() {
+  const kataloge = await api.lieferantenKataloge();
+  const katContainer = document.getElementById('ids-kataloge');
+  katContainer.innerHTML = kataloge.map(k => `
+    <button class="btn btn-secondary btn-small" onclick="loadArtikelKatalog('${escHtml(k.name)}')">${escHtml(k.name)}</button>
+  `).join('') || '<span style="color:var(--text-light);">Keine Kataloge vorhanden. Zuerst BMEcat importieren.</span>';
+
+  const lieferanten = await api.getLieferanten();
+  const sel = document.getElementById('ids-lieferant');
+  sel.innerHTML = lieferanten.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+}
+
+async function loadArtikelKatalog(kategorie) {
+  const artikel = await api.artikelNachKategorie(kategorie);
+  const tbody = document.getElementById('ids-artikel-tbody');
+  tbody.innerHTML = artikel.map(a => `
+    <tr>
+      <td>${escHtml(a.sku || '-')}</td>
+      <td>${escHtml(a.name)}</td>
+      <td><input type="checkbox" class="ids-bestellen" data-id="${a.id}" data-name="${escHtml(a.name)}" data-sku="${escHtml(a.sku || '')}" data-preis="${a.einkaufspreis || 0}" data-einheit="${escHtml(a.einheit || 'Stk')}"></td>
+      <td><input type="number" class="ids-menge" data-id="${a.id}" value="1" min="1" style="width:60px;"></td>
+      <td>${formatEuro(a.einkaufspreis || 0)}</td>
+    </tr>
+  `).join('');
+}
+
+async function importBMEcat() {
+  const result = await api.importBMEcat();
+  if (!result) return;
+  const el = document.getElementById('ids-ergebnis');
+  el.style.display = 'block';
+  el.style.background = '#d1fae5';
+  el.style.color = '#065f46';
+  el.textContent = `Katalog importiert: ${result.importiert} neue, ${result.aktualisiert} aktualisierte Artikel (${result.lieferant || 'Unbekannt'})`;
+  loadIDSConnect();
+}
+
+async function exportBMEcat() {
+  await api.exportBMEcat();
+}
+
+async function bestellungErstellen() {
+  const checks = document.querySelectorAll('.ids-bestellen:checked');
+  if (checks.length === 0) { alert('Bitte mindestens einen Artikel auswählen.'); return; }
+
+  const positionen = [];
+  checks.forEach(c => {
+    const menge = document.querySelector(`.ids-menge[data-id="${c.dataset.id}"]`);
+    positionen.push({
+      sku: c.dataset.sku,
+      name: c.dataset.name,
+      menge: parseInt(menge ? menge.value : 1),
+      preis: parseFloat(c.dataset.preis),
+      einheit: c.dataset.einheit
+    });
+  });
+
+  const lieferantId = document.getElementById('ids-lieferant').value;
+  const lieferant = await api.getLieferant(parseInt(lieferantId));
+  const bestellung = await api.bestellungErstellen({
+    kunde: 'Eigener Betrieb',
+    lieferant: lieferant ? lieferant.name : 'Unbekannt',
+    positionen
+  });
+
+  alert(`Bestellung erstellt: ${bestellung.bestell_nr}\nNetto: ${formatEuro(bestellung.netto)}\nDatei wird zum Speichern angeboten.`);
+}
+
+// ============ Aufgabenverwaltung ============
+
+async function ladeAufgaben() {
+  const status = document.getElementById('aufg-filter-status')?.value || '';
+  const prio = document.getElementById('aufg-filter-prio')?.value || '';
+  const aufgaben = await api.getAufgaben({ status, prioritaet: prio });
+  const tbody = document.getElementById('aufgaben-tbody');
+  if (!tbody) return;
+
+  const prioColors = { dringend: '#dc3545', hoch: '#ff9900', normal: '#0066cc', niedrig: '#999' };
+  const statusColors = { offen: '#ff9900', 'in-arbeit': '#0066cc', erledigt: '#28a745' };
+
+  tbody.innerHTML = aufgaben.map(a => `
+    <tr>
+      <td><strong>${a.titel}</strong>${a.beschreibung ? '<br><small style="color:#888">' + a.beschreibung.substring(0, 60) + '</small>' : ''}</td>
+      <td>${a.zustandig || '—'}</td>
+      <td><span style="color:${prioColors[a.prioritaet] || '#999'}; font-weight:600; text-transform:uppercase; font-size:12px;">${a.prioritaet || 'normal'}</span></td>
+      <td>${a.faelligkeit ? new Date(a.faelligkeit).toLocaleDateString('de-DE') : '—'}</td>
+      <td><span style="background:${statusColors[a.status] || '#999'}; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px;">${a.status}</span></td>
+      <td>${a.quelle || 'manuell'}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="editiereAufgabe(${a.id})">✏️</button>
+        <button class="btn btn-sm btn-secondary" onclick="loescheAufgabe(${a.id})" style="color:var(--danger);">✕</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center; color:#999; padding:24px;">Keine Aufgaben vorhanden</td></tr>';
+
+  const stats = await api.getAufgabenStatistik();
+  document.getElementById('aufg-offen').textContent = stats.offen;
+  document.getElementById('aufg-inarbeit').textContent = stats.inArbeit;
+  document.getElementById('aufg-erledigt').textContent = stats.erledigt;
+  document.getElementById('aufg-ueberfaellig').textContent = stats.ueberfaellig;
+}
+
+async function showAufgabenForm(aufgabe = null) {
+  const titel = aufgabe ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+  const html = `
+    <div class="form-group">
+      <label>Titel *</label>
+      <input type="text" id="aufg-titel" value="${aufgabe?.titel || ''}" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label>Beschreibung</label>
+      <textarea id="aufg-beschreibung" class="form-control" rows="3">${aufgabe?.beschreibung || ''}</textarea>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label>Zuständig</label>
+        <input type="text" id="aufg-zustandig" value="${aufgabe?.zustandig || ''}" class="form-control">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Priorität</label>
+        <select id="aufg-prioritaet" class="form-control">
+          <option value="dringend" ${aufgabe?.prioritaet === 'dringend' ? 'selected' : ''}>Dringend</option>
+          <option value="hoch" ${aufgabe?.prioritaet === 'hoch' ? 'selected' : ''}>Hoch</option>
+          <option value="normal" ${aufgabe?.prioritaet === 'normal' || !aufgabe ? 'selected' : ''}>Normal</option>
+          <option value="niedrig" ${aufgabe?.prioritaet === 'niedrig' ? 'selected' : ''}>Niedrig</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label>Fälligkeit</label>
+        <input type="date" id="aufg-faelligkeit" value="${aufgabe?.faelligkeit ? aufgabe.faelligkeit.split('T')[0] : ''}" class="form-control">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Status</label>
+        <select id="aufg-status" class="form-control">
+          <option value="offen" ${aufgabe?.status === 'offen' || !aufgabe ? 'selected' : ''}>Offen</option>
+          <option value="in-arbeit" ${aufgabe?.status === 'in-arbeit' ? 'selected' : ''}>In Arbeit</option>
+          <option value="erledigt" ${aufgabe?.status === 'erledigt' ? 'selected' : ''}>Erledigt</option>
+        </select>
+      </div>
+    </div>
+  `;
+  showFormModal(titel, html, async () => {
+    const data = {
+      id: aufgabe?.id,
+      titel: document.getElementById('aufg-titel').value,
+      beschreibung: document.getElementById('aufg-beschreibung').value,
+      zustandig: document.getElementById('aufg-zustandig').value,
+      prioritaet: document.getElementById('aufg-prioritaet').value,
+      faelligkeit: document.getElementById('aufg-faelligkeit').value || null,
+      status: document.getElementById('aufg-status').value,
+    };
+    await api.saveAufgabe(data);
+    ladeAufgaben();
+  });
+}
+
+async function editiereAufgabe(id) {
+  const aufgaben = await api.getAufgaben();
+  const aufgabe = aufgaben.find(a => a.id === id);
+  if (aufgabe) showAufgabenForm(aufgabe);
+}
+
+async function loescheAufgabe(id) {
+  if (!confirm('Aufgabe wirklich löschen?')) return;
+  await api.deleteAufgabe(id);
+  ladeAufgaben();
+}
+
+// ============ Doppelte Buchführung ============
+
+async function ladeKontenrahmen() {
+  const konten = await api.getKontenrahmen();
+  const select = document.getElementById('sh-filter-konto');
+  if (!select) return;
+  select.innerHTML = '<option value="">Alle Konten</option>' + konten.map(k =>
+    `<option value="${k.konto_nr}">${k.konto_nr} ${k.konto_name}</option>`
+  ).join('');
+}
+
+async function ladeBuchungenSH() {
+  const konto = document.getElementById('sh-filter-konto')?.value || '';
+  const von = document.getElementById('sh-filter-von')?.value || '';
+  const bis = document.getElementById('sh-filter-bis')?.value || '';
+  const buchungen = await api.getBuchungenSollHaben({ konto, von, bis });
+  const tbody = document.getElementById('sh-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = buchungen.map(b => `
+    <tr>
+      <td>${new Date(b.buchungsdatum).toLocaleDateString('de-DE')}</td>
+      <td>${b.konto_nr} ${b.konto_name || ''}</td>
+      <td><span style="color:${b.typ === 'Soll' ? '#0066cc' : '#28a745'}; font-weight:600;">${b.typ}</span></td>
+      <td style="text-align:right; font-weight:600;">${formatEuro(b.betrag)}</td>
+      <td>${b.gegenkonto || '—'}</td>
+      <td>${b.beleg_nr || '—'}</td>
+      <td>${b.buchungstitel || '—'}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="editiereBuchungSH(${b.id})">✏️</button>
+        <button class="btn btn-sm btn-secondary" onclick="loescheBuchungSH(${b.id})" style="color:var(--danger);">✕</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center; color:#999; padding:24px;">Keine Buchungen vorhanden</td></tr>';
+
+  // Salden anzeigen
+  const saldoContainer = document.getElementById('sh-salden');
+  if (saldoContainer) {
+    const kontoSalden = await api.getKontenraeumeSumme();
+    saldoContainer.innerHTML = '<h3 style="margin-bottom:12px;">Kontensalden</h3><table class="data-table"><thead><tr><th>Konto</th><th>Name</th><th>Soll</th><th>Haben</th><th>Saldo</th></tr></thead><tbody>' +
+      kontoSalden.map(ks => `
+        <tr>
+          <td>${ks.konto_nr}</td>
+          <td>${ks.konto_name}</td>
+          <td style="text-align:right;">${formatEuro(ks.soll)}</td>
+          <td style="text-align:right;">${formatEuro(ks.haben)}</td>
+          <td style="text-align:right; font-weight:bold; color:${(ks.soll - ks.haben) >= 0 ? '#0066cc' : '#dc3545'};">${formatEuro(ks.soll - ks.haben)}</td>
+        </tr>
+      `).join('') +
+      '</tbody></table>';
+  }
+}
+
+async function showBuchungSHForm(buchung = null) {
+  const konten = await api.getKontenrahmen();
+  const titel = buchung ? 'Buchung bearbeiten' : 'Neue Buchung (Soll/Haben)';
+  const html = `
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label>Konto (Soll/Haben) *</label>
+        <select id="sh-konto" class="form-control" required>
+          ${konten.map(k => `<option value="${k.konto_nr}" ${buchung?.konto_nr === k.konto_nr ? 'selected' : ''}>${k.konto_nr} ${k.konto_name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Buchungsart *</label>
+        <select id="sh-typ" class="form-control">
+          <option value="Soll" ${buchung?.typ === 'Soll' || !buchung ? 'selected' : ''}>Soll</option>
+          <option value="Haben" ${buchung?.typ === 'Haben' ? 'selected' : ''}>Haben</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label>Betrag *</label>
+        <input type="number" id="sh-betrag" value="${buchung?.betrag || ''}" class="form-control" step="0.01" required>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Gegenkonto</label>
+        <select id="sh-gegenkonto" class="form-control">
+          <option value="">—</option>
+          ${konten.map(k => `<option value="${k.konto_nr}" ${buchung?.gegenkonto === k.konto_nr ? 'selected' : ''}>${k.konto_nr} ${k.konto_name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label>Buchungsdatum *</label>
+        <input type="date" id="sh-datum" value="${buchung?.buchungsdatum ? buchung.buchungsdatum.split('T')[0] : new Date().toISOString().split('T')[0]}" class="form-control" required>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Beleg-Nr.</label>
+        <input type="text" id="sh-beleg" value="${buchung?.beleg_nr || ''}" class="form-control">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Buchungstitel</label>
+      <input type="text" id="sh-titel" value="${buchung?.buchungstitel || ''}" class="form-control">
+    </div>
+  `;
+  showFormModal(titel, html, async () => {
+    const kontoNr = document.getElementById('sh-konto').value;
+    const konto = konten.find(k => k.konto_nr === kontoNr);
+    const data = {
+      id: buchung?.id,
+      konto_nr: kontoNr,
+      konto_name: konto?.konto_name || '',
+      typ: document.getElementById('sh-typ').value,
+      betrag: parseFloat(document.getElementById('sh-betrag').value),
+      gegenkonto: document.getElementById('sh-gegenkonto').value,
+      buchungstitel: document.getElementById('sh-titel').value,
+      beleg_nr: document.getElementById('sh-beleg').value,
+      buchungsdatum: document.getElementById('sh-datum').value,
+    };
+    await api.saveBuchungSollHaben(data);
+    ladeBuchungenSH();
+  });
+}
+
+async function editiereBuchungSH(id) {
+  const buchungen = await api.getBuchungenSollHaben();
+  const b = buchungen.find(x => x.id === id);
+  if (b) showBuchungSHForm(b);
+}
+
+async function loescheBuchungSH(id) {
+  if (!confirm('Buchung wirklich löschen?')) return;
+  await api.deleteBuchungSollHaben(id);
+  ladeBuchungenSH();
+}
+
+async function exportIcsKalender() {
+  const pfad = await api.exportIcs();
+  if (pfad) alert(`Kalender exportiert: ${pfad}`);
+}
+
+async function exportSepaUeberweisungen() {
+  const pfad = await api.exportSepaUeberweisungen();
+  if (pfad) alert(`SEPA-Überweisungen exportiert: ${pfad}`);
+}
+
+async function exportSepaLastschrift() {
+  const pfad = await api.exportSepaLastschrift();
+  if (pfad) alert(`SEPA-Lastschrift exportiert: ${pfad}`);
 }
 
 // ============ Startup ============

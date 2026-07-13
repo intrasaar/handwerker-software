@@ -1,0 +1,20 @@
+{
+  "name": "handwerker-server",
+  "version": "1.0.0",
+  "description": "Handwerker-Software Client-Server — lokaler Datenbankserver für mehrere Clients",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "service:install": "node service.js install",
+    "service:uninstall": "node service.js uninstall",
+    "service:start": "node service.js start",
+    "service:stop": "node service.js stop"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "selfsigned": "^2.4.0"
+  }
+}

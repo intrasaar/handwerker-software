@@ -33,6 +33,18 @@
           <span class="nav-icon">🧾</span>
           <span class="nav-text">Rechnungen</span>
         </li>
+        <li class="nav-item" data-page="eingangsrechnungen">
+          <span class="nav-icon">📥</span>
+          <span class="nav-text">Eingangsrechnungen</span>
+        </li>
+        <li class="nav-item" data-page="lieferanten">
+          <span class="nav-icon">🏭</span>
+          <span class="nav-text">Lieferanten</span>
+        </li>
+        <li class="nav-item" data-page="mahnungen">
+          <span class="nav-icon">⚠️</span>
+          <span class="nav-text">Mahnungen</span>
+        </li>
         <li class="nav-item" data-page="termine">
           <span class="nav-icon">📅</span>
           <span class="nav-text">Termine</span>
@@ -40,6 +52,22 @@
         <li class="nav-item" data-page="auftraege">
           <span class="nav-icon">🔨</span>
           <span class="nav-text">Aufträge</span>
+        </li>
+        <li class="nav-item" data-page="aufmasse">
+          <span class="nav-icon">📐</span>
+          <span class="nav-text">Aufmaß</span>
+        </li>
+        <li class="nav-item" data-page="artikel">
+          <span class="nav-icon">📦</span>
+          <span class="nav-text">Artikel/Lager</span>
+        </li>
+        <li class="nav-item" data-page="kasse">
+          <span class="nav-icon">💶</span>
+          <span class="nav-text">Kassenbuch</span>
+        </li>
+        <li class="nav-item" data-page="subunternehmer">
+          <span class="nav-icon">👷</span>
+          <span class="nav-text">Subunternehmer</span>
         </li>
         <li class="nav-item" data-page="einstellungen">
           <span class="nav-icon">⚙️</span>
@@ -53,6 +81,26 @@
           <span class="nav-icon">📊</span>
           <span class="nav-text">USt-Voranmeldung</span>
         </li>
+        <li class="nav-item" data-page="datev">
+          <span class="nav-icon">📁</span>
+          <span class="nav-text">DATEV-Export</span>
+        </li>
+        <li class="nav-item" data-page="regeln">
+          <span class="nav-icon">🤖</span>
+          <span class="nav-text">Automatisierung</span>
+        </li>
+        <li class="nav-item" data-page="aufgaben">
+          <span class="nav-icon">✅</span>
+          <span class="nav-text">Aufgaben</span>
+        </li>
+        <li class="nav-item" data-page="doppelbuchfuehrung">
+          <span class="nav-icon">📒</span>
+          <span class="nav-text">Buchführung</span>
+        </li>
+        <li class="nav-item" data-page="branchen">
+          <span class="nav-icon">🔌</span>
+          <span class="nav-text">Branchen-Schnittstellen</span>
+        </li>
         <li class="nav-item" data-page="import">
           <span class="nav-icon">📥</span>
           <span class="nav-text">CSV-Import</span>
@@ -60,7 +108,7 @@
       </ul>
       <div class="sidebar-footer">
         <div class="copyright">&copy; <span id="copyright-year"></span> Handwerker Software</div>
-        <div class="version">v1.0.0</div>
+        <div class="version">v2.2.0</div>
         <div class="license-status" id="license-status"></div>
       </div>
     </nav>
@@ -202,6 +250,7 @@
             <button class="btn btn-secondary" onclick="prevMonth()">◀</button>
             <span id="kalender-monat"></span>
             <button class="btn btn-secondary" onclick="nextMonth()">▶</button>
+            <button class="btn btn-secondary" onclick="exportIcsKalender()">📅 ICS Export</button>
             <button class="btn btn-primary" onclick="showTerminForm()">+ Neuer Termin</button>
           </div>
         </div>
@@ -280,6 +329,83 @@
             </div>
           </div>
           <button class="btn btn-primary" onclick="saveEinstellungen()">Speichern</button>
+        </div>
+
+        <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">Server-Verbindung</h2>
+        <div class="settings-form">
+          <div id="server-status" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-sm); font-size:13px; display:none;"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Modus</label>
+              <select id="set-modus">
+                <option value="lokal">Lokal (SQLite)</option>
+                <option value="server">Server (Netzwerk)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Server-URL</label>
+              <input type="text" id="set-server-url" placeholder="https://192.168.x.x:8443">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>API-Key</label>
+            <input type="password" id="set-server-key" placeholder="Vom Server kopieren...">
+          </div>
+          <div class="form-group">
+            <label>Client-ID (eindeutig pro Arbeitsplatz)</label>
+            <input type="text" id="set-client-id" placeholder="z.B. Büro-PC-01">
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-primary" onclick="saveServerEinstellungen()">Speichern</button>
+            <button class="btn btn-secondary" onclick="testServerVerbindung()">🔍 Verbindung testen</button>
+          </div>
+        </div>
+
+        <!-- Lizenz -->
+        <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">🔑 Lizenz</h2>
+        <div class="settings-form">
+          <div id="set-license-status" style="padding:16px; border-radius:var(--radius-sm); margin-bottom:16px; border:2px solid; font-size:14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:24px;" id="set-license-icon">🔑</span>
+              <div>
+                <div style="font-weight:bold;" id="set-license-text">Wird geprüft...</div>
+                <div style="font-size:12px; color:var(--text-secondary);" id="set-license-detail"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Lizenzschlüssel</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="set-license-key" placeholder="HW-..." style="flex:1; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:monospace;">
+              <button class="btn btn-primary" onclick="aktiviereLizenz()">Aktivieren</button>
+            </div>
+          </div>
+          <div id="set-license-msg" style="margin-top:8px; font-size:13px; display:none;"></div>
+          <details style="margin-top:8px; font-size:12px; color:var(--text-light);">
+            <summary style="cursor:pointer;">Hardware-ID anzeigen (für Keygen)</summary>
+            <code id="set-license-fp" style="display:block; margin-top:8px; padding:8px; background:var(--bg-hover); border-radius:4px; font-size:11px; word-break:break-all; cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">Laden...</code>
+          </details>
+          <div style="margin-top:12px;">
+            <button class="btn btn-secondary" onclick="deaktiviereLizenz()" style="font-size:12px; color:var(--accent-red);">Lizenz deaktivieren</button>
+          </div>
+        </div>
+
+        <!-- Updates -->
+        <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">🔄 Updates</h2>
+        <div class="settings-form">
+          <div id="set-update-status" style="padding:16px; border-radius:var(--radius-sm); margin-bottom:16px; border:2px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:24px;" id="set-update-icon">🔄</span>
+              <div>
+                <div style="font-weight:bold;" id="set-update-text">Aktuelle Version: v2.2.0</div>
+                <div style="font-size:12px; color:var(--text-secondary);" id="set-update-detail">Letzte Prüfung: Nie</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="pruefeUpdates()">🔄 Nach Updates suchen</button>
+          </div>
+          <div id="set-update-msg" style="margin-top:8px; font-size:13px; display:none;"></div>
         </div>
       </div>
 
@@ -441,6 +567,312 @@
         <div id="import-ergebnis" style="display: none;">
           <h3>Import-Ergebnis:</h3>
           <div id="import-ergebnis-content"></div>
+        </div>
+      </div>
+
+      <!-- Eingangsrechnungen -->
+      <div class="page" id="page-eingangsrechnungen">
+        <div class="page-header">
+          <h1>Eingangsrechnungen</h1>
+          <button class="btn btn-primary" onclick="showEingangsrechnungForm()">+ Neue Eingangsrechnung</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nr.</th>
+                <th>Lieferant</th>
+                <th>Titel</th>
+                <th>Betrag</th>
+                <th>Status</th>
+                <th>Fällig</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="eingangsrechnungen-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lieferanten -->
+      <div class="page" id="page-lieferanten">
+        <div class="page-header">
+          <h1>Lieferanten</h1>
+          <button class="btn btn-primary" onclick="showLieferantForm()">+ Neuer Lieferant</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Ansprechpartner</th><th>Adresse</th><th>Telefon</th><th>E-Mail</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="lieferanten-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mahnungen -->
+      <div class="page" id="page-mahnungen">
+        <div class="page-header">
+          <h1>Mahnwesen</h1>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Rechnung</th><th>Kunde</th><th>Mahnstufe</th><th>Betrag</th><th>Gebühr</th><th>Fällig bis</th><th>Status</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="mahnungen-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Aufmaß -->
+      <div class="page" id="page-aufmasse">
+        <div class="page-header">
+          <h1>Aufmaß</h1>
+          <button class="btn btn-primary" onclick="showAufmassForm()">+ Neues Aufmaß</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Titel</th><th>Kunde</th><th>Auftrag</th><th>Datum</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="aufmasse-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Artikel / Lager -->
+      <div class="page" id="page-artikel">
+        <div class="page-header">
+          <h1>Artikel / Lager</h1>
+          <button class="btn btn-primary" onclick="showArtikelForm()">+ Neuer Artikel</button>
+        </div>
+        <div id="mindestbestand-warnung" style="display:none; background:var(--accent-red); color:white; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;"></div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>SKU</th><th>Bestand</th><th>Min.</th><th>Einkauf</th><th>Verkauf</th><th>Lagerplatz</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="artikel-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Kassenbuch -->
+      <div class="page" id="page-kasse">
+        <div class="page-header">
+          <h1>Kassenbuch</h1>
+          <button class="btn btn-primary" onclick="showKasseForm()">+ Neuer Eintrag</button>
+        </div>
+        <div class="dashboard-grid" style="margin-bottom:24px;">
+          <div class="dashboard-card green"><div class="card-icon">💰</div><div class="card-content"><div class="card-value" id="kasse-einnahmen">0,00 €</div><div class="card-label">Einnahmen</div></div></div>
+          <div class="dashboard-card red"><div class="card-icon">💸</div><div class="card-content"><div class="card-value" id="kasse-ausgaben">0,00 €</div><div class="card-label">Ausgaben</div></div></div>
+          <div class="dashboard-card blue"><div class="card-icon">💶</div><div class="card-content"><div class="card-value" id="kasse-stand">0,00 €</div><div class="card-label">Kassenstand</div></div></div>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Datum</th><th>Uhrzeit</th><th>Typ</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Mitarbeiter</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="kasse-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Subunternehmer -->
+      <div class="page" id="page-subunternehmer">
+        <div class="page-header">
+          <h1>Subunternehmer</h1>
+          <button class="btn btn-primary" onclick="showSubunternehmerForm()">+ Neuer Subunternehmer</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Ansprechpartner</th><th>Stundensatz</th><th>Telefon</th><th>E-Mail</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="subunternehmer-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DATEV-Export -->
+      <div class="page" id="page-datev">
+        <div class="page-header">
+          <h1>DATEV-Export</h1>
+        </div>
+        <div class="settings-form" style="max-width:500px;">
+          <div class="form-group">
+            <label>Monat wählen</label>
+            <input type="month" id="datev-monat" value="">
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-primary" onclick="exportDatev()">📁 DATEV-CSV exportieren</button>
+            <button class="btn btn-secondary" onclick="exportUstXml()">📄 USt-Voranmeldung XML</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automatisierung / Regeln -->
+      <div class="page" id="page-regeln">
+        <div class="page-header">
+          <h1>Automatisierung / Regeln</h1>
+          <button class="btn btn-primary" onclick="showRegelForm()">+ Neue Regel</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Typ</th><th>Bedingung</th><th>Aktion</th><th>Aktiv</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="regeln-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Aufgaben -->
+      <div class="page" id="page-aufgaben">
+        <div class="page-header">
+          <h1>Aufgabenverwaltung</h1>
+          <button class="btn btn-primary" onclick="showAufgabenForm()">+ Neue Aufgabe</button>
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+          <div class="stat-card" style="border-left: 4px solid var(--warning);">
+            <div class="stat-value" id="aufg-offen">0</div>
+            <div class="stat-label">Offen</div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid var(--primary);">
+            <div class="stat-value" id="aufg-inarbeit">0</div>
+            <div class="stat-label">In Arbeit</div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid var(--success);">
+            <div class="stat-value" id="aufg-erledigt">0</div>
+            <div class="stat-label">Erledigt</div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid var(--danger);">
+            <div class="stat-value" id="aufg-ueberfaellig">0</div>
+            <div class="stat-label">Überfällig</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <select id="aufg-filter-status" onchange="ladeAufgaben()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+            <option value="">Alle Status</option>
+            <option value="offen">Offen</option>
+            <option value="in-arbeit">In Arbeit</option>
+            <option value="erledigt">Erledigt</option>
+          </select>
+          <select id="aufg-filter-prio" onchange="ladeAufgaben()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+            <option value="">Alle Prioritäten</option>
+            <option value="dringend">Dringend</option>
+            <option value="hoch">Hoch</option>
+            <option value="normal">Normal</option>
+            <option value="niedrig">Niedrig</option>
+          </select>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Titel</th><th>Zuständig</th><th>Priorität</th><th>Fälligkeit</th><th>Status</th><th>Quelle</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="aufgaben-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Doppelte Buchführung -->
+      <div class="page" id="page-doppelbuchfuehrung">
+        <div class="page-header">
+          <h1>Buchführung (Soll/Haben)</h1>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" onclick="exportSepaUeberweisungen()">💳 SEPA-Überweisungen</button>
+            <button class="btn btn-secondary" onclick="exportSepaLastschrift()">🏦 SEPA-Lastschrift</button>
+            <button class="btn btn-primary" onclick="showBuchungSHForm()">+ Buchung</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+          <select id="sh-filter-konto" onchange="ladeBuchungenSH()" style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:180px;">
+            <option value="">Alle Konten</option>
+          </select>
+          <input type="date" id="sh-filter-von" onchange="ladeBuchungenSH()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+          <input type="date" id="sh-filter-bis" onchange="ladeBuchungenSH()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Datum</th><th>Konto</th><th>Soll/Haben</th><th>Betrag</th><th>Gegenkonto</th><th>Beleg</th><th>Titel</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="sh-tbody"></tbody>
+          </table>
+        </div>
+        <div id="sh-salden" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Branchen-Schnittstellen -->
+      <div class="page" id="page-branchen">
+        <div class="page-header">
+          <h1>Branchen-Schnittstellen</h1>
+        </div>
+
+        <!-- TAB Navigation -->
+        <div style="display:flex; gap:4px; margin-bottom:24px; border-bottom:2px solid var(--border); padding-bottom:0;">
+          <button class="btn btn-secondary tab-btn active" onclick="switchBranchenTab('datanorm')" id="tab-datanorm">DATANORM</button>
+          <button class="btn btn-secondary tab-btn" onclick="switchBranchenTab('gaeb')" id="tab-gaeb">GAEB</button>
+          <button class="btn btn-secondary tab-btn" onclick="switchBranchenTab('ids')" id="tab-ids">IDS-Connect</button>
+        </div>
+
+        <!-- DATANORM -->
+        <div class="branchen-tab" id="branchen-datanorm">
+          <h2>DATANORM — Preislisten</h2>
+          <p style="color:var(--text-secondary); margin-bottom:16px;">Importieren und exportieren Sie DATANORM-Dateien (Preislisten von Herstellern/Großhändlern).</p>
+          <div style="display:flex; gap:12px; margin-bottom:24px;">
+            <button class="btn btn-primary" onclick="importDatanorm()">📥 DATANORM-Datei importieren</button>
+            <button class="btn btn-secondary" onclick="exportDatanorm()">📤 Artikel als DATANORM exportieren</button>
+          </div>
+          <div id="datanorm-ergebnis" style="display:none; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;"></div>
+        </div>
+
+        <!-- GAEB -->
+        <div class="branchen-tab" id="branchen-gaeb" style="display:none;">
+          <h2>GAEB — Leistungsverzeichnisse & Angebote</h2>
+          <p style="color:var(--text-secondary); margin-bottom:16px;">Importieren Sie GAEB 85 Leistungsverzeichnisse oder GAEB 90 Angebote. Exportieren Sie eigene Leistungsverzeichnisse.</p>
+          <div style="display:flex; gap:12px; margin-bottom:24px;">
+            <button class="btn btn-primary" onclick="importGaeb85()">📥 GAEB 85 (Leistungsverzeichnis)</button>
+            <button class="btn btn-primary" onclick="importGaeb90()">📥 GAEB 90 (Angebot)</button>
+            <button class="btn btn-secondary" onclick="exportGaeb85()">📤 GAEB 85 exportieren</button>
+          </div>
+          <div id="gaeb-ergebnis" style="display:none; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;"></div>
+          <div id="gaeb-vorschau" style="display:none;">
+            <h3>Vorschau:</h3>
+            <table class="data-table" style="margin-top:8px;">
+              <thead><tr><th>Pos.</th><th>Beschreibung</th><th>Menge</th><th>Einheit</th><th>Preis</th><th>Gesamt</th></tr></thead>
+              <tbody id="gaeb-vorschau-tbody"></tbody>
+            </table>
+            <button class="btn btn-primary" onclick="gaebZuAngebot()" style="margin-top:16px;">📋 Als Angebot übernehmen</button>
+          </div>
+        </div>
+
+        <!-- IDS-Connect -->
+        <div class="branchen-tab" id="branchen-ids" style="display:none;">
+          <h2>IDS-Connect — Großhandels-Schnittstelle</h2>
+          <p style="color:var(--text-secondary); margin-bottom:16px;">BMEcat-Kataloge importieren, Bestellungen elektronisch erstellen.</p>
+          <div style="display:flex; gap:12px; margin-bottom:24px;">
+            <button class="btn btn-primary" onclick="importBMEcat()">📥 BMEcat-Katalog importieren</button>
+            <button class="btn btn-secondary" onclick="exportBMEcat()">📤 Artikelkatalog als BMEcat exportieren</button>
+          </div>
+          <div id="ids-ergebnis" style="display:none; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;"></div>
+
+          <h3 style="margin-top:24px;">Kataloge / Lieferanten</h3>
+          <div id="ids-kataloge" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+
+          <h3>Bestellung erstellen</h3>
+          <div style="display:flex; gap:12px; margin-bottom:16px;">
+            <div class="form-group" style="flex:1;"><label>Lieferant</label><select id="ids-lieferant"></select></div>
+          </div>
+          <div id="ids-artikel-tabelle">
+            <table class="data-table">
+              <thead><tr><th>Nr.</th><th>Name</th><th>Bestellen</th><th>Menge</th><th>Preis</th></tr></thead>
+              <tbody id="ids-artikel-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-primary" onclick="bestellungErstellen()" style="margin-top:16px;">🛒 Bestellung erstellen</button>
         </div>
       </div>
     </main>

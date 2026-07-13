@@ -75,6 +75,24 @@ body {
   list-style: none;
   padding: 16px 12px;
   flex: 1;
+  overflow-y: auto;
+}
+
+.nav-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+}
+
+.nav-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.4);
 }
 
 .nav-item {
@@ -281,6 +299,20 @@ body {
 .badge-fertig { background: #d1fae5; color: #065f46; }
 .badge-offen-orange { background: #ffedd5; color: #9a3412; }
 .badge-in-arbeit { background: #e0e7ff; color: #3730a3; }
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-badge.status-offen { background: #fef3c7; color: #92400e; }
+.status-badge.status-bezahlt { background: #d1fae5; color: #065f46; }
+.status-badge.status-akzeptiert { background: #dbeafe; color: #1e40af; }
+.status-badge.status-fertig { background: #d1fae5; color: #065f46; }
+.status-badge.status-offen-orange { background: #ffedd5; color: #9a3412; }
 
 /* Buttons */
 .btn {

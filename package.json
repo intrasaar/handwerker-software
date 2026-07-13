@@ -1,6 +1,6 @@
 {
   "name": "handwerker-software",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "description": "Handwerker-Software — Angebote, Rechnungen, Terminplanung, Kundenverwaltung, Buchhaltung",
   "main": "src/main.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "electron-builder --mac --win",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "test": "node --test ./tests/*.test.js"
   },
   "build": {
     "appId": "de.handwerker-software.app",
