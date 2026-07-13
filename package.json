@@ -1,0 +1,70 @@
+{
+  "name": "handwerker-software",
+  "version": "1.0.0",
+  "description": "Handwerker-Software — Angebote, Rechnungen, Terminplanung, Kundenverwaltung, Buchhaltung",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --win",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
+  },
+  "build": {
+    "appId": "de.handwerker-software.app",
+    "productName": "Handwerker-Software",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "src/icon.icns",
+      "target": [
+        "dmg"
+      ]
+    },
+    "dmg": {
+      "title": "Handwerker-Software",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    },
+    "win": {
+      "icon": "src/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/icon.ico",
+      "uninstallerIcon": "src/icon.ico",
+      "installerHeaderIcon": "src/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Handwerker-Software"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office"
+    }
+  },
+  "author": "Handwerker Software",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "pdfkit": "^0.15.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0",
+    "@electron/rebuild": "^3.6.0"
+  }
+}

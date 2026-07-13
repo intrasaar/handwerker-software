@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Handwerker-Software</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">🔧</span>
+          <span class="logo-text">Handwerker</span>
+        </div>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </li>
+        <li class="nav-item" data-page="kunden">
+          <span class="nav-icon">👥</span>
+          <span class="nav-text">Kunden</span>
+        </li>
+        <li class="nav-item" data-page="angebote">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Angebote</span>
+        </li>
+        <li class="nav-item" data-page="rechnungen">
+          <span class="nav-icon">🧾</span>
+          <span class="nav-text">Rechnungen</span>
+        </li>
+        <li class="nav-item" data-page="termine">
+          <span class="nav-icon">📅</span>
+          <span class="nav-text">Termine</span>
+        </li>
+        <li class="nav-item" data-page="auftraege">
+          <span class="nav-icon">🔨</span>
+          <span class="nav-text">Aufträge</span>
+        </li>
+        <li class="nav-item" data-page="einstellungen">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Einstellungen</span>
+        </li>
+        <li class="nav-item" data-page="buchungen">
+          <span class="nav-icon">💶</span>
+          <span class="nav-text">Einnahmen/Ausgaben</span>
+        </li>
+        <li class="nav-item" data-page="ust">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">USt-Voranmeldung</span>
+        </li>
+        <li class="nav-item" data-page="import">
+          <span class="nav-icon">📥</span>
+          <span class="nav-text">CSV-Import</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <span class="version">v1.0.0</span>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+        </div>
+        <div class="dashboard-grid">
+          <div class="dashboard-card blue">
+            <div class="card-icon">👥</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-kunden">0</div>
+              <div class="card-label">Kunden</div>
+            </div>
+          </div>
+          <div class="dashboard-card orange">
+            <div class="card-icon">📋</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-angebote">0</div>
+              <div class="card-label">Offene Angebote</div>
+              <div class="card-sub" id="stat-angebote-summe">0,00 €</div>
+            </div>
+          </div>
+          <div class="dashboard-card green">
+            <div class="card-icon">🧾</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-rechnungen">0</div>
+              <div class="card-label">Offene Rechnungen</div>
+              <div class="card-sub" id="stat-rechnungen-summe">0,00 €</div>
+            </div>
+          </div>
+          <div class="dashboard-card purple">
+            <div class="card-icon">📅</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-termine">0</div>
+              <div class="card-label">Termine heute</div>
+            </div>
+          </div>
+          <div class="dashboard-card red">
+            <div class="card-icon">🔨</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-auftraege">0</div>
+              <div class="card-label">Offene Aufträge</div>
+            </div>
+          </div>
+          <div class="dashboard-card teal">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-umsatz">0,00 €</div>
+              <div class="card-label">Umsatz (Monat)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kunden -->
+      <div class="page" id="page-kunden">
+        <div class="page-header">
+          <h1>Kunden</h1>
+          <button class="btn btn-primary" onclick="showKundenForm()">+ Neuer Kunde</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Ansprechpartner</th>
+                <th>Adresse</th>
+                <th>Telefon</th>
+                <th>E-Mail</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="kunden-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Angebote -->
+      <div class="page" id="page-angebote">
+        <div class="page-header">
+          <h1>Angebote</h1>
+          <button class="btn btn-primary" onclick="showAngebotForm()">+ Neues Angebot</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nr.</th>
+                <th>Kunde</th>
+                <th>Titel</th>
+                <th>Betrag</th>
+                <th>Status</th>
+                <th>Gültig bis</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="angebote-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Rechnungen -->
+      <div class="page" id="page-rechnungen">
+        <div class="page-header">
+          <h1>Rechnungen</h1>
+          <button class="btn btn-primary" onclick="showRechnungForm()">+ Neue Rechnung</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nr.</th>
+                <th>Kunde</th>
+                <th>Titel</th>
+                <th>Betrag</th>
+                <th>Status</th>
+                <th>Fällig am</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="rechnungen-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Termine -->
+      <div class="page" id="page-termine">
+        <div class="page-header">
+          <h1>Termine</h1>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="prevMonth()">◀</button>
+            <span id="kalender-monat"></span>
+            <button class="btn btn-secondary" onclick="nextMonth()">▶</button>
+            <button class="btn btn-primary" onclick="showTerminForm()">+ Neuer Termin</button>
+          </div>
+        </div>
+        <div class="kalender-grid" id="kalender-grid">
+        </div>
+      </div>
+
+      <!-- Aufträge -->
+      <div class="page" id="page-auftraege">
+        <div class="page-header">
+          <h1>Aufträge</h1>
+          <button class="btn btn-primary" onclick="showAuftragForm()">+ Neuer Auftrag</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nr.</th>
+                <th>Kunde</th>
+                <th>Titel</th>
+                <th>Status</th>
+                <th>Priorität</th>
+                <th>Start</th>
+                <th>Ende</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="auftraege-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Einstellungen -->
+      <div class="page" id="page-einstellungen">
+        <div class="page-header">
+          <h1>Einstellungen</h1>
+        </div>
+        <div class="settings-form">
+          <div class="form-group">
+            <label>Firmenname</label>
+            <input type="text" id="set-firma" placeholder="Meine Firma GmbH">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Straße & Nr.</label>
+              <input type="text" id="set-anschrift" placeholder="Musterstraße 1">
+            </div>
+            <div class="form-group">
+              <label>PLZ & Ort</label>
+              <input type="text" id="set-plz-ort" placeholder="12345 Musterstadt">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Telefon</label>
+              <input type="text" id="set-telefon" placeholder="0123 / 456789">
+            </div>
+            <div class="form-group">
+              <label>E-Mail</label>
+              <input type="text" id="set-email" placeholder="info@firma.de">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>USt-IdNr.</label>
+            <input type="text" id="set-ust" placeholder="DE123456789">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>IBAN</label>
+              <input type="text" id="set-iban" placeholder="DE89 3704 0044 0532 0130 00">
+            </div>
+            <div class="form-group">
+              <label>BIC</label>
+              <input type="text" id="set-bic" placeholder="COBADEFFXXX">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveEinstellungen()">Speichern</button>
+        </div>
+      </div>
+
+      <!-- Einnahmen/Ausgaben -->
+      <div class="page" id="page-buchungen">
+        <div class="page-header">
+          <h1>Einnahmen/Ausgaben</h1>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="importCsv()">📥 CSV Import</button>
+            <button class="btn btn-primary" onclick="showBuchungForm()">+ Neue Buchung</button>
+          </div>
+        </div>
+        
+        <!-- Filter -->
+        <div class="filter-bar">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Von</label>
+              <input type="date" id="filter-von">
+            </div>
+            <div class="form-group">
+              <label>Bis</label>
+              <input type="date" id="filter-bis">
+            </div>
+            <div class="form-group">
+              <label>Typ</label>
+              <select id="filter-typ">
+                <option value="">Alle</option>
+                <option value="einnahme">Einnahmen</option>
+                <option value="ausgabe">Ausgaben</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" onclick="loadBuchungen()">Filtern</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Statistik -->
+        <div class="dashboard-grid" style="margin-bottom: 24px;">
+          <div class="dashboard-card green">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-einnahmen">0,00 €</div>
+              <div class="card-label">Einnahmen</div>
+            </div>
+          </div>
+          <div class="dashboard-card red">
+            <div class="card-icon">💸</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-ausgaben">0,00 €</div>
+              <div class="card-label">Ausgaben</div>
+            </div>
+          </div>
+          <div class="dashboard-card blue">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+              <div class="card-value" id="stat-bilanz">0,00 €</div>
+              <div class="card-label">Bilanz</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tabelle -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Typ</th>
+                <th>Kategorie</th>
+                <th>Beschreibung</th>
+                <th>Betrag</th>
+                <th>MwSt</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="buchungen-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USt-Voranmeldung -->
+      <div class="page" id="page-ust">
+        <div class="page-header">
+          <h1>USt-Voranmeldung</h1>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="prevUstMonth()">◀</button>
+            <span id="ust-monat"></span>
+            <button class="btn btn-secondary" onclick="nextUstMonth()">▶</button>
+          </div>
+        </div>
+        
+        <div class="ust-uebersicht">
+          <div class="ust-card">
+            <h3>Umsätze (netto)</h3>
+            <div class="ust-value" id="ust-umsatz">0,00 €</div>
+          </div>
+          <div class="ust-card">
+            <h3>USt-pflichtige Umsätze</h3>
+            <div class="ust-value" id="ust-pflichtig">0,00 €</div>
+          </div>
+          <div class="ust-card highlight">
+            <h3>USt-Betrag (19%)</h3>
+            <div class="ust-value" id="ust-betrag">0,00 €</div>
+          </div>
+          <div class="ust-card">
+            <h3>Vorsteuerabzug</h3>
+            <div class="ust-value" id="ust-vorsteuer">0,00 €</div>
+          </div>
+          <div class="ust-card result">
+            <h3>Zu zahlende USt</h3>
+            <div class="ust-value" id="ust-zahlbar">0,00 €</div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 24px;">
+          <button class="btn btn-primary" onclick="exportUstXml()">📄 XML Export</button>
+        </div>
+      </div>
+
+      <!-- CSV-Import -->
+      <div class="page" id="page-import">
+        <div class="page-header">
+          <h1>CSV-Import</h1>
+        </div>
+        
+        <div class="import-info">
+          <h3>Unterstützte Programme:</h3>
+          <ul>
+            <li>Lexoffice</li>
+            <li>sevDesk</li>
+            <li>FastBill</li>
+            <li>Seatable</li>
+            <li>Und viele mehr...</li>
+          </ul>
+          
+          <h3>Erkannte Spalten:</h3>
+          <ul>
+            <li>Rechnungsnr / Nummer / Nr.</li>
+            <li>Datum / Rechnungsdatum</li>
+            <li>Kunde / Kundenname / Firma</li>
+            <li>Betrag / Brutto / Gesamtbetrag</li>
+            <li>Netto / Nettobetrag</li>
+            <li>MwSt / USt / Steuer</li>
+            <li>Status</li>
+          </ul>
+        </div>
+        
+        <div class="import-actions">
+          <button class="btn btn-primary btn-large" onclick="importCsv()">📥 CSV-Datei auswählen</button>
+          <p style="margin-top: 16px; color: var(--text-secondary);">
+            CSV-Datei wird automatisch erkannt und importiert.
+          </p>
+        </div>
+        
+        <div id="import-ergebnis" style="display: none;">
+          <h3>Import-Ergebnis:</h3>
+          <div id="import-ergebnis-content"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+      </div>
+      <div class="modal-footer" id="modal-footer">
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
