@@ -11,6 +11,7 @@
     "rebuild": "electron-rebuild -f -w better-sqlite3"
   },
   "build": {
+    "publish": "never",
     "appId": "de.handwerker-software.app",
     "productName": "Handwerker-Software",
     "directories": {
