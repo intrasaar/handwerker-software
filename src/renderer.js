@@ -178,6 +178,7 @@ async function loadAngebote() {
           ${a.status === 'offen' ? `<button class="btn btn-success btn-small" onclick="angebotAkzeptiert(${a.id})">✅</button>` : ''}
           ${a.status === 'akzeptiert' ? `<button class="btn btn-primary btn-small" onclick="angebotZuRechnung(${a.id})">→ Rechnung</button>` : ''}
           <button class="btn btn-secondary btn-small" onclick="viewAngebot(${a.id})">📄</button>
+          <button class="btn btn-primary btn-small" onclick="sendeAngebotPerMail(${a.id})">📧</button>
           <button class="btn btn-danger btn-small" onclick="deleteAngebot(${a.id})">🗑️</button>
         </div>
       </td>
@@ -380,12 +381,15 @@ async function viewAngebot(id) {
 
 async function exportAngebotPdf(id) {
   const a = await api.getAngebot(id);
-  const inst = await api.getEinstellungen();
   await api.exportPdf({
     nummer: a.nummer,
-    titel: `Angebot ${a.nummer} — ${a.titel}`,
+    titel: `Angebot ${a.nummer}`,
+    untertitel: a.titel,
     datum: a.erstellt,
     kunden_name: a.kunden_name,
+    kunden_strasse: a.strasse,
+    kunden_plz: a.plz,
+    kunden_ort: a.ort,
     positionen: a.positionen,
     betrag_netto: a.betrag_netto,
     mwst_satz: a.mwst_satz,
@@ -409,6 +413,8 @@ async function loadRechnungen() {
         <div class="btn-group">
           <button class="btn btn-secondary btn-small" onclick="editRechnung(${r.id})">✏️</button>
           ${r.status === 'offen' ? `<button class="btn btn-success btn-small" onclick="rechnungBezahlt(${r.id})">💰 Bezahlt</button>` : ''}
+          ${r.status === 'offen' ? `<button class="btn btn-primary btn-small" onclick="sendeRechnungPerMail(${r.id})">📧</button>` : ''}
+          ${r.status === 'offen' ? `<button class="btn btn-secondary btn-small" onclick="showGutschriftForm(${r.id})" style="color:#f59e0b;" title="Gutschrift">📉</button>` : ''}
           <button class="btn btn-secondary btn-small" onclick="viewRechnung(${r.id})">📄</button>
           <button class="btn btn-danger btn-small" onclick="deleteRechnung(${r.id})">🗑️</button>
         </div>
@@ -590,14 +596,24 @@ async function viewRechnung(id) {
           <strong>Gesamt: ${formatEuro(r.betrag_brutto)}</strong>
         </div>
       </div>
+      <div id="gutschriften-section"></div>
       <div style="margin-top:30px; font-size:11px; color:#666; border-top:1px solid #ccc; padding-top:12px;">
         ${escHtml(inst.firma)} | ${escHtml(inst.anschrift)}, ${escHtml(inst.plz_ort)}<br>
         USt-IdNr.: ${escHtml(inst.ust_id)} | IBAN: ${escHtml(inst.iban)} | BIC: ${escHtml(inst.bic)}
       </div>
     </div>
   `;
+  const gutschriften = await api.getGutschriften(r.id);
+  const gsSection = document.getElementById('gutschriften-section');
+  if (gutschriften.length > 0) {
+    gsSection.innerHTML = '<div style="margin-top:20px;"><strong>Gutschriften:</strong><table style="width:100%; border-collapse:collapse; margin:8px 0;"><thead><tr style="background:#fef3c7;"><th style="padding:6px; text-align:left;">Datum</th><th style="padding:6px; text-align:right;">Betrag</th><th style="padding:6px; text-align:left;">Grund</th></tr></thead><tbody>' +
+      gutschriften.map(g => `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;">${g.datum}</td><td style="padding:6px; text-align:right; color:#f59e0b;">-${formatEuro(g.betrag)}</td><td style="padding:6px;">${escHtml(g.grund || '-')}</td></tr>`).join('') +
+      '</tbody></table></div>';
+  }
   document.getElementById('modal-footer').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
+    ${r.status === 'offen' ? `<button class="btn btn-secondary" onclick="closeModal(); showGutschriftForm(${r.id})" style="color:#f59e0b;">📉 Gutschrift</button>` : ''}
+    ${r.status === 'offen' ? `<button class="btn btn-secondary" onclick="erstelleMahnung(${r.id})" style="color:#dc3545;">⚠️ Mahnung</button>` : ''}
     <button class="btn btn-primary" onclick="closeModal(); exportRechnungPdf(${r.id})">📄 PDF Export</button>
     <button class="btn btn-primary" onclick="exportERechnung(${r.id})" style="background:var(--accent-orange);">⚡ E-Rechnung</button>
   `;
@@ -613,13 +629,55 @@ async function exportERechnung(id) {
   }
 }
 
+async function showGutschriftForm(rechnungId) {
+  const r = await api.getRechnung(rechnungId);
+  if (!r) return;
+  showFormModal(`Gutschrift für ${r.nummer}`, `
+    <div style="margin-bottom:12px; color:#888; font-size:13px;">
+      Offener Betrag: <strong>${formatEuro(r.betrag_brutto)}</strong>
+    </div>
+    <div class="form-group">
+      <label>Gutschriftsbetrag (€) *</label>
+      <input type="number" id="gs-betrag" class="form-control" step="0.01" max="${r.betrag_brutto}" required>
+    </div>
+    <div class="form-group">
+      <label>Grund</label>
+      <textarea id="gs-grund" class="form-control" rows="2" placeholder="z.B. Retoure, Preisnachlass, Korrektur"></textarea>
+    </div>
+  `, async () => {
+    const betrag = parseFloat(document.getElementById('gs-betrag').value);
+    if (!betrag || betrag <= 0) { alert('Bitte einen positiven Betrag eingeben.'); return; }
+    if (betrag > r.betrag_brutto) { alert(`Betrag darf ${formatEuro(r.betrag_brutto)} nicht übersteigen.`); return; }
+    const result = await api.gutschriftErstellen({ rechnungen_id: rechnungId, betrag, grund: document.getElementById('gs-grund').value });
+    if (result.error) { alert(result.error); return; }
+    alert(`Gutschrift über ${formatEuro(result.tatsaechlicherBetrag)} erstellt.\nNeuer Restbetrag: ${formatEuro(result.neuerBetrag)}`);
+    loadRechnungen();
+  });
+}
+
+async function erstelleMahnung(rechnungId) {
+  const result = await api.mahnungErstellen(rechnungId);
+  if (result) {
+    alert(`Mahnung Stufe ${result.mahnstufe || ''} erstellt.`);
+    loadMahnungen();
+  } else {
+    alert('Mahnung konnte nicht erstellt werden (bereits max. Stufe oder Rechnung bezahlt).');
+  }
+}
+
 async function exportRechnungPdf(id) {
   const r = await api.getRechnung(id);
   await api.exportPdf({
     nummer: r.nummer,
-    titel: `Rechnung ${r.nummer} — ${r.titel}`,
+    titel: `Rechnung ${r.nummer}`,
+    untertitel: r.titel,
     datum: r.erstellt,
+    faellig_am: r.faellig_am,
     kunden_name: r.kunden_name,
+    kunden_strasse: r.strasse,
+    kunden_plz: r.plz,
+    kunden_ort: r.ort,
+    beschreibung: r.beschreibung,
     positionen: r.positionen,
     betrag_netto: r.betrag_netto,
     mwst_satz: r.mwst_satz,
@@ -897,7 +955,17 @@ async function loadEinstellungen() {
   document.getElementById('set-ust').value = s.ust_id || '';
   document.getElementById('set-iban').value = s.iban || '';
   document.getElementById('set-bic').value = s.bic || '';
+  document.getElementById('set-website').value = s.website || '';
+  document.getElementById('set-farbe').value = s.briefkopf_farbe || '#1a1d27';
+  document.getElementById('set-kopfzeile').value = s.briefkopf_kopfzeile || '';
+  document.getElementById('set-fusszeile').value = s.briefkopf_fusszeile || '';
+  if (s.briefkopf_logo) {
+    document.getElementById('set-logo-preview').innerHTML = `<img src="${s.briefkopf_logo}" style="max-height:50px; border:1px solid var(--border); border-radius:4px; padding:4px;">`;
+  } else {
+    document.getElementById('set-logo-preview').innerHTML = '';
+  }
   loadServerEinstellungen();
+  loadSmtpEinstellungen();
   ladeLizenzStatus();
 }
 
@@ -1030,7 +1098,9 @@ async function pruefeUpdates() {
 }
 
 async function saveEinstellungen() {
+  const aktuelle = await api.getEinstellungen();
   await api.saveEinstellungen({
+    ...aktuelle,
     firma: document.getElementById('set-firma').value,
     anschrift: document.getElementById('set-anschrift').value,
     plz_ort: document.getElementById('set-plz-ort').value,
@@ -1038,9 +1108,77 @@ async function saveEinstellungen() {
     email: document.getElementById('set-email').value,
     ust_id: document.getElementById('set-ust').value,
     iban: document.getElementById('set-iban').value,
-    bic: document.getElementById('set-bic').value
+    bic: document.getElementById('set-bic').value,
+    website: document.getElementById('set-website').value,
+    briefkopf_farbe: document.getElementById('set-farbe').value,
+    briefkopf_kopfzeile: document.getElementById('set-kopfzeile').value,
+    briefkopf_fusszeile: document.getElementById('set-fusszeile').value,
   });
   alert('Einstellungen gespeichert!');
+}
+
+function uploadLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Logo darf max. 2 MB groß sein.'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    document.getElementById('set-logo-preview').innerHTML = `<img src="${base64}" style="max-height:50px; border:1px solid var(--border); border-radius:4px; padding:4px;">`;
+    const aktuelle = await api.getEinstellungen();
+    await api.saveEinstellungen({ ...aktuelle, briefkopf_logo: base64 });
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removeLogo() {
+  const aktuelle = await api.getEinstellungen();
+  delete aktuelle.briefkopf_logo;
+  await api.saveEinstellungen(aktuelle);
+  document.getElementById('set-logo-preview').innerHTML = '';
+}
+
+async function previewBriefkopf() {
+  const inst = await api.getEinstellungen();
+  showFormModal('Briefkopf-Vorschau', `
+    <div style="border:1px solid #ccc; border-radius:8px; padding:24px; background:#fff; color:#000; font-family:Helvetica,Arial,sans-serif;">
+      ${inst.briefkopf_logo ? `<img src="${inst.briefkopf_logo}" style="max-height:60px; margin-bottom:12px;"><br>` : ''}
+      <div style="font-size:20px; font-weight:bold; color:${inst.briefkopf_farbe || '#1a1d27'};">${escHtml(inst.firma || 'Firmenname')}</div>
+      <div style="font-size:12px; color:#444;">${escHtml(inst.anschrift || '')} | ${escHtml(inst.plz_ort || '')}</div>
+      <div style="font-size:12px; color:#444;">Tel: ${escHtml(inst.telefon || '')} | ${escHtml(inst.email || '')}${inst.website ? ' | ' + escHtml(inst.website) : ''}</div>
+      ${inst.briefkopf_kopfzeile ? `<div style="font-size:10px; color:#666; margin-top:4px;">${escHtml(inst.briefkopf_kopfzeile)}</div>` : ''}
+      <hr style="border:1px solid ${inst.briefkopf_farbe || '#1a1d27'}; margin:12px 0;">
+      <div style="font-size:14px; font-weight:bold; color:${inst.briefkopf_farbe || '#1a1d27'};">RECHNUNG RE-00001</div>
+      <div style="font-size:11px; color:#333; margin-top:8px;">Datum: ${new Date().toLocaleDateString('de-DE')}</div>
+      <div style="margin-top:12px; font-size:11px; color:#333;">
+        <strong>Empfänger:</strong><br>
+        Max Mustermann<br>
+        Musterstraße 1<br>
+        12345 Musterstadt
+      </div>
+      <table style="width:100%; border-collapse:collapse; margin-top:16px; font-size:11px;">
+        <tr style="background:${inst.briefkopf_farbe || '#1a1d27'}; color:#fff;">
+          <th style="padding:6px; text-align:left;">#</th>
+          <th style="padding:6px; text-align:left;">Beschreibung</th>
+          <th style="padding:6px; text-align:right;">Menge</th>
+          <th style="padding:6px; text-align:right;">Preis</th>
+          <th style="padding:6px; text-align:right;">Gesamt</th>
+        </tr>
+        <tr><td style="padding:6px; border-bottom:1px solid #eee;">1</td><td style="padding:6px; border-bottom:1px solid #eee;">Beispielarbeit</td><td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">2 Stk</td><td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">150,00 €</td><td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">300,00 €</td></tr>
+      </table>
+      <div style="text-align:right; margin-top:12px; font-size:12px;">
+        <div>Nettobetrag: 300,00 €</div>
+        <div>MwSt. 19%: 57,00 €</div>
+        <hr style="border:1px solid ${inst.briefkopf_farbe || '#1a1d27'};">
+        <div style="font-weight:bold; font-size:14px; color:${inst.briefkopf_farbe || '#1a1d27'};">Gesamtbetrag: 357,00 €</div>
+      </div>
+      <div style="font-size:9px; color:#888; border-top:1px solid #ccc; padding-top:8px; margin-top:20px; text-align:center;">
+        ${escHtml(inst.firma || '')} · ${escHtml(inst.anschrift || '')}, ${escHtml(inst.plz_ort || '')}<br>
+        IBAN: ${escHtml(inst.iban || '')} | BIC: ${escHtml(inst.bic || '')}
+        ${inst.briefkopf_fusszeile ? '<br>' + escHtml(inst.briefkopf_fusszeile) : ''}
+      </div>
+    </div>
+  `, () => closeModal());
 }
 
 // ============ Positionen Helpers ============
@@ -1139,11 +1277,24 @@ function formatEuro(betrag) {
 
 function escHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function showFormModal(titel, bodyHtml, onSave) {
+  document.getElementById('modal-title').textContent = titel;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    <button class="btn btn-primary" id="modal-save-btn">Speichern</button>
+  `;
+  openModal();
+  document.getElementById('modal-save-btn').onclick = async () => {
+    await onSave();
+    closeModal();
+  };
 }
 
 // ============ Init ============
-loadDashboard();
 
 // ============ Buchungen (Einnahmen/Ausgaben) ============
 let currentUstMonth = new Date();
@@ -1576,12 +1727,35 @@ async function loadMahnungen() {
       <td><span class="status-badge status-${m.status}">${m.status}</span></td>
       <td>
         ${m.status !== 'bezahlt' ? `<button class="btn btn-success btn-small" onclick="mahnungBezahlt(${m.id})">✅ Bezahlt</button>` : ''}
+        ${m.status !== 'bezahlt' ? `<button class="btn btn-primary btn-small" onclick="sendeMahnungPerMail(${m.rechnung_id})">📧</button>` : ''}
+        <button class="btn btn-secondary btn-small" onclick="exportMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">📄</button>
       </td>
     </tr>
   `).join('');
 }
 
 async function mahnungBezahlt(id) { await api.mahnungBezahlen(id); loadMahnungen(); }
+
+async function exportMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) {
+  const r = await api.getRechnung(rechnungId);
+  if (!r) return;
+  await api.exportPdf({
+    nummer: r.nummer,
+    titel: `Mahnung Stufe ${stufe}`,
+    untertitel: `Mahnung für Rechnung ${r.nummer}`,
+    datum: new Date().toISOString().split('T')[0],
+    faellig_am: faelligBis,
+    kunden_name: r.kunden_name,
+    kunden_strasse: r.strasse,
+    kunden_plz: r.plz,
+    kunden_ort: r.ort,
+    beschreibung: `Gezahlter Betrag: ${formatEuro(betrag)}${gebuehr > 0 ? '\nMahngebühr: ' + formatEuro(gebuehr) : ''}\nOffener Gesamtbetrag: ${formatEuro(betrag + gebuehr)}`,
+    positionen: [],
+    betrag_netto: betrag / 1.19,
+    mwst_satz: r.mwst_satz,
+    betrag_brutto: betrag + gebuehr
+  });
+}
 
 // ============ Aufmaß ============
 async function loadAufmasse() {
@@ -1958,8 +2132,220 @@ function showServerStatus(msg, type) {
   el.textContent = msg;
 }
 
-// Patch loadEinstellungen um auch Server-Werte zu laden
-const _origLoadEinstellungen = typeof loadEinstellungen === 'function' ? loadEinstellungen : null;
+// ============ SMTP / E-Mail Einstellungen ============
+
+async function saveSmtpEinstellungen() {
+  const smtp = {
+    host: document.getElementById('set-smtp-host').value,
+    port: document.getElementById('set-smtp-port').value,
+    user: document.getElementById('set-smtp-user').value,
+    pass: document.getElementById('set-smtp-pass').value,
+    fromName: document.getElementById('set-smtp-from-name').value,
+    fromEmail: document.getElementById('set-smtp-from-email').value,
+    tls: document.getElementById('set-smtp-tls').checked
+  };
+  await api.saveSmtpConfig(smtp);
+  showMailStatus('SMTP-Einstellungen gespeichert.', 'success');
+}
+
+async function loadSmtpEinstellungen() {
+  try {
+    const s = await api.getEinstellungen();
+    const data = s.smtp || {};
+    document.getElementById('set-smtp-host').value = data.host || '';
+    document.getElementById('set-smtp-port').value = data.port || '587';
+    document.getElementById('set-smtp-user').value = data.user || '';
+    document.getElementById('set-smtp-pass').value = data.pass || '';
+    document.getElementById('set-smtp-from-name').value = data.fromName || '';
+    document.getElementById('set-smtp-from-email').value = data.fromEmail || '';
+    document.getElementById('set-smtp-tls').checked = data.tls !== false;
+  } catch(e) {}
+}
+
+async function testSmtpVerbindung() {
+  showMailStatus('Test-E-Mail wird gesendet...', 'pending');
+  try {
+    const result = await api.sendMail({
+      to: document.getElementById('set-smtp-from-email').value || document.getElementById('set-email').value,
+      subject: 'IMHWS Test-E-Mail',
+      html: '<h2>Test erfolgreich!</h2><p>Ihr SMTP-Mailversand funktioniert korrekt.</p>'
+    });
+    if (result.success) {
+      showMailStatus('Test-E-Mail gesendet an ' + result.to, 'success');
+    } else {
+      showMailStatus('Fehler: ' + (result.error || 'Unbekannt'), 'error');
+    }
+  } catch(err) {
+    showMailStatus('Fehler: ' + err.message, 'error');
+  }
+}
+
+function showMailStatus(msg, type) {
+  const el = document.getElementById('mail-status');
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? '#d1fae5' : type === 'error' ? '#fee2e2' : '#e0e7ff';
+  el.style.color = type === 'success' ? '#065f46' : type === 'error' ? '#991b1b' : '#3730a3';
+  el.textContent = msg;
+}
+
+// ============ E-Mail senden (Rechnung/Angesbot/Mahnung) ============
+
+async function sendeRechnungPerMail(rechnungId) {
+  const s = await api.getEinstellungen();
+  if (!s.smtp || !s.smtp.host) {
+    alert('Bitte zuerst SMTP-Einstellungen konfigurieren (Einstellungen → E-Mail / SMTP).');
+    return;
+  }
+  const r = await api.getRechnung(rechnungId);
+  if (!r || !r.kunden_email) {
+    alert('Keine E-Mail-Adresse fuer diesen Kunden hinterlegt.');
+    return;
+  }
+  const betrag = formatEuro(r.betrag_brutto);
+  const html = `<div style="font-family:Arial,sans-serif; max-width:600px;">
+    <h2 style="color:#1B5E20;">Rechnung ${r.nummer}</h2>
+    <p>Sehr geehrte Damen und Herren,</p>
+    <p>anbei erhalten Sie unsere Rechnung <strong>${r.nummer}</strong> ueber <strong>${betrag}</strong>.</p>
+    <p>Bitte ueberweisen Sie den Betrag innerhalb von 30 Tagen auf unser Konto.</p>
+    <p>Mit freundlichen Gruessen,<br>${escHtml(s.firma || '')}</p>
+  </div>`;
+  showMailStatus('E-Mail wird gesendet...', 'pending');
+  try {
+    const result = await api.sendMail({ to: r.kunden_email, subject: `Rechnung ${r.nummer}`, html });
+    if (result.success) {
+      showMailStatus(`Rechnung ${r.nummer} an ${r.kunden_email} gesendet.`, 'success');
+    } else {
+      showMailStatus('Fehler: ' + (result.error || 'Unbekannt'), 'error');
+    }
+  } catch(err) {
+    showMailStatus('Fehler: ' + err.message, 'error');
+  }
+}
+
+async function sendeAngebotPerMail(angebotId) {
+  const s = await api.getEinstellungen();
+  if (!s.smtp || !s.smtp.host) {
+    alert('Bitte zuerst SMTP-Einstellungen konfigurieren (Einstellungen → E-Mail / SMTP).');
+    return;
+  }
+  const a = await api.getAngebot(angebotId);
+  if (!a || !a.kunden_email) {
+    alert('Keine E-Mail-Adresse fuer diesen Kunden hinterlegt.');
+    return;
+  }
+  const betrag = formatEuro(a.betrag_brutto);
+  const html = `<div style="font-family:Arial,sans-serif; max-width:600px;">
+    <h2 style="color:#1B5E20;">Angebot ${a.nummer}</h2>
+    <p>Sehr geehrte Damen und Herren,</p>
+    <p>anbei erhalten Sie unser Angebot <strong>${a.nummer}</strong> ueber <strong>${betrag}</strong>.</p>
+    <p>Das Angebot ist gueltig bis ${a.gueltig_bis || '30 Tage'}.</p>
+    <p>Mit freundlichen Gruessen,<br>${escHtml(s.firma || '')}</p>
+  </div>`;
+  showMailStatus('E-Mail wird gesendet...', 'pending');
+  try {
+    const result = await api.sendMail({ to: a.kunden_email, subject: `Angebot ${a.nummer}`, html });
+    if (result.success) {
+      showMailStatus(`Angebot ${a.nummer} an ${a.kunden_email} gesendet.`, 'success');
+    } else {
+      showMailStatus('Fehler: ' + (result.error || 'Unbekannt'), 'error');
+    }
+  } catch(err) {
+    showMailStatus('Fehler: ' + err.message, 'error');
+  }
+}
+
+async function sendeMahnungPerMail(rechnungId) {
+  const s = await api.getEinstellungen();
+  if (!s.smtp || !s.smtp.host) {
+    alert('Bitte zuerst SMTP-Einstellungen konfigurieren (Einstellungen → E-Mail / SMTP).');
+    return;
+  }
+  const r = await api.getRechnung(rechnungId);
+  if (!r || !r.kunden_email) {
+    alert('Keine E-Mail-Adresse fuer diesen Kunden hinterlegt.');
+    return;
+  }
+  const betrag = formatEuro(r.betrag_brutto);
+  const html = `<div style="font-family:Arial,sans-serif; max-width:600px;">
+    <h2 style="color:#c62828;">Mahnung — Rechnung ${r.nummer}</h2>
+    <p>Sehr geehrte Damen und Herren,</p>
+    <p>leider haben wir fuer die Rechnung <strong>${r.nummer}</strong> ueber <strong>${betrag}</strong> noch keine Zahlung erhalten.</p>
+    <p>Wir bitten Sie, den f&auml;lligen Betrag umgehend zu &uuml;berweisen.</p>
+    <p>Mit freundlichen Gruessen,<br>${escHtml(s.firma || '')}</p>
+  </div>`;
+  showMailStatus('Mahnung wird gesendet...', 'pending');
+  try {
+    const result = await api.sendMail({ to: r.kunden_email, subject: `Mahnung — Rechnung ${r.nummer}`, html });
+    if (result.success) {
+      showMailStatus(`Mahnung fuer ${r.nummer} an ${r.kunden_email} gesendet.`, 'success');
+    } else {
+      showMailStatus('Fehler: ' + (result.error || 'Unbekannt'), 'error');
+    }
+  } catch(err) {
+    showMailStatus('Fehler: ' + err.message, 'error');
+  }
+}
+
+// ============ Server-Sync ============
+
+function showSyncStatus(msg, type) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? '#d1fae5' : type === 'error' ? '#fee2e2' : '#e0e7ff';
+  el.style.color = type === 'success' ? '#065f46' : type === 'error' ? '#991b1b' : '#3730a3';
+  el.textContent = msg;
+}
+
+async function syncPush() {
+  showSyncStatus('Daten werden zum Server gesendet...', 'pending');
+  try {
+    const result = await api.syncPush();
+    if (result.success) {
+      showSyncStatus(`Upload abgeschlossen um ${new Date(result.timestamp).toLocaleTimeString('de-DE')}.`, 'success');
+    } else {
+      showSyncStatus('Fehler beim Upload.', 'error');
+    }
+  } catch(e) {
+    showSyncStatus('Fehler: ' + e.message, 'error');
+  }
+}
+
+async function syncPull() {
+  showSyncStatus('Daten werden vom Server geladen...', 'pending');
+  try {
+    const result = await api.syncPull();
+    if (result.success) {
+      showSyncStatus(`Download abgeschlossen um ${new Date(result.timestamp).toLocaleTimeString('de-DE')}. Daten werden neu geladen...`, 'success');
+      loadKunden();
+      loadAngebote();
+      loadRechnungen();
+      loadArtikel();
+    } else {
+      showSyncStatus('Fehler beim Download.', 'error');
+    }
+  } catch(e) {
+    showSyncStatus('Fehler: ' + e.message, 'error');
+  }
+}
+
+async function syncFull() {
+  showSyncStatus('Synchronisierung laeuft...', 'pending');
+  try {
+    const result = await api.syncFull();
+    if (result.success) {
+      showSyncStatus(`Synchronisierung abgeschlossen um ${new Date(result.timestamp).toLocaleTimeString('de-DE')}.`, 'success');
+      loadKunden();
+      loadAngebote();
+      loadRechnungen();
+      loadArtikel();
+    } else {
+      showSyncStatus('Fehler bei der Synchronisierung.', 'error');
+    }
+  } catch(e) {
+    showSyncStatus('Fehler: ' + e.message, 'error');
+  }
+}
 
 // ============ Branchen-Schnittstellen ============
 let gaebDaten = null;
@@ -2118,8 +2504,8 @@ async function ladeAufgaben() {
 
   tbody.innerHTML = aufgaben.map(a => `
     <tr>
-      <td><strong>${a.titel}</strong>${a.beschreibung ? '<br><small style="color:#888">' + a.beschreibung.substring(0, 60) + '</small>' : ''}</td>
-      <td>${a.zustandig || '—'}</td>
+      <td><strong>${escHtml(a.titel)}</strong>${a.beschreibung ? '<br><small style="color:#888">' + escHtml(a.beschreibung.substring(0, 60)) + '</small>' : ''}</td>
+      <td>${escHtml(a.zustandig) || '—'}</td>
       <td><span style="color:${prioColors[a.prioritaet] || '#999'}; font-weight:600; text-transform:uppercase; font-size:12px;">${a.prioritaet || 'normal'}</span></td>
       <td>${a.faelligkeit ? new Date(a.faelligkeit).toLocaleDateString('de-DE') : '—'}</td>
       <td><span style="background:${statusColors[a.status] || '#999'}; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px;">${a.status}</span></td>
@@ -2143,16 +2529,16 @@ async function showAufgabenForm(aufgabe = null) {
   const html = `
     <div class="form-group">
       <label>Titel *</label>
-      <input type="text" id="aufg-titel" value="${aufgabe?.titel || ''}" class="form-control" required>
+      <input type="text" id="aufg-titel" value="${escHtml(aufgabe?.titel || '')}" class="form-control" required>
     </div>
     <div class="form-group">
       <label>Beschreibung</label>
-      <textarea id="aufg-beschreibung" class="form-control" rows="3">${aufgabe?.beschreibung || ''}</textarea>
+      <textarea id="aufg-beschreibung" class="form-control" rows="3">${escHtml(aufgabe?.beschreibung || '')}</textarea>
     </div>
     <div style="display:flex; gap:12px;">
       <div class="form-group" style="flex:1">
         <label>Zuständig</label>
-        <input type="text" id="aufg-zustandig" value="${aufgabe?.zustandig || ''}" class="form-control">
+        <input type="text" id="aufg-zustandig" value="${escHtml(aufgabe?.zustandig || '')}" class="form-control">
       </div>
       <div class="form-group" style="flex:1">
         <label>Priorität</label>
@@ -2228,12 +2614,12 @@ async function ladeBuchungenSH() {
   tbody.innerHTML = buchungen.map(b => `
     <tr>
       <td>${new Date(b.buchungsdatum).toLocaleDateString('de-DE')}</td>
-      <td>${b.konto_nr} ${b.konto_name || ''}</td>
+      <td>${b.konto_nr} ${escHtml(b.konto_name) || ''}</td>
       <td><span style="color:${b.typ === 'Soll' ? '#0066cc' : '#28a745'}; font-weight:600;">${b.typ}</span></td>
       <td style="text-align:right; font-weight:600;">${formatEuro(b.betrag)}</td>
-      <td>${b.gegenkonto || '—'}</td>
-      <td>${b.beleg_nr || '—'}</td>
-      <td>${b.buchungstitel || '—'}</td>
+      <td>${escHtml(b.gegenkonto) || '—'}</td>
+      <td>${escHtml(b.beleg_nr) || '—'}</td>
+      <td>${escHtml(b.buchungstitel) || '—'}</td>
       <td>
         <button class="btn btn-sm btn-secondary" onclick="editiereBuchungSH(${b.id})">✏️</button>
         <button class="btn btn-sm btn-secondary" onclick="loescheBuchungSH(${b.id})" style="color:var(--danger);">✕</button>
@@ -2249,7 +2635,7 @@ async function ladeBuchungenSH() {
       kontoSalden.map(ks => `
         <tr>
           <td>${ks.konto_nr}</td>
-          <td>${ks.konto_name}</td>
+          <td>${escHtml(ks.konto_name)}</td>
           <td style="text-align:right;">${formatEuro(ks.soll)}</td>
           <td style="text-align:right;">${formatEuro(ks.haben)}</td>
           <td style="text-align:right; font-weight:bold; color:${(ks.soll - ks.haben) >= 0 ? '#0066cc' : '#dc3545'};">${formatEuro(ks.soll - ks.haben)}</td>
@@ -2298,12 +2684,12 @@ async function showBuchungSHForm(buchung = null) {
       </div>
       <div class="form-group" style="flex:1">
         <label>Beleg-Nr.</label>
-        <input type="text" id="sh-beleg" value="${buchung?.beleg_nr || ''}" class="form-control">
+        <input type="text" id="sh-beleg" value="${escHtml(buchung?.beleg_nr || '')}" class="form-control">
       </div>
     </div>
     <div class="form-group">
       <label>Buchungstitel</label>
-      <input type="text" id="sh-titel" value="${buchung?.buchungstitel || ''}" class="form-control">
+      <input type="text" id="sh-titel" value="${escHtml(buchung?.buchungstitel || '')}" class="form-control">
     </div>
   `;
   showFormModal(titel, html, async () => {

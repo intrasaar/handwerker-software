@@ -4,9 +4,12 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
+const nodemailer = require('nodemailer');
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 const APP_NAME = 'Handwerker-Software';
+
+function xmlEsc(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
 const COMPANY = 'Handwerker Software';
 const LICENSE_SECRET = 'HW-K3y-2024-mN7pQ9xL';
 
@@ -257,6 +260,16 @@ function initDatabase() {
       gebuehr REAL DEFAULT 0,
       status TEXT DEFAULT 'offen',
       notizen TEXT,
+      erstellt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (rechnungen_id) REFERENCES rechnungen(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS gutschriften (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rechnungen_id INTEGER NOT NULL,
+      betrag REAL NOT NULL,
+      grund TEXT,
+      datum DATE NOT NULL,
       erstellt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (rechnungen_id) REFERENCES rechnungen(id)
     );
@@ -580,7 +593,7 @@ ipcMain.handle('get-dashboard-data', () => {
   const offeneAngebote = db.prepare("SELECT COUNT(*) as anzahl, COALESCE(SUM(betrag_brutto),0) as betrag FROM angebote WHERE status='offen'").get();
   const offeneRechnungen = db.prepare("SELECT COUNT(*) as anzahl, COALESCE(SUM(betrag_brutto),0) as betrag FROM rechnungen WHERE status='offen'").get();
   const termineHeute = db.prepare("SELECT COUNT(*) as anzahl FROM termine WHERE datum = date('now')").get();
-  const umsatzMonat = db.prepare("SELECT COALESCE(SUM(betrag_brutto),0) as betrag FROM rechnungen WHERE bezahlt_am IS NULL AND strftime('%Y-%m', erstellt) = strftime('%Y-%m', 'now')").get();
+  const umsatzMonat = db.prepare("SELECT COALESCE(SUM(betrag_brutto),0) as betrag FROM rechnungen WHERE strftime('%Y-%m', erstellt) = strftime('%Y-%m', 'now')").get();
   const offeneAuftraege = db.prepare("SELECT COUNT(*) as anzahl FROM auftraege WHERE status != 'fertig'").get();
 
   return {
@@ -784,7 +797,81 @@ ipcMain.handle('delete-auftrag', (event, id) => {
   return true;
 });
 
-// ============ PDF Export ============
+// ============ PDF Export mit Briefkopf ============
+
+function drawBriefkopf(doc, inst, y) {
+  const left = 50;
+  const right = doc.page.width - 50;
+  const farbe = inst.briefkopf_farbe || '#1a1d27';
+
+  // Logo (falls vorhanden)
+  if (inst.briefkopf_logo) {
+    try {
+      const logoBuf = Buffer.from(inst.briefkopf_logo.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+      doc.image(logoBuf, left, y, { width: 120, height: 60, fit: [120, 60] });
+      y += 68;
+    } catch (e) { /* Logo-Laden fehlgeschlagen */ }
+  }
+
+  // Firmenname
+  doc.fontSize(18).fillColor(farbe).text(inst.firma || '', left, y, { width: right - left });
+  y = doc.y + 4;
+
+  // Adresse
+  doc.fontSize(9).fillColor('#444');
+  const addrParts = [inst.anschrift, inst.plz_ort].filter(Boolean);
+  if (addrParts.length) { doc.text(addrParts.join(', '), left, y, { width: right - left }); y = doc.y + 2; }
+
+  // Kontakt
+  const contactParts = [];
+  if (inst.telefon) contactParts.push(`Tel: ${inst.telefon}`);
+  if (inst.email) contactParts.push(inst.email);
+  if (inst.website) contactParts.push(inst.website);
+  if (contactParts.length) { doc.text(contactParts.join(' | '), left, y, { width: right - left }); y = doc.y + 2; }
+
+  // USt-IdNr. rechts
+  if (inst.ust_id) {
+    doc.fontSize(8).fillColor('#888').text(`USt-IdNr.: ${inst.ust_id}`, right - 160, y - 14, { width: 160, align: 'right' });
+  }
+
+  // Trennlinie
+  y = doc.y + 6;
+  doc.moveTo(left, y).lineTo(right, y).lineWidth(1.5).strokeColor(farbe).stroke();
+  y += 14;
+
+  // Kopfzeile (falls vorhanden)
+  if (inst.briefkopf_kopfzeile) {
+    doc.fontSize(8).fillColor('#666').text(inst.briefkopf_kopfzeile, left, y, { width: right - left });
+    y = doc.y + 8;
+  }
+
+  doc.fillColor('#000');
+  return y;
+}
+
+function drawBrieffuss(doc, inst) {
+  const left = 50;
+  const right = doc.page.width - 50;
+  const y = doc.page.height - 60;
+
+  doc.fontSize(7).fillColor('#888');
+  doc.moveTo(left, y).lineTo(right, y).lineWidth(0.5).strokeColor('#ccc').stroke();
+
+  const fussParts = [];
+  if (inst.firma) fussParts.push(inst.firma);
+  if (inst.anschrift) fussParts.push(inst.anschrift);
+  if (inst.plz_ort) fussParts.push(inst.plz_ort);
+  doc.text(fussParts.join(' · '), left, y + 4, { width: right - left, align: 'center' });
+
+  const kontoParts = [];
+  if (inst.iban) kontoParts.push(`IBAN: ${inst.iban}`);
+  if (inst.bic) kontoParts.push(`BIC: ${inst.bic}`);
+  if (kontoParts.length) doc.text(kontoParts.join(' | '), left, y + 14, { width: right - left, align: 'center' });
+
+  if (inst.briefkopf_fusszeile) {
+    doc.text(inst.briefkopf_fusszeile, left, y + 24, { width: right - left, align: 'center' });
+  }
+}
 
 ipcMain.handle('export-pdf', async (event, data) => {
   const { filePath } = await dialog.showSaveDialog(mainWindow, {
@@ -799,26 +886,119 @@ ipcMain.handle('export-pdf', async (event, data) => {
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
 
-  doc.fontSize(20).text(data.titel, { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Nummer: ${data.nummer}`);
-  doc.text(`Datum: ${data.datum}`);
-  doc.text(`Kunde: ${data.kunden_name}`);
-  doc.moveDown();
-
-  if (data.positionen && data.positionen.length > 0) {
-    doc.fontSize(14).text('Positionen:');
-    doc.moveDown(0.5);
-    doc.fontSize(10);
-    for (const pos of data.positionen) {
-      doc.text(`${pos.position}. ${pos.beschreibung} — ${pos.menge} ${pos.einheit} × ${pos.einzelpreis.toFixed(2)} € = ${pos.gesamt.toFixed(2)} €`);
-    }
-    doc.moveDown();
+  let inst;
+  try {
+    inst = JSON.parse(fs.readFileSync(path.join(dataDir, 'einstellungen.json'), 'utf-8'));
+  } catch (e) {
+    inst = {};
   }
 
-  doc.fontSize(12).text(`Nettobetrag: ${data.betrag_netto.toFixed(2)} €`);
-  doc.text(`MwSt. ${data.mwst_satz}%: ${(data.betrag_brutto - data.betrag_netto).toFixed(2)} €`);
-  doc.fontSize(14).text(`Gesamtbetrag: ${data.betrag_brutto.toFixed(2)} €`, { continued: false });
+  // Briefkopf zeichnen
+  let y = drawBriefkopf(doc, inst, 50);
+
+  // Dokumenttyp + Nummer
+  const typName = data.titel.split(' ')[0] || 'Dokument';
+  doc.fontSize(22).fillColor(inst.briefkopf_farbe || '#1a1d27').text(typName, 50, y, { align: 'left' });
+  y = doc.y + 2;
+  doc.fontSize(12).fillColor('#666').text(`Nr. ${data.nummer}`, 50, y);
+  y = doc.y + 4;
+
+  // Datum + Fälligkeit
+  doc.fontSize(10).fillColor('#333');
+  doc.text(`Datum: ${data.datum}`, 50, y);
+  if (data.faellig_am) doc.text(`Fällig: ${data.faellig_am}`, 50, doc.y + 2);
+  y = doc.y + 10;
+
+  // Rechnungsempfänger
+  if (data.kunden_name) {
+    doc.fontSize(10).fillColor('#333').text('Empfänger:', 50, y);
+    y = doc.y + 2;
+    doc.fontSize(10).text(data.kunden_name, 50, y);
+    if (data.kunden_strasse) { doc.text(data.kunden_strasse, 50, doc.y + 1); }
+    if (data.kunden_plz || data.kunden_ort) { doc.text(`${data.kunden_plz || ''} ${data.kunden_ort || ''}`.trim(), 50, doc.y + 1); }
+    y = doc.y + 12;
+  }
+
+  // Titel + Beschreibung
+  if (data.untertitel) {
+    doc.fontSize(11).fillColor('#333').text(data.untertitel, 50, y, { width: doc.page.width - 100 });
+    y = doc.y + 4;
+  }
+  if (data.beschreibung) {
+    doc.fontSize(9).fillColor('#555').text(data.beschreibung, 50, y, { width: doc.page.width - 100 });
+    y = doc.y + 8;
+  }
+
+  // Positionstabelle
+  if (data.positionen && data.positionen.length > 0) {
+    const tableTop = y;
+    const cols = { nr: 50, desc: 75, qty: 340, unit: 380, price: 420, total: 490 };
+    const farbe = inst.briefkopf_farbe || '#1a1d27';
+
+    // Header
+    doc.fontSize(8).fillColor('#fff').rect(50, tableTop, doc.page.width - 100, 18).fill(farbe);
+    doc.fillColor('#fff').text('#', cols.nr + 2, tableTop + 4, { width: 20 });
+    doc.text('Beschreibung', cols.desc, tableTop + 4, { width: 260 });
+    doc.text('Menge', cols.qty, tableTop + 4, { width: 35, align: 'right' });
+    doc.text('Einh.', cols.unit, tableTop + 4, { width: 35 });
+    doc.text('Einzelpreis', cols.price, tableTop + 4, { width: 65, align: 'right' });
+    doc.text('Gesamt', cols.total, tableTop + 4, { width: 65, align: 'right' });
+
+    y = tableTop + 22;
+    doc.fillColor('#000');
+
+    for (const pos of data.positionen) {
+      if (y > doc.page.height - 120) {
+        doc.addPage();
+        y = 50;
+      }
+      doc.fontSize(9).fillColor('#333');
+      doc.text(String(pos.position), cols.nr + 2, y, { width: 20 });
+      doc.text(pos.beschreibung || '', cols.desc, y, { width: 260 });
+      doc.text(String(pos.menge), cols.qty, y, { width: 35, align: 'right' });
+      doc.text(pos.einheit || '', cols.unit, y, { width: 35 });
+      doc.text(`${(pos.einzelpreis || 0).toFixed(2)} €`, cols.price, y, { width: 65, align: 'right' });
+      doc.text(`${(pos.gesamt || 0).toFixed(2)} €`, cols.total, y, { width: 65, align: 'right' });
+      y = doc.y + 3;
+      doc.moveTo(50, y).lineTo(doc.page.width - 50, y).lineWidth(0.3).strokeColor('#ddd').stroke();
+      y += 4;
+    }
+    y += 6;
+  }
+
+  // Summen
+  const sumX = 350;
+  doc.fontSize(10).fillColor('#333');
+  doc.text(`Nettobetrag:`, sumX, y, { width: 90, align: 'left' });
+  doc.text(`${(data.betrag_netto || 0).toFixed(2)} €`, 450, y, { width: 100, align: 'right' });
+  y = doc.y + 4;
+  doc.text(`MwSt. ${data.mwst_satz || 19}%:`, sumX, y, { width: 90, align: 'left' });
+  doc.text(`${((data.betrag_brutto || 0) - (data.betrag_netto || 0)).toFixed(2)} €`, 450, y, { width: 100, align: 'right' });
+  y = doc.y + 6;
+
+  const farbe = inst.briefkopf_farbe || '#1a1d27';
+  doc.moveTo(sumX, y).lineTo(doc.page.width - 50, y).lineWidth(1).strokeColor(farbe).stroke();
+  y += 6;
+
+  doc.fontSize(13).fillColor(farbe).font('Helvetica-Bold');
+  doc.text(`Gesamtbetrag:`, sumX, y, { width: 90, align: 'left' });
+  doc.text(`${(data.betrag_brutto || 0).toFixed(2)} €`, 440, y, { width: 110, align: 'right' });
+  doc.font('Helvetica');
+  y = doc.y + 14;
+
+  // Zahlungshinweis
+  if (inst.iban) {
+    doc.fontSize(9).fillColor('#444');
+    doc.text('Zahlungsdaten:', 50, y);
+    y = doc.y + 2;
+    doc.text(`IBAN: ${inst.iban}`, 50, y);
+    if (inst.bic) doc.text(`BIC: ${inst.bic}`, 50, doc.y + 1);
+    if (inst.firma) doc.text(`Kontoinhaber: ${inst.firma}`, 50, doc.y + 1);
+    doc.text(`Verwendungszweck: ${data.nummer}`, 50, doc.y + 2);
+  }
+
+  // Fußzeile
+  drawBrieffuss(doc, inst);
 
   doc.end();
   return new Promise(resolve => stream.on('finish', () => resolve(true)));
@@ -840,7 +1020,12 @@ ipcMain.handle('get-einstellungen', () => {
     ust_id: 'DE123456789',
     iban: 'DE89 3704 0044 0532 0130 00',
     bic: 'COBADEFFXXX',
-    waehrung: '€'
+    waehrung: '€',
+    website: '',
+    briefkopf_farbe: '#1a1d27',
+    briefkopf_kopfzeile: '',
+    briefkopf_fusszeile: '',
+    briefkopf_logo: null
   };
 });
 
@@ -1262,11 +1447,11 @@ ipcMain.handle('delete-eingangsrechnung', (event, id) => {
 ipcMain.handle('eingangsrechnung-zu-buchung', (event, id) => {
   const ein = db.prepare('SELECT * FROM eingangsrechnungen WHERE id = ?').get(id);
   if (!ein || ein.status !== 'bezahlt') return false;
-  const existing = db.prepare('SELECT id FROM buchungen WHERE eingangsrechnungen_id = ?').get(id);
+  const existing = db.prepare('SELECT id FROM buchungen WHERE beleg_nummer = ? AND kategorie = ?').get(ein.nummer, 'Eingangsrechnung');
   if (existing) return false;
   const lieferant = db.prepare('SELECT name FROM lieferanten WHERE id = ?').get(ein.lieferanten_id);
-  db.prepare('INSERT INTO buchungen (typ, kategorie, betrag, datum, beschreibung, beleg_nummer, mwst_satz, mwst_betrag, lieferanten_id, eingangsrechnungen_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run('ausgabe', 'Eingangsrechnung', ein.betrag_brutto, ein.bezahlt_am || ein.erstellt.split(' ')[0], `Eingang: ${lieferant ? lieferant.name : ''} ${ein.nummer}`, ein.nummer, ein.mwst_satz, ein.mwst_betrag, ein.lieferanten_id, id);
+  db.prepare('INSERT INTO buchungen (typ, kategorie, betrag, datum, beschreibung, beleg_nummer, mwst_satz, mwst_betrag, kunden_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run('ausgabe', 'Eingangsrechnung', ein.betrag_brutto, ein.bezahlt_am || ein.erstellt.split(' ')[0], `Eingang: ${lieferant ? lieferant.name : ''} ${ein.nummer}`, ein.nummer, ein.mwst_satz, ein.mwst_betrag, null);
   return true;
 });
 
@@ -1298,20 +1483,20 @@ ipcMain.handle('export-zugferd', async (event, rechnungId) => {
       <ram:BuyerAssignedURI>${r.nummer}</ram:BuyerAssignedURI>
     </ram:BuyerReference>
     <ram:SellerTradeParty>
-      <ram:Name>${s.firma}</ram:Name>
+      <ram:Name>${xmlEsc(s.firma)}</ram:Name>
       <ram:PostalTradeAddress>
-        <ram:StreetName>${s.anschrift}</ram:StreetName>
-        <ram:Postcode>${s.plz_ort.split(' ')[0]}</ram:Postcode>
-        <ram:CityName>${s.plz_ort.split(' ').slice(1).join(' ')}</ram:CityName>
+        <ram:StreetName>${xmlEsc(s.anschrift)}</ram:StreetName>
+        <ram:Postcode>${xmlEsc(s.plz_ort.split(' ')[0])}</ram:Postcode>
+        <ram:CityName>${xmlEsc(s.plz_ort.split(' ').slice(1).join(' '))}</ram:CityName>
         <ram:CountryID>DE</ram:CountryID>
       </ram:PostalTradeAddress>
       <ram:TaxRegistration>
-        <ram:ID schemeID="9955">${s.ust_id}</ram:ID>
+        <ram:ID schemeID="9955">${xmlEsc(s.ust_id)}</ram:ID>
       </ram:TaxRegistration>
     </ram:SellerTradeParty>
     <ram:BuyerTradeParty>
-      <ram:Name>${r.kunden_name}</ram:Name>
-      ${r.strasse ? `<ram:PostalTradeAddress><ram:StreetName>${r.strasse}</ram:StreetName>${r.plz ? `<ram:Postcode>${r.plz}</ram:Postcode>` : ''}${r.ort ? `<ram:CityName>${r.ort}</ram:CityName>` : ''}<ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress>` : ''}
+      <ram:Name>${xmlEsc(r.kunden_name)}</ram:Name>
+      ${r.strasse ? `<ram:PostalTradeAddress><ram:StreetName>${xmlEsc(r.strasse)}</ram:StreetName>${r.plz ? `<ram:Postcode>${xmlEsc(r.plz)}</ram:Postcode>` : ''}${r.ort ? `<ram:CityName>${xmlEsc(r.ort)}</ram:CityName>` : ''}<ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress>` : ''}
     </ram:BuyerTradeParty>
   </rsm:ApplicableHeaderTradeAgreement>
   <rsm:ApplicableHeaderTradeDelivery>
@@ -1324,10 +1509,10 @@ ipcMain.handle('export-zugferd', async (event, rechnungId) => {
       <udt:DateTimeString format="102">${(r.faellig_am || r.erstellt.split(' ')[0]).replace(/-/g, '')}</udt:DateTimeString>
     </ram:DueDateDateTime>
     <ram:ApplicableTradePaymentTerms>
-      <ram:Description>${r.faellig_am ? `Zahlbar bis ${r.faellig_am}` : 'Zahlbar innerhalb 30 Tagen'}</ram:Description>
+      <ram:Description>${r.faellig_am ? xmlEsc(`Zahlbar bis ${r.faellig_am}`) : 'Zahlbar innerhalb 30 Tagen'}</ram:Description>
     </ram:ApplicableTradePaymentTerms>
     <ram:ApplicableTradeSettlementFinancialAccount>
-      <ram:IBANID>${s.iban}</ram:IBANID>
+      <ram:IBANID>${xmlEsc(s.iban)}</ram:IBANID>
     </ram:ApplicableTradeSettlementFinancialAccount>
   </rsm:ApplicableHeaderTradePayment>
   <rsm:ApplicableHeaderTradeApplicableHeaderTradeAgreement>
@@ -1375,7 +1560,7 @@ ipcMain.handle('export-zugferd', async (event, rechnungId) => {
     </ram:ApplicableHeaderTradeTax>
     <ram:ApplicableHeaderTradeSettlement>
       <ram:ApplicableTradeSettlementFinancialAccount>
-        <ram:IBANID>${s.iban}</ram:IBANID>
+        <ram:IBANID>${xmlEsc(s.iban)}</ram:IBANID>
       </ram:ApplicableTradeSettlementFinancialAccount>
     </ram:ApplicableHeaderTradeSettlement>
     <ram:ApplicableHeaderTradeSettlementPaymentMeans>
@@ -1395,7 +1580,7 @@ ipcMain.handle('export-zugferd', async (event, rechnungId) => {
       <ram:LineNetAmount currencyID="EUR">${pos.gesamt.toFixed(2)}</ram:LineNetAmount>
     </ram:SpecifiedLineTradeSettlement>
     <ram:SpecifiedTradeProduct>
-      <ram:Name>${pos.beschreibung}</ram:Name>
+      <ram:Name>${xmlEsc(pos.beschreibung)}</ram:Name>
     </ram:SpecifiedTradeProduct>
     <ram:AssociatedDocumentLineDocument>
       <ram:LineID>${idx + 1}</ram:LineID>
@@ -1507,6 +1692,36 @@ ipcMain.handle('mahnung-erstellen', (event, rechnungId) => {
 ipcMain.handle('mahnung-bezahlen', (event, id) => {
   db.prepare("UPDATE mahnungen SET status = 'bezahlt' WHERE id = ?").run(id);
   return true;
+});
+
+// ============ Gutschriften (Rechnungskorrekturen) ============
+
+ipcMain.handle('get-gutschriften', (event, rechnungId) => {
+  if (rechnungId) {
+    return db.prepare('SELECT * FROM gutschriften WHERE rechnungen_id = ? ORDER BY erstellt DESC').all(rechnungId);
+  }
+  return db.prepare(`SELECT g.*, r.nummer as rechnung_nummer, k.name as kunden_name FROM gutschriften g LEFT JOIN rechnungen r ON g.rechnungen_id = r.id LEFT JOIN kunden k ON r.kunden_id = k.id ORDER BY g.erstellt DESC`).all();
+});
+
+ipcMain.handle('gutschrift-erstellen', (event, data) => {
+  const { rechnungen_id, betrag, grund } = data;
+  const rechnung = db.prepare('SELECT * FROM rechnungen WHERE id = ?').get(rechnungen_id);
+  if (!rechnung) return { error: 'Rechnung nicht gefunden' };
+  if (rechnung.status === 'bezahlt') return { error: 'Rechnung ist bereits bezahlt' };
+  if (betrag <= 0) return { error: 'Betrag muss positiv sein' };
+
+  const offenerBetrag = rechnung.betrag_brutto;
+  const tatsaechlicherBetrag = Math.min(betrag, offenerBetrag);
+  const neuerBetrag = Math.max(0, offenerBetrag - tatsaechlicherBetrag);
+  const neuerNetto = rechnung.betrag_netto * (neuerBetrag / offenerBetrag);
+  const neuerStatus = neuerBetrag <= 0 ? 'bezahlt' : rechnung.status;
+
+  db.prepare('INSERT INTO gutschriften (rechnungen_id, betrag, grund, datum) VALUES (?, ?, ?, date(\'now\'))')
+    .run(rechnungen_id, tatsaechlicherBetrag, grund || '');
+  db.prepare('UPDATE rechnungen SET betrag_brutto = ?, betrag_netto = ?, status = ?, bezahlt_am = CASE WHEN ? = \'bezahlt\' THEN date(\'now\') ELSE bezahlt_am END WHERE id = ?')
+    .run(neuerBetrag, neuerNetto, neuerStatus, neuerStatus, rechnungen_id);
+
+  return { success: true, tatsaechlicherBetrag, neuerBetrag, neuerStatus };
 });
 
 // ============ Kassenbuch ============
@@ -1723,7 +1938,7 @@ ipcMain.handle('export-datanorm', async (event, artikel) => {
   });
   if (!filePath) return false;
 
-  const lieferant = db.prepare('SELECT name FROM einstellungen').get() || {};
+  const lieferant = JSON.parse(fs.readFileSync(path.join(dataDir, 'einstellungen.json'), 'utf-8')) || {};
   const daten = artikel || db.prepare('SELECT * FROM artikel ORDER BY name').all();
 
   const datanormArtikel = daten.map(a => ({
@@ -1822,8 +2037,8 @@ ipcMain.handle('export-bmecat', async () => {
   });
   if (!filePath) return false;
   const artikel = db.prepare('SELECT * FROM artikel ORDER BY name').all();
-  const lieferant = db.prepare('SELECT * FROM einstellungen').get() || {};
-  const xml = writeBMEcat({ lieferant: lieferant.firma || '', name: 'Artikelkatalog', datum: new Date().toISOString().split('T')[0] }, artikel.map(a => ({
+  const einstellungen = JSON.parse(fs.readFileSync(path.join(dataDir, 'einstellungen.json'), 'utf-8')) || {};
+  const xml = writeBMEcat({ lieferant: einstellungen.firma || '', name: 'Artikelkatalog', datum: new Date().toISOString().split('T')[0] }, artikel.map(a => ({
     nummer: a.sku || `ART-${a.id}`, bezeichnung: a.name, einheit: a.einheit, preis: a.einkaufspreis || 0, mwst: a.mwst_satz || 19, ean: a.barcode || '', kategorie: a.kategorie || ''
   })));
   fs.writeFileSync(filePath, xml, 'utf-8');
@@ -1930,18 +2145,23 @@ ipcMain.handle('export-ics', async (event) => {
     filters: [{ name: 'iCalendar', extensions: ['ics'] }],
   });
   if (result.canceled) return null;
-  const termine = db.prepare('SELECT * FROM termine ORDER BY start ASC').all();
-  const icsTermine = termine.map(t => ({
-    id: t.id,
-    titel: t.titel || t.betreff || '',
-    beschreibung: t.beschreibung || '',
-    start: t.start,
-    ende: t.ende,
-    ort: t.ort || '',
-    kunde: t.kunde || '',
-    mitarbeiter: t.mitarbeiter || '',
-    status: t.status || 'offen',
-  }));
+  const termine = db.prepare('SELECT * FROM termine ORDER BY datum ASC').all();
+  const icsTermine = termine.map(t => {
+    const startDT = t.datum ? (t.uhrzeit_von ? `${t.datum}T${t.uhrzeit_von}:00` : `${t.datum}T09:00:00`) : null;
+    const endeDT = t.datum ? (t.uhrzeit_bis ? `${t.datum}T${t.uhrzeit_bis}:00` : null) : null;
+    const kunde = t.kunden_id ? (db.prepare('SELECT name FROM kunden WHERE id = ?').get(t.kunden_id)?.name || '') : '';
+    return {
+      id: t.id,
+      titel: t.titel || '',
+      beschreibung: t.beschreibung || '',
+      start: startDT,
+      ende: endeDT,
+      ort: '',
+      kunde: kunde,
+      mitarbeiter: '',
+      status: t.status || 'geplant',
+    };
+  });
   icsDateiSpeichern(result.filePath, icsTermine);
   return result.filePath;
 });
@@ -1956,13 +2176,13 @@ ipcMain.handle('export-sepa-ueberweisungen', async (event) => {
     filters: [{ name: 'CSV', extensions: ['csv'] }],
   });
   if (result.canceled) return null;
-  const buchungen = db.prepare("SELECT * FROM buchungen WHERE typ = 'ausgabe' AND bezahlt = 0 ORDER BY buchungsdatum ASC").all();
+  const buchungen = db.prepare("SELECT * FROM buchungen WHERE typ = 'ausgabe' ORDER BY datum ASC").all();
   const csv = sepaÜberweisungenCSV(buchungen.map(b => ({
-    iban: b.iban || '',
-    bic: b.bic || '',
+    iban: '',
+    bic: '',
     betrag: b.betrag || 0,
-    empfänger: b.empfaenger || b.gegenkonto_name || '',
-    verwendungszweck: b.buchungstitel || b.rechnungsnr || '',
+    empfänger: b.beschreibung || '',
+    verwendungszweck: b.buchungstitel || b.beleg_nummer || b.beschreibung || '',
   })));
   csvSpeichern(result.filePath, csv);
   return result.filePath;
@@ -1976,17 +2196,17 @@ ipcMain.handle('export-sepa-lastschrift', async (event) => {
     filters: [{ name: 'CSV', extensions: ['csv'] }],
   });
   if (result.canceled) return null;
-  const rechnungen = db.prepare("SELECT r.*, k.* FROM rechnungen r LEFT JOIN kunden k ON r.kunden_id = k.id WHERE r.bezahlt = 0 ORDER BY r.rechnungsdatum ASC").all();
+  const rechnungen = db.prepare("SELECT r.*, k.name as name, k.strasse as straße, k.plz, k.ort, k.iban, k.bic FROM rechnungen r LEFT JOIN kunden k ON r.kunden_id = k.id WHERE r.bezahlt_am IS NULL ORDER BY r.erstellt ASC").all();
   const csv = sepaLastschriftCSV(rechnungen.map(r => ({
-    mandatsreferenz: r.mandatsreferenz || '',
+    mandatsreferenz: '',
     iban: r.iban || '',
     bic: r.bic || '',
-    betrag: r.gesamtbetrag || 0,
+    betrag: r.betrag_brutto || 0,
     name: r.name || '',
-    straße: r.adresse || '',
+    straße: r.straße || '',
     plz: r.plz || '',
     ort: r.ort || '',
-    verwendungszweck: r.rechnungsnr || '',
+    verwendungszweck: r.nummer || '',
   })));
   csvSpeichern(result.filePath, csv);
   return result.filePath;
@@ -2058,11 +2278,203 @@ ipcMain.handle('get-konten-saldo', (event, kontoNr) => {
 
 ipcMain.handle('get-kontenraeume-summe', () => {
   return db.prepare(`
-    SELECT konto_nr, konto_name, kontoart,
-      COALESCE(SUM(CASE WHEN typ = 'Soll' THEN betrag ELSE 0 END), 0) as soll,
-      COALESCE(SUM(CASE WHEN typ = 'Haben' THEN betrag ELSE 0 END), 0) as haben
-    FROM konto_bewegungen
-    GROUP BY konto_nr
-    ORDER BY konto_nr ASC
+    SELECT kb.konto_nr, kb.konto_name,
+      COALESCE(SUM(CASE WHEN kb2.typ = 'Soll' THEN kb2.betrag ELSE 0 END), 0) as soll,
+      COALESCE(SUM(CASE WHEN kb2.typ = 'Haben' THEN kb2.betrag ELSE 0 END), 0) as haben
+    FROM konto_bewegungen kb2
+    LEFT JOIN konto_kontenrahmen kb ON kb2.konto_nr = kb.konto_nr
+    GROUP BY kb2.konto_nr
+    ORDER BY kb2.konto_nr ASC
   `).all();
 });
+
+// ============ E-Mail / SMTP ============
+
+let mailTransporter = null;
+
+function createMailTransporter(config) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: parseInt(config.port) || 587,
+    secure: config.port === '465',
+    auth: {
+      user: config.user,
+      pass: config.pass
+    },
+    tls: { rejectUnauthorized: config.tls !== false }
+  });
+}
+
+ipcMain.handle('send-mail', async (event, data) => {
+  try {
+    const settingsPath = path.join(dataDir, 'einstellungen.json');
+    let einstellungen = {};
+    if (fs.existsSync(settingsPath)) {
+      einstellungen = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    }
+    const smtpConfig = einstellungen.smtp || {};
+    if (!smtpConfig.host || !smtpConfig.user) {
+      return { success: false, error: 'Keine SMTP-Einstellungen konfiguriert.' };
+    }
+    mailTransporter = createMailTransporter(smtpConfig);
+    const fromAddress = smtpConfig.fromEmail || einstellungen.email || 'noreply@imhws.de';
+    const fromName = smtpConfig.fromName || einstellungen.firma || 'IMHWS';
+    const info = await mailTransporter.sendMail({
+      from: `"${fromName}" <${fromAddress}>`,
+      to: data.to,
+      subject: data.subject,
+      html: data.html,
+      attachments: data.attachments || []
+    });
+    return { success: true, messageId: info.messageId, to: data.to };
+  } catch (err) {
+    console.error('Mail send error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('save-smtp-config', (event, config) => {
+  const settingsPath = path.join(dataDir, 'einstellungen.json');
+  let settings = {};
+  if (fs.existsSync(settingsPath)) {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  }
+  settings.smtp = config;
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+  return true;
+});
+
+// ============ Server-Sync ============
+
+const https_node = require('https');
+const http_node = require('http');
+
+function getServerConfig() {
+  const settingsPath = path.join(dataDir, 'einstellungen.json');
+  if (!fs.existsSync(settingsPath)) return null;
+  const s = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  if (!s.server_url || s.modus !== 'server') return null;
+  return { url: s.server_url, key: s.server_key || '', clientId: s.client_id || 'desktop-01' };
+}
+
+function serverRequest(method, endpoint, body) {
+  const config = getServerConfig();
+  if (!config) return Promise.resolve(null);
+  const url = new URL(endpoint, config.url);
+  const isHttps = url.protocol === 'https:';
+  const mod = isHttps ? https_node : http_node;
+  return new Promise((resolve, reject) => {
+    const opts = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname + url.search,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': config.key,
+        'X-Client-Id': config.clientId
+      }
+    };
+    const req = mod.request(opts, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', (e) => { console.error('Server-Sync error:', e.message); resolve(null); });
+    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+const SYNC_TABLES = ['kunden', 'angebote', 'rechnungen', 'artikel', 'lieferanten', 'subunternehmer', 'kasse', 'eingangsrechnungen'];
+
+async function pushToServer() {
+  const config = getServerConfig();
+  if (!config) return;
+  for (const table of SYNC_TABLES) {
+    try {
+      const localItems = db.prepare(`SELECT * FROM ${table}`).all();
+      const serverItems = await serverRequest('GET', `/api/${table}`);
+      if (!serverItems) continue;
+      const serverMap = new Map(serverItems.map(i => [i.id, i]));
+      for (const item of localItems) {
+        const serverItem = serverMap.get(item.id);
+        if (!serverItem) {
+          await serverRequest('POST', `/api/${table}`, item);
+        }
+      }
+    } catch (e) {
+      console.error(`Push ${table} error:`, e.message);
+    }
+  }
+}
+
+async function pullFromServer() {
+  const config = getServerConfig();
+  if (!config) return;
+  for (const table of SYNC_TABLES) {
+    try {
+      const serverItems = await serverRequest('GET', `/api/${table}`);
+      if (!serverItems || !Array.isArray(serverItems)) continue;
+      const localIds = new Set(
+        db.prepare(`SELECT id FROM ${table}`).all().map(r => r.id)
+      );
+      for (const item of serverItems) {
+        if (localIds.has(item.id)) {
+          const cols = Object.keys(item).filter(k => k !== 'id');
+          if (cols.length > 0) {
+            const setClause = cols.map(k => `${k} = ?`).join(', ');
+            const vals = cols.map(k => item[k]);
+            db.prepare(`UPDATE ${table} SET ${setClause} WHERE id = ?`).run(...vals, item.id);
+          }
+        } else {
+          const cols = Object.keys(item).filter(k => k !== 'id');
+          const vals = cols.map(k => item[k]);
+          const placeholders = cols.map(() => '?').join(', ');
+          db.prepare(`INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`).run(...vals);
+        }
+      }
+    } catch (e) {
+      console.error(`Pull ${table} error:`, e.message);
+    }
+  }
+}
+
+ipcMain.handle('sync-push', async () => {
+  await pushToServer();
+  return { success: true, timestamp: new Date().toISOString() };
+});
+
+ipcMain.handle('sync-pull', async () => {
+  await pullFromServer();
+  return { success: true, timestamp: new Date().toISOString() };
+});
+
+ipcMain.handle('sync-full', async () => {
+  await pushToServer();
+  await pullFromServer();
+  return { success: true, timestamp: new Date().toISOString() };
+});
+
+ipcMain.handle('get-sync-status', () => {
+  const config = getServerConfig();
+  return {
+    modus: config ? 'server' : 'lokal',
+    serverUrl: config ? config.url : null,
+    clientId: config ? config.clientId : null
+  };
+});
+
+// Auto-Sync: Alle 60 Sekunden wenn Server-Modus aktiv
+setInterval(async () => {
+  const config = getServerConfig();
+  if (config) {
+    try {
+      await pushToServer();
+      await pullFromServer();
+    } catch (e) {}
+  }
+}, 60000);

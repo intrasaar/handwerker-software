@@ -108,7 +108,7 @@
       </ul>
       <div class="sidebar-footer">
         <div class="copyright">&copy; <span id="copyright-year"></span> Handwerker Software</div>
-        <div class="version">v2.2.0</div>
+        <div class="version">v2.3.0</div>
         <div class="license-status" id="license-status"></div>
       </div>
     </nav>
@@ -331,6 +331,84 @@
           <button class="btn btn-primary" onclick="saveEinstellungen()">Speichern</button>
         </div>
 
+        <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">Briefkopf / Dokumentengestaltung</h2>
+        <div class="settings-form">
+          <div class="form-group">
+            <label>Logo (Bild-Datei)</label>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <input type="file" id="set-logo-file" accept="image/*" onchange="uploadLogo(this)" style="font-size:13px;">
+              <button class="btn btn-secondary btn-small" onclick="document.getElementById('set-logo-file').value=''; removeLogo();" style="color:var(--danger);">Logo entfernen</button>
+            </div>
+            <div id="set-logo-preview" style="margin-top:8px;"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Primärfarbe (Header, Trennlinien)</label>
+              <input type="color" id="set-farbe" value="#1a1d27" style="width:60px; height:36px; padding:2px; cursor:pointer;">
+            </div>
+            <div class="form-group">
+              <label>Website</label>
+              <input type="text" id="set-website" placeholder="www.firma.de">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Kopfzeile (unter Firmenname)</label>
+            <input type="text" id="set-kopfzeile" placeholder="z.B. Handwerk · Service · Qualität">
+          </div>
+          <div class="form-group">
+            <label>Fußzeile (auf allen Dokumenten)</label>
+            <input type="text" id="set-fusszeile" placeholder="z.B. Geschäftsführer: Max Mustermann · HRB 12345">
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="saveEinstellungen()">Speichern</button>
+            <button class="btn btn-secondary" onclick="previewBriefkopf()">👁️ Vorschau</button>
+          </div>
+        </div>
+
+        <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">E-Mail / SMTP</h2>
+        <div class="settings-form">
+          <div id="mail-status" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-sm); font-size:13px; display:none;"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>SMTP-Server</label>
+              <input type="text" id="set-smtp-host" placeholder="smtp.gmx.de">
+            </div>
+            <div class="form-group">
+              <label>Port</label>
+              <input type="text" id="set-smtp-port" placeholder="587">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Benutzername</label>
+              <input type="text" id="set-smtp-user" placeholder="user@gmx.de">
+            </div>
+            <div class="form-group">
+              <label>Passwort</label>
+              <input type="password" id="set-smtp-pass" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Absender-Name</label>
+              <input type="text" id="set-smtp-from-name" placeholder="Max Mustermann">
+            </div>
+            <div class="form-group">
+              <label>Absender-E-Mail</label>
+              <input type="text" id="set-smtp-from-email" placeholder="info@firma.de">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="set-smtp-tls" checked> TLS/STARTTLS verwenden
+            </label>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-primary" onclick="saveSmtpEinstellungen()">Speichern</button>
+            <button class="btn btn-secondary" onclick="testSmtpVerbindung()">📧 Test-E-Mail senden</button>
+          </div>
+        </div>
+
         <h2 style="margin-top:40px; margin-bottom:16px; padding-top:24px; border-top:1px solid var(--border);">Server-Verbindung</h2>
         <div class="settings-form">
           <div id="server-status" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-sm); font-size:13px; display:none;"></div>
@@ -358,6 +436,12 @@
           <div style="display:flex; gap:12px;">
             <button class="btn btn-primary" onclick="saveServerEinstellungen()">Speichern</button>
             <button class="btn btn-secondary" onclick="testServerVerbindung()">🔍 Verbindung testen</button>
+          </div>
+          <div id="sync-status" style="margin-top:16px; padding:12px; border-radius:var(--radius-sm); font-size:13px; display:none;"></div>
+          <div style="display:flex; gap:12px; margin-top:12px;">
+            <button class="btn btn-primary" onclick="syncFull()">🔄 Daten synchronisieren</button>
+            <button class="btn btn-secondary" onclick="syncPush()">⬆️ Lokal → Server</button>
+            <button class="btn btn-secondary" onclick="syncPull()">⬇️ Server → Lokal</button>
           </div>
         </div>
 
@@ -397,7 +481,7 @@
             <div style="display:flex; align-items:center; gap:10px;">
               <span style="font-size:24px;" id="set-update-icon">🔄</span>
               <div>
-                <div style="font-weight:bold;" id="set-update-text">Aktuelle Version: v2.2.0</div>
+                <div style="font-weight:bold;" id="set-update-text">Aktuelle Version: v2.3.0</div>
                 <div style="font-size:12px; color:var(--text-secondary);" id="set-update-detail">Letzte Prüfung: Nie</div>
               </div>
             </div>

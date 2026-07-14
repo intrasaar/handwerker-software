@@ -1,6 +1,6 @@
 {
   "name": "handwerker-software",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Handwerker-Software — Angebote, Rechnungen, Terminplanung, Kundenverwaltung, Buchhaltung",
   "main": "src/main.js",
   "scripts": {
@@ -25,15 +25,26 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ]
     },
     "dmg": {
       "title": "Handwerker-Software",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "win": {
@@ -59,11 +70,13 @@
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^11.0.0",
-    "pdfkit": "^0.15.0"
+    "nodemailer": "^9.0.3",
+    "pdfkit": "^0.15.0",
+    "puppeteer-core": "^25.3.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "electron": "^30.0.0",
-    "electron-builder": "^24.0.0",
-    "@electron/rebuild": "^3.6.0"
+    "electron-builder": "^24.0.0"
   }
 }

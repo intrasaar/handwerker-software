@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMHWS Bedienerhandbuch</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-card: #1a1d27;
+    --bg-hover: #232733;
+    --border: #2d3140;
+    --text: #e4e6f0;
+    --text-secondary: #8b8fa8;
+    --text-light: #6b6f88;
+    --accent: #4CAF50;
+    --accent-hover: #66BB6A;
+    --accent-red: #ef4444;
+    --accent-blue: #3b82f6;
+    --accent-yellow: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 36px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .header .version {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  
+  /* Navigation */
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 32px;
+    margin-bottom: 40px;
+  }
+  .toc h2 {
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px;
+  }
+  .toc a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .toc a:hover {
+    color: var(--accent);
+    background: var(--bg-hover);
+  }
+  
+  /* Sections */
+  .section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .section h2 {
+    font-size: 22px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section h3 {
+    font-size: 16px;
+    color: var(--text);
+    margin: 20px 0 8px;
+  }
+  .section p {
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .section ul, .section ol {
+    color: var(--text-secondary);
+    margin: 8px 0 16px 20px;
+    font-size: 14px;
+  }
+  .section li { margin-bottom: 4px; }
+  
+  /* Steps */
+  .steps {
+    background: var(--bg-hover);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .steps ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .steps li {
+    padding: 4px 0;
+    color: var(--text);
+  }
+  
+  /* Tip/Warning boxes */
+  .tip, .warning, .info {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .tip {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid var(--accent);
+    color: var(--accent);
+  }
+  .warning {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--accent-red);
+    color: var(--accent-red);
+  }
+  .info {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--accent-blue);
+    color: var(--accent-blue);
+  }
+  
+  /* Code */
+  code {
+    background: var(--bg-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'SF Mono', Menlo, monospace;
+    color: var(--accent);
+  }
+  
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  th {
+    background: var(--bg-hover);
+    color: var(--text);
+    font-weight: 600;
+  }
+  td { color: var(--text-secondary); }
+
+  /* Print */
+  @media print {
+    body { background: white; color: #333; }
+    .section { border: 1px solid #ddd; background: white; }
+    .toc { background: #f5f5f5; }
+    a { color: #1B5E20; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="header">
+  <h1>IMHWS Bedienerhandbuch</h1>
+  <div class="version">Handwerker-Software v2.2.0 &middot; Mac & Windows</div>
+</div>
+
+<div class="toc">
+  <h2>Inhaltsverzeichnis</h2>
+  <div class="toc-grid">
+    <a href="#installation">1. Installation</a>
+    <a href="#ersteinrichtung">2. Ersteinrichtung</a>
+    <a href="#dashboard">3. Dashboard</a>
+    <a href="#kunden">4. Kunden</a>
+    <a href="#angebote">5. Angebote</a>
+    <a href="#rechnungen">6. Rechnungen</a>
+    <a href="#mahnungen">7. Mahnungen</a>
+    <a href="#eingangsrechnungen">8. Eingangsrechnungen</a>
+    <a href="#lieferanten">9. Lieferanten</a>
+    <a href="#auftraege">10. Aufträge</a>
+    <a href="#aufmasse">11. Aufmaße</a>
+    <a href="#artikel">12. Artikel &amp; Lager</a>
+    <a href="#kasse">13. Kassenbuch</a>
+    <a href="#subunternehmer">14. Subunternehmer</a>
+    <a href="#termine">15. Termine &amp; Kalender</a>
+    <a href="#aufgaben">16. Aufgaben</a>
+    <a href="#buchungen">17. Einnahmen/Ausgaben</a>
+    <a href="#sollhaben">18. Buchführung</a>
+    <a href="#ust">19. USt-Voranmeldung</a>
+    <a href="#datev">20. DATEV-Export</a>
+    <a href="#ereg">21. E-Rechnung (ZUGFeRD)</a>
+    <a href="#branchen">22. Branchen-Schnittstellen</a>
+    <a href="#mail">23. E-Mail-Versand</a>
+    <a href="#server">24. Server-Verbindung</a>
+    <a href="#einstellungen">25. Einstellungen</a>
+    <a href="#tastatur">26. Tastenkürzel</a>
+    <a href="#monteur">27. Monteur-App</a>
+    <a href="#hilfe">28. Hilfe &amp; Support</a>
+    <a href="#automatisierung">29. Automatisierung</a>
+    <a href="#csv-import">30. CSV-Import</a>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="installation">
+  <h2>1. Installation</h2>
+  
+  <h3>macOS</h3>
+  <div class="steps">
+    <ol>
+      <li>Öffne die <code>.dmg</code>-Datei</li>
+      <li>Ziehe <strong>Handwerker-Software</strong> in den <strong>Programme</strong>-Ordner</li>
+      <li>Beim ersten Start: Rechtsklick → <strong>Öffnen</strong> (macOS-Sicherheitswarnung)</li>
+    </ol>
+  </div>
+  
+  <h3>Windows</h3>
+  <div class="steps">
+    <ol>
+      <li>Starte die <code>.exe</code>-Installationsdatei</li>
+      <li>Durchlaufe den Installationsassistenten</li>
+      <li>Starte die App über das Desktop-Symbol oder Startmenü</li>
+    </ol>
+  </div>
+  
+  <div class="info">
+    <strong>Systemanforderungen:</strong> macOS 10.15+ oder Windows 10+. Es wird kein Internet für den normalen Betrieb benötigt.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="ersteinrichtung">
+  <h2>2. Ersteinrichtung</h2>
+  <p>Beim ersten Start wird die Software mit Beispieldaten geladen. Richte zuerst deine Firmendaten ein:</p>
+  
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Einstellungen</strong> (Sidebar unten)</li>
+      <li>Fülle deine Firmendaten aus:
+        <ul>
+          <li>Firmenname, Adresse, PLZ/Ort</li>
+          <li>Telefon, E-Mail</li>
+          <li>USt-IdNr. (falls vorhanden)</li>
+          <li>IBAN und BIC</li>
+        </ul>
+      </li>
+      <li>Klicke <strong>Speichern</strong></li>
+    </ol>
+  </div>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> Diese Daten erscheinen auf allen Rechnungen, Angeboten und Dokumenten.
+  </div>
+  
+  <h3>Lizenz aktivieren</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Einstellungen → Lizenz</strong></li>
+      <li>Trage deinen Lizenzschlüssel ein (<code>HW-...</code>)</li>
+      <li>Klicke <strong>Aktivieren</strong></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="dashboard">
+  <h2>3. Dashboard</h2>
+  <p>Das Dashboard zeigt dir auf einen Blick die wichtigsten Kennzahlen:</p>
+  <ul>
+    <li><strong>Offene Angebote</strong> — Anzahl und Gesamtwert</li>
+    <li><strong>Offene Rechnungen</strong> — Anzahl und Gesamtwert</li>
+    <li><strong>Aufträge</strong> — Offen, in Arbeit, erledigt</li>
+    <li><strong>Termine</strong> — Nächste anstehende Termine</li>
+    <li><strong>Kasse</strong> — Tageseinnahmen</li>
+    <li><strong>Aufgaben</strong> — Offene Aufgaben nach Priorität</li>
+  </ul>
+  <p>Klicke auf eine Kennzahl um direkt zur passenden Seite zu navigieren.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="kunden">
+  <h2>4. Kunden</h2>
+  <p>Verwalte alle deine Kunden an einem Ort.</p>
+  
+  <h3>Neuen Kunden anlegen</h3>
+  <div class="steps">
+    <ol>
+      <li>Klicke <strong>+ Neuer Kunde</strong></li>
+      <li>Fülle die Daten aus (Name ist Pflicht, Rest optional)</li>
+      <li>Speichere mit <strong>Speichern</strong></li>
+    </ol>
+  </div>
+  
+  <h3>Kundenübersicht</h3>
+  <ul>
+    <li><strong>Suche:</strong> Filtere nach Name, Ort oder Telefon</li>
+    <li><strong>Bearbeiten:</strong> Stift-Symbol (✏️) neben dem Kunden</li>
+    <li><strong>Löschen:</strong> Mülleimer-Symbol (🗑️)</li>
+  </ul>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> Trage immer eine E-Mail-Adresse ein — diese wird für den E-Mail-Versand von Rechnungen und Angeboten benötigt.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="angebote">
+  <h2>5. Angebote</h2>
+  <p>Erstelle Angebote für deine Kunden und verfolge deren Status.</p>
+  
+  <h3>Angebot erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Klicke <strong>+ Neues Angebot</strong></li>
+      <li>Wähle den Kunden aus der Dropdown-Liste</li>
+      <li>Gib eine Bezeichnung ein (z.B. "Sanitärarbeiten Badezimmer")</li>
+      <li>Füge Positionen hinzu:
+        <ul>
+          <li>Beschreibung, Menge, Einheit, Einzelpreis</li>
+          <li>Das Programm berechnet den Gesamtbetrag automatisch</li>
+        </ul>
+      </li>
+      <li>Setze ein Gültigkeitsdatum (Standard: 30 Tage)</li>
+      <li>Speichere das Angebot</li>
+    </ol>
+  </div>
+  
+  <h3>Status</h3>
+  <table>
+    <tr><th>Status</th><th>Beschreibung</th></tr>
+    <tr><td><span style="color:var(--accent-yellow)">offen</span></td><td>Wartet auf Entscheidung des Kunden</td></tr>
+    <tr><td><span style="color:var(--accent)">akzeptiert</span></td><td>Kunde hat zugestimmt → Rechnung erstellen</td></tr>
+    <tr><td><span style="color:var(--accent-blue)">rechnung</span></td><td>Rechnung wurde erstellt</td></tr>
+  </table>
+  
+  <h3>Aktionen</h3>
+  <ul>
+    <li><strong>✅ Akzeptiert:</strong> Status auf "akzeptiert" setzen</li>
+    <li><strong>→ Rechnung:</strong> Rechnung aus Angebot erstellen (Positionen werden übernommen)</li>
+    <li><strong>📧 E-Mail:</strong> Angebot per E-Mail an Kunden senden</li>
+    <li><strong>📄 PDF:</strong> Angebot als PDF exportieren</li>
+  </ul>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> Nutze die Branchen-Schnittstellen (DATANORM, GAEB, BMEcat) um Leistungsverzeichnisse zu importieren.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="rechnungen">
+  <h2>6. Rechnungen</h2>
+  <p>Erstelle und verwalte Rechnungen für deine Kunden.</p>
+  
+  <h3>Rechnung erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Klicke <strong>+ Neue Rechnung</strong></li>
+      <li>Wähle den Kunden</li>
+      <li>Gib Titel und Positionen ein</li>
+      <li>Die Fälligkeit wird automatisch auf 30 Tage gesetzt</li>
+      <li>Speichere die Rechnung</li>
+    </ol>
+  </div>
+  
+  <h3>Rechnung aus Angebot</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Angebote</strong></li>
+      <li>Setze den Status auf <strong>✅ Akzeptiert</strong></li>
+      <li>Klicke <strong>→ Rechnung</strong></li>
+      <li>Die Rechnung wird automatisch mit allen Positionen erstellt</li>
+    </ol>
+  </div>
+  
+  <h3>Aktionen</h3>
+  <ul>
+    <li><strong>💰 Bezahlt:</strong> Rechnung als bezahlt markieren</li>
+    <li><strong>📧 E-Mail:</strong> Rechnung per E-Mail versenden</li>
+    <li><strong>📄 PDF:</strong> Rechnung als PDF exportieren</li>
+    <li><strong>🧾 E-Rechnung:</strong> ZUGFeRD-konforme E-Rechnung erstellen</li>
+  </ul>
+  
+  <h3>Nummernkreis</h3>
+  <p>Rechnungsnummern werden automatisch vergeben: <code>RE-100001</code>, <code>RE-100002</code>, usw.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="mahnungen">
+  <h2>7. Mahnungen</h2>
+  <p>Automatische Mahnungserstellung für überfällige Rechnungen.</p>
+  
+  <h3>Mahnung erstellen</h3>
+  <ul>
+    <li>Gehe zu <strong>Mahnungen</strong> in der Sidebar</li>
+    <li>Das System zeigt alle überfälligen Rechnungen</li>
+    <li>Erstelle Mahnungen mit Mahnstufe 1, 2 oder 3</li>
+    <li>Optional: Mahngebühr hinzufügen</li>
+  </ul>
+  
+  <h3>Aktionen</h3>
+  <ul>
+    <li><strong>✅ Bezahlt:</strong> Mahnung als bezahlt markieren</li>
+    <li><strong>📧 E-Mail:</strong> Mahnung per E-Mail versenden</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="eingangsrechnungen">
+  <h2>8. Eingangsrechnungen</h2>
+  <p>Erfasse Rechnungen die du von Lieferanten oder Dienstleistern erhalten hast.</p>
+  <div class="steps">
+    <ol>
+      <li>Klicke <strong>+ Neue Eingangsrechnung</strong></li>
+      <li>Wähle den Lieferanten (optional)</li>
+      <li>Gib Rechnungsnummer, Betrag und Fälligkeitsdatum ein</li>
+      <li>Speichere die Eingangsrechnung</li>
+    </ol>
+  </div>
+  <p>Eingangsrechnungen erscheinen in der Buchhaltung als Ausgaben.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="lieferanten">
+  <h2>9. Lieferanten</h2>
+  <p>Verwalte deine Lieferanten und deren Kontaktdaten.</p>
+  <ul>
+    <li>Name, Ansprechpartner, Adresse</li>
+    <li>Telefon, E-Mail</li>
+    <li>IBAN und USt-IdNr. für Rechnungsabwicklung</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="auftraege">
+  <h2>10. Aufträge</h2>
+  <p>Verwalte laufende Aufträge und Arbeitsaufträge.</p>
+  
+  <h3>Auftrag erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Klicke <strong>+ Neuer Auftrag</strong></li>
+      <li>Verknüpfe den Auftrag mit einem Kunden</li>
+      <li>Gib eine Bezeichnung ein (z.B. "Heizungsinstallation Mustermann")</li>
+      <li>Setze Status: Offen, In Arbeit, Erledigt</li>
+    </ol>
+  </div>
+  <p>Aufträge können mit Aufmaßen, Fotos und Unterschriften (Monteur-App) ergänzt werden.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="aufmasse">
+  <h2>11. Aufmaße</h2>
+  <p>Dokumentiere Arbeitsumfänge mit Messwerten und Fotos.</p>
+  <ul>
+    <li>Erstelle ein Aufmaß mit Titel und Kunde</li>
+    <li>Füge Positionen mit Menge, Einheit und Preis hinzu</li>
+    <li>Nutze die Kamera für Fotos vor Ort (Monteur-App)</li>
+    <li>Erstelle direkt ein Angebot oder eine Rechnung aus dem Aufmaß</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="artikel">
+  <h2>12. Artikel &amp; Lager</h2>
+  <p>Verwalte deinen Artikelstammdaten und Lagerbestand.</p>
+  
+  <h3>Artikel anlegen</h3>
+  <ul>
+    <li>Artikelnummer, Bezeichnung, Einheit</li>
+    <li>Einzelverkaufspreis und Einkaufspreis</li>
+    <li>Lagerbestand mit Mindestbestand-Warnung</li>
+  </ul>
+  
+  <h3>Lagerbewegungen</h3>
+  <ul>
+    <li>Zugang: Wareneingang erfassen</li>
+    <li>Abgang: Warenausgang bei Rechnung/Auftrag</li>
+    <li>Inventur: Bestände manuell prüfen und korrigieren</li>
+  </ul>
+  
+  <h3>Import/Export</h3>
+  <p>Artikel können per DATANORM, GAEB oder BMEcat importiert und exportiert werden.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="kasse">
+  <h2>13. Kassenbuch</h2>
+  <p>Erfasse Bareinnahmen und Barausgaben direkt.</p>
+  <ul>
+    <li>Barbuchung erfassen (Einnahme oder Ausgabe)</li>
+    <li>Belegfoto anhängen</li>
+    <li>Kategorisierung nach Kontenrahmen</li>
+    <li>Tagesübersicht und Summen</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="subunternehmer">
+  <h2>14. Subunternehmer</h2>
+  <p>Verwalte Subunternehmer und deren Stundensätze.</p>
+  <ul>
+    <li>Name, Kontaktdaten, IBAN</li>
+    <li>Stundensatz für Kalkulation</li>
+    <li>USt-IdNr. für korrekte Rechnungsstellung</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="termine">
+  <h2>15. Termine &amp; Kalender</h2>
+  <p>Verwalte Termine und erstelle Kalender-Exports.</p>
+  
+  <h3>Termin erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Termine</strong></li>
+      <li>Klicke <strong>+ Neuer Termin</strong></li>
+      <li>Gib Datum, Uhrzeit und Beschreibung ein</li>
+      <li>Optional: Verknüpfe mit Kunden</li>
+    </ol>
+  </div>
+  
+  <h3>ICS-Export</h3>
+  <p>Exportiere alle Termine als <code>.ics</code>-Datei für Google Calendar, Outlook oder Apple Calendar.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="aufgaben">
+  <h2>16. Aufgaben</h2>
+  <p>Erstelle und verwalte Aufgaben mit Prioritäten und Fristen.</p>
+  
+  <h3>Aufgabe erstellen</h3>
+  <ul>
+    <li>Titel und Beschreibung</li>
+    <li>Priorität: Niedrig, Normal, Hoch, Dringend</li>
+    <li>Fälligkeitsdatum</li>
+    <li>Status: Offen, In Arbeit, Erledigt</li>
+  </ul>
+  
+  <h3>Statistiken</h3>
+  <p>Das Dashboard zeigt die Aufgabenverteilung nach Priorität und Status.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="buchungen">
+  <h2>17. Einnahmen/Ausgaben</h2>
+  <p>Einfache Buchführung für Einnahmen und Ausgaben.</p>
+  
+  <h3>Buchung erfassen</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Buchungen</strong></li>
+      <li>Klicke <strong>+ Neue Buchung</strong></li>
+      <li>Wähle Datum, Betrag, Kategorie</li>
+      <li>Beschreibung hinzufügen</li>
+      <li>Speichern</li>
+    </ol>
+  </div>
+  
+  <p>Exportiere Buchungen als CSV für die Weiterverarbeitung in Excel oder DATEV.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="sollhaben">
+  <h2>18. Buchführung (Soll/Haben)</h2>
+  <p>Professionelle Buchführung mit SKR03-Kontenrahmen.</p>
+  
+  <h3>Buchungsschema</h3>
+  <p>Jede Buchung besteht aus einem Soll- und einem Haben-Eintrag. Das Programm stellt sicher, dass Soll immer gleich Haben ist.</p>
+  
+  <h3>Kontenrahmen (SKR03)</h3>
+  <p>Die wichtigsten Konten sind vordefiniert:</p>
+  <table>
+    <tr><th>Konto</th><th>Name</th><th>Art</th></tr>
+    <tr><td>1000</td><td>Bank</td><td>Bestandskonto</td></tr>
+    <tr><td>1200</td><td>Kasse</td><td>Bestandskonto</td></tr>
+    <tr><td>8400</td><td>Erlöse 19% USt</td><td>Erlöskonto</td></tr>
+    <tr><td>3800</td><td>USt-Erhaltene 19%</td><td>Passivkonto</td></tr>
+    <tr><td>4900</td><td>Bankgebühren</td><td>Aufwandskonto</td></tr>
+  </table>
+  
+  <h3>Buchung erfassen</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Doppelte Buchführung</strong></li>
+      <li>Klicke <strong>+ Neue Buchung</strong></li>
+      <li>Gib Datum und Betrag ein</li>
+      <li>Wähle Soll-Konto und Haben-Konto</li>
+      <li>Beschreibung hinzufügen</li>
+      <li>Speichern</li>
+    </ol>
+  </div>
+  
+  <h3>Kontenübersicht</h3>
+  <p>Die Übersicht zeigt Soll, Haben und Saldo pro Konto. Filtere nach Zeitraum für monatliche oder quartalsweise Auswertungen.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="ust">
+  <h2>19. USt-Voranmeldung</h2>
+  <p>Erstelle die Umsatzsteuer-Voranmeldung als XML-Datei für ELSTER.</p>
+  
+  <h3>Erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>USt-Voranmeldung</strong></li>
+      <li>Wähle den Zeitraum (Monat oder Quartal)</li>
+      <li>Das Programm berechnet automatisch:
+        <ul>
+          <li>Umsatzsteuer-Soll (19% und 7%)</li>
+          <li>Umsatzsteuer-Voranabzüge</li>
+          <li>Umsatzsteuer-Differenz</li>
+        </ul>
+      </li>
+      <li>Exportiere die XML-Datei für ELSTER</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="datev">
+  <h2>20. DATEV-Export</h2>
+  <p>Exportiere deine Buchungen im DATEV-Format für die Weiterverarbeitung mit DATEV-Software.</p>
+  
+  <h3>Exportieren</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>DATEV</strong></li>
+      <li>Wähle den Exportzeitraum</li>
+      <li>Klicke <strong>CSV exportieren</strong></li>
+      <li>Die Datei kann direkt in DATEV importiert werden</li>
+    </ol>
+  </div>
+  
+  <div class="info">
+    <strong>Hinweis:</strong> Der Export enthält alle Buchungen im DATEV-konformen Format mit Kontonummern, Beträgen und Belegdaten.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="ereg">
+  <h2>21. E-Rechnung (ZUGFeRD)</h2>
+  <p>Erstelle rechtsgültige E-Rechnungen im ZUGFeRD-Format.</p>
+  
+  <h3>E-Rechnung erstellen</h3>
+  <div class="steps">
+    <ol>
+      <li>Öffne eine bestehende Rechnung</li>
+      <li>Klicke <strong>🧾 E-Rechnung</strong></li>
+      <li>Die ZUGFeRD-XML wird automatisch in die PDF eingebettet</li>
+      <li>Speichere die Datei</li>
+    </ol>
+  </div>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> ZUGFeRD-E-Rechnungen sind in Deutschland ab 2025 Pflicht für bestimmte Branchen. Das Format kombiniert PDF und XML in einer Datei.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="branchen">
+  <h2>22. Branchen-Schnittstellen</h2>
+  <p>Importiere und exportiere Leistungsverzeichnisse in gängigen Handwerksformaten.</p>
+  
+  <h3>Verfügbare Formate</h3>
+  <table>
+    <tr><th>Format</th><th>Beschreibung</th><th>Import</th><th>Export</th></tr>
+    <tr><td><strong>DATANORM</strong></td><td>Standard für Heizung/sanitär</td><td>✅</td><td>✅</td></tr>
+    <tr><td><strong>GAEB 85</strong></td><td>Leistungsverzeichnis</td><td>✅</td><td>✅</td></tr>
+    <tr><td><strong>GAEB 90</strong></td><td>Angebotsformat</td><td>✅</td><td>✅</td></tr>
+    <tr><td><strong>BMEcat</strong></td><td>IDS-Connect / Katalogformat</td><td>✅</td><td>✅</td></tr>
+  </table>
+  
+  <h3>DATANORM importieren</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Branchen-Schnittstellen</strong></li>
+      <li>Klicke <strong>📥 DATANORM importieren</strong></li>
+      <li>Wähle die Datei aus</li>
+      <li>Artikel werden in die Artikelliste übernommen</li>
+    </ol>
+  </div>
+  
+  <h3>GAEB zu Angebot</h3>
+  <div class="steps">
+    <ol>
+      <li>Importiere eine GAEB-90 Datei</li>
+      <li>Klicke <strong>📋 Als Angebot übernehmen</strong></li>
+      <li>Ein neues Angebot wird mit allen Positionen erstellt</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="mail">
+  <h2>23. E-Mail-Versand</h2>
+  <p>Sende Rechnungen, Angebote und Mahnungen direkt per E-Mail an deine Kunden.</p>
+  
+  <h3>SMTP einrichten</h3>
+  <div class="steps">
+    <ol>
+      <li>Gehe zu <strong>Einstellungen → E-Mail / SMTP</strong></li>
+      <li>Trage deine SMTP-Daten ein:
+        <ul>
+          <li><strong>SMTP-Server:</strong> z.B. <code>smtp.gmx.de</code>, <code>smtp.web.de</code>, <code>smtp.strato.de</code></li>
+          <li><strong>Port:</strong> 587 (STARTTLS) oder 465 (SSL)</li>
+          <li><strong>Benutzername:</strong> Deine E-Mail-Adresse</li>
+          <li><strong>Passwort:</strong> Dein E-Mail-Passwort</li>
+          <li><strong>Absender:</strong> Name und E-Mail-Adresse</li>
+        </ul>
+      </li>
+      <li>Klicke <strong>Speichern</strong></li>
+      <li>Teste mit <strong>📧 Test-E-Mail senden</strong></li>
+    </ol>
+  </div>
+  
+  <h3>Beliebte SMTP-Server</h3>
+  <table>
+    <tr><th>Anbieter</th><th>SMTP-Server</th><th>Port</th></tr>
+    <tr><td>GMX</td><td>smtp.gmx.de</td><td>587</td></tr>
+    <tr><td>Web.de</td><td>smtp.web.de</td><td>587</td></tr>
+    <tr><td>Strato</td><td>smtp.strato.de</td><td>587</td></tr>
+    <tr><td>1&1</td><td>smtp.ionos.de</td><td>587</td></tr>
+    <tr><td>Gmail</td><td>smtp.gmail.com</td><td>587</td></tr>
+    <tr><td>Outlook</td><td>smtp.office365.com</td><td>587</td></tr>
+  </table>
+  
+  <h3>E-Mail senden</h3>
+  <p>Klicke auf das 📧-Symbol neben einer Rechnung, Angebot oder Mahnung. Die E-Mail wird mit folgendem Inhalt versendet:</p>
+  <ul>
+    <li><strong>Rechnung:</strong> Betreff "Rechnung RE-XXXXX", Text mit Betrag und Zahlungsziel</li>
+    <li><strong>Angebot:</strong> Betreff "Angebot AN-XXXXX", Text mit Betrag und Gültigkeit</li>
+    <li><strong>Mahnung:</strong> Betreff "Mahnung — Rechnung RE-XXXXX", freundlicher Zahlungserinnerung</li>
+  </ul>
+  
+  <div class="warning">
+    <strong>Wichtig:</strong> Der Kunde muss eine E-Mail-Adresse im Kundenstamm haben, sonst kann keine E-Mail gesendet werden.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="server">
+  <h2>24. Server-Verbindung</h2>
+  <p>Arbeite vernetzt: Büro, Home Office und Monteur-App teilen sich dieselben Daten.</p>
+  
+  <h3>Modi</h3>
+  <table>
+    <tr><th>Modus</th><th>Beschreibung</th></tr>
+    <tr><td><strong>Lokal</strong></td><td>Alles auf diesem PC, kein Server nötig</td></tr>
+    <tr><td><strong>Server</strong></td><td>Daten werden mit einem Server synchronisiert</td></tr>
+  </table>
+  
+  <h3>Server-Modus einrichten</h3>
+  <div class="steps">
+    <ol>
+      <li>Server-Software auf dem Server starten (z.B. VPS mit Node.js)</li>
+      <li>API-Key vom Server kopieren</li>
+      <li>In der App: <strong>Einstellungen → Server-Verbindung</strong></li>
+      <li>Modus auf <strong>Server</strong> stellen</li>
+      <li>Server-URL eingeben (z.B. <code>https://mein-server.de:8443</code>)</li>
+      <li>API-Key einfügen</li>
+      <li>Client-ID vergeben (z.B. "Büro-PC-01")</li>
+      <li>Mit <strong>🔍 Verbindung testen</strong> prüfen</li>
+      <li>Mit <strong>🔄 Daten synchronisieren</strong> erstmalig synchronisieren</li>
+    </ol>
+  </div>
+  
+  <h3>Automatische Synchronisation</h3>
+  <p>Im Server-Modus werden Daten automatisch alle 60 Sekunden synchronisiert. Manuell kannst du jederzeit:</p>
+  <ul>
+    <li><strong>⬆️ Lokal → Server:</strong> Lokale Änderungen hochladen</li>
+    <li><strong>⬇️ Server → Lokal:</strong> Server-Änderungen herunterladen</li>
+    <li><strong>🔄 Synchronisieren:</strong> Beides gleichzeitig</li>
+  </ul>
+  
+  <h3>Typische Netzwerk-Szenarien</h3>
+  <ul>
+    <li><strong>DynDNS + VPN:</strong> Server zu Hause, Zugriff von unterwegs</li>
+    <li><strong>VPS/Root-Server:</strong> Cloud-Lösung, kein eigener Server nötig</li>
+    <li><strong>Lokales Netzwerk:</strong> Server im Büro, alle PC's synchronisieren</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="einstellungen">
+  <h2>25. Einstellungen</h2>
+  
+  <h3>Firmendaten</h3>
+  <p>Name, Adresse, Telefon, E-Mail, USt-IdNr., IBAN, BIC — diese Daten erscheinen auf allen Dokumenten.</p>
+  
+  <h3>E-Mail / SMTP</h3>
+  <p>SMTP-Server für den E-Mail-Versand konfigurieren (siehe Abschnitt 23).</p>
+  
+  <h3>Server-Verbindung</h3>
+  <p>Server-Modus und Sync-Einstellungen (siehe Abschnitt 24).</p>
+  
+  <h3>Lizenz</h3>
+  <ul>
+    <li><strong>Status:</strong> Zeigt den Lizenzstatus (aktiv/inaktiv)</li>
+    <li><strong>Aktivierung:</strong> Lizenzschlüssel eingeben und aktivieren</li>
+    <li><strong>Hardware-ID:</strong> Wird für die Lizenzgenerierung benötigt</li>
+    <li><strong>Deaktivierung:</strong> Lizenz kann auf einen anderen PC übertragen werden</li>
+  </ul>
+  
+  <h3>Updates</h3>
+  <p>Automatische Update-Prüfung über GitHub. Bei Verfügbarkeit wird ein Download-Link angezeigt.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="tastatur">
+  <h2>26. Tastenkürzel</h2>
+  <table>
+    <tr><th>Taste</th><th>Aktion</th></tr>
+    <tr><td><code>Ctrl/⌘ + N</code></td><td>Neues Element (je nach Seite)</td></tr>
+    <tr><td><code>Ctrl/⌘ + S</code></td><td>Aktuelles Element speichern</td></tr>
+    <tr><td><code>Ctrl/⌘ + P</code></td><td>PDF exportieren</td></tr>
+    <tr><td><code>Ctrl/⌘ + E</code></td><td>E-Rechnung erstellen</td></tr>
+    <tr><td><code>Ctrl/⌘ + D</code></td><td>Dashboard</td></tr>
+    <tr><td><code>Ctrl/⌘ + ,</code></td><td>Einstellungen öffnen</td></tr>
+    <tr><td><code>Ctrl/⌘ + L</code></td><td>Seitenleiste ein/ausblenden</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="monteur">
+  <h2>27. Monteur-App (Android)</h2>
+  <p>Die begleitende App für Monteure im Feld. Erfasst Zeiten, Rapporte, Fotos und Unterschriften direkt beim Kunden.</p>
+  
+  <h3>Funktionen</h3>
+  <ul>
+    <li><strong>Zeiterfassung:</strong> Start/Stopp mit Pausenberechnung</li>
+    <li><strong>Rapporte:</strong> Tätigkeiten, Material, Fotos dokumentieren</li>
+    <li><strong>Unterschrift:</strong> Kundenunterschrift auf dem Handy</li>
+    <li><strong>Aufmaß:</strong> Messeingaben mit Foto</li>
+    <li><strong>Lieferschein:</strong> Lieferungen dokumentieren</li>
+    <li><strong>Inventur:</strong> NFC-basierte Lagerbestandsprüfung</li>
+  </ul>
+  
+  <h3>Installation</h3>
+  <p>Lade die <code>.apk</code>-Datei auf dein Android-Handy und installiere sie. In den Einstellungen die Server-URL und Client-ID eintragen.</p>
+  
+  <div class="info">
+    <strong>Hinweis:</strong> Die Monteur-App arbeitet offline und synchronisiert automatisch, sobald eine Verbindung besteht.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="hilfe">
+  <h2>28. Hilfe &amp; Support</h2>
+  
+  <h3>Häufige Fragen</h3>
+  
+  <p><strong>Wo werden die Daten gespeichert?</strong></p>
+  <p>Alle Daten werden lokal in einer SQLite-Datenbank gespeichert. Der Speicherort hängt vom Betriebssystem ab:</p>
+  <ul>
+    <li><strong>macOS:</strong> <code>~/Library/Application Support/Handwerker-Software/data/</code></li>
+    <li><strong>Windows:</strong> <code>%APPDATA%/Handwerker-Software/data/</code></li>
+  </ul>
+  
+  <p><strong>Kann ich die Daten sichern?</strong></p>
+  <p>Ja. Kopiere einfach die komplette <code>data/</code>-Ordner an einen sicheren Ort. Die Datenbank-Datei <code>handwerker.db</code> enthält alle Daten.</p>
+  
+  <p><strong>Was passiert bei einem PC-Wechsel?</strong></p>
+  <ol>
+    <li>Lizenz deaktivieren (Einstellungen → Lizenz → Deaktivieren)</li>
+    <li>App auf neuem PC installieren</li>
+    <li><code>data/</code>-Ordner vom alten PC kopieren</li>
+    <li>Lizenz auf neuem PC aktivieren</li>
+  </ol>
+  
+  <p><strong>Wie ändere ich das Passwort für die Lizenz?</strong></p>
+  <p>Die Lizenz ist an die Hardware gebunden. Bei PC-Wechsel muss die Lizenz deaktiviert und neu aktiviert werden.</p>
+
+  <h3>Support</h3>
+  <p>Technischer Support:</p>
+  <ul>
+    <li><strong>intrasaar media</strong></li>
+    <li>URL: <code>https://intrasaar.de</code></li>
+    <li>E-Mail: Über die Firmen-Homepage</li>
+  </ul>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> Bei Problemen hilft oft ein Neustart der App. Die Daten bleiben erhalten.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="automatisierung">
+  <h2>29. Automatisierung / Regeln</h2>
+  
+  <p>Erstelle eigene Regeln, um wiederkehrende Aufgaben zu automatisieren.</p>
+  
+  <h3>Neue Regel erstellen</h3>
+  <ol>
+    <li>Wechsle zu <strong>Automatisierung</strong> in der Sidebar</li>
+    <li>Klicke auf <strong>+ Neue Regel</strong></li>
+    <li>Gib einen Namen ein und wähle Typ, Bedingung und Aktion</li>
+    <li>Aktiviere die Regel mit dem Toggle</li>
+  </ol>
+  
+  <h3>Regel-Typen</h3>
+  <ul>
+    <li><strong>Termin-Erinnerung:</strong> Erinnert an Termine X Tage im Voraus</li>
+    <li><strong>Rechnungs-Fälligkeit:</strong> Erstellt Mahnung bei Überfälligkeit</li>
+    <li><strong>Status-Änderung:</strong> Automatischer Statuswechsel bei Bedingung</li>
+  </ul>
+  
+  <div class="tip">
+    <strong>Tipp:</strong> Regeln laufen im Hintergrund. Deaktivierte Regeln werden nicht ausgeführt.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="csv-import">
+  <h2>30. CSV-Import</h2>
+  
+  <p>Importiere Rechnungsdaten aus anderen Programmen per CSV-Datei.</p>
+  
+  <h3>Unterstützte Formate</h3>
+  <ul>
+    <li>Lexoffice</li>
+    <li>sevDesk</li>
+    <li>FastBill</li>
+    <li>Seatable</li>
+    <li>Und viele mehr…</li>
+  </ul>
+  
+  <h3>Import starten</h3>
+  <ol>
+    <li>Wechsle zu <strong>CSV-Import</strong> in der Sidebar</li>
+    <li>Klicke auf <strong>CSV-Datei auswählen</strong></li>
+    <li>Die Spalten werden automatisch erkannt</li>
+    <li>Das Import-Ergebnis wird angezeigt</li>
+  </ol>
+  
+  <h3>Erkannte Spalten</h3>
+  <ul>
+    <li>Rechnungsnr / Nummer / Nr.</li>
+    <li>Datum / Rechnungsdatum</li>
+    <li>Kunde / Kundenname / Firma</li>
+    <li>Betrag / Brutto / Gesamtbetrag</li>
+    <li>Netto / Nettobetrag</li>
+    <li>MwSt / USt / Steuer</li>
+    <li>Status</li>
+  </ul>
+  
+  <div class="info">
+    <strong>Hinweis:</strong> Bei Problemen mit dem Import überprüfe die Kodierung der CSV-Datei (UTF-8 empfohlen).
+  </div>
+</div>
+
+<div style="text-align:center; padding:40px 0; color:var(--text-light); font-size:12px; border-top:1px solid var(--border); margin-top:20px;">
+  IMHWS Bedienerhandbuch v2.2.0 &middot; © 2025 intrasaar.de
+</div>
+
+</div>
+</body>
+</html>

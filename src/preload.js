@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
   saveAngebot: (data) => ipcRenderer.invoke('save-angebot', data),
   deleteAngebot: (id) => ipcRenderer.invoke('delete-angebot', id),
   angebotAkzeptiert: (id) => ipcRenderer.invoke('angebot-akzeptiert', id),
+  angebotZuRechnung: (id) => ipcRenderer.invoke('angebot-zu-rechnung', id),
 
   // Rechnungen
   getRechnungen: () => ipcRenderer.invoke('get-rechnungen'),
@@ -71,6 +72,10 @@ contextBridge.exposeInMainWorld('api', {
   getMahnungen: () => ipcRenderer.invoke('get-mahnungen'),
   mahnungErstellen: (rechnungId) => ipcRenderer.invoke('mahnung-erstellen', rechnungId),
   mahnungBezahlen: (id) => ipcRenderer.invoke('mahnung-bezahlen', id),
+
+  // Gutschriften (Rechnungskorrekturen)
+  getGutschriften: (rechnungId) => ipcRenderer.invoke('get-gutschriften', rechnungId),
+  gutschriftErstellen: (data) => ipcRenderer.invoke('gutschrift-erstellen', data),
 
   // Kassenbuch
   getKasse: (filters) => ipcRenderer.invoke('get-kasse', filters),
@@ -159,6 +164,16 @@ contextBridge.exposeInMainWorld('api', {
   deleteBuchungSollHaben: (id) => ipcRenderer.invoke('delete-buchung-soll-haben', id),
   getKontenSaldo: (kontoNr) => ipcRenderer.invoke('get-konten-saldo', kontoNr),
   getKontenraeumeSumme: () => ipcRenderer.invoke('get-kontenraeume-summe'),
+
+  // E-Mail / SMTP
+  sendMail: (data) => ipcRenderer.invoke('send-mail', data),
+  saveSmtpConfig: (config) => ipcRenderer.invoke('save-smtp-config', config),
+
+  // Server-Sync
+  syncPush: () => ipcRenderer.invoke('sync-push'),
+  syncPull: () => ipcRenderer.invoke('sync-pull'),
+  syncFull: () => ipcRenderer.invoke('sync-full'),
+  getSyncStatus: () => ipcRenderer.invoke('get-sync-status'),
 
   // Navigation (Menu)
   onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
