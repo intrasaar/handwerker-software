@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IMHWS — Handwerker-Software | Rechnungen, Angebote, Buchhaltung</title>
+  <meta name="description" content="Die komplette Desktop-Software für Handwerker: Angebote, Rechnungen, Buchhaltung, Terminplanung, Warenwirtschaft und mehr. Made in Germany.">
+  <meta name="keywords" content="Handwerker Software, Rechnungsstellung, Angebot, Buchhaltung, Faktura, Kleinunternehmer, Handwerk">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a1d27;
+      --primary-light: #2a2e3a;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: #dbeafe;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --text-muted: #9ca3af;
+      --bg: #ffffff;
+      --bg-alt: #f9fafb;
+      --bg-dark: #111827;
+      --border: #e5e7eb;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ===== NAVIGATION ===== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: var(--shadow); }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 72px;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo {
+      width: 40px; height: 40px; background: var(--primary); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 18px;
+    }
+    .nav-brand-text { font-weight: 700; font-size: 18px; color: var(--text); }
+    .nav-brand-text span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a {
+      text-decoration: none; color: var(--text-light); font-size: 14px;
+      font-weight: 500; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta {
+      background: var(--accent); color: white !important; padding: 10px 20px;
+      border-radius: 8px; font-weight: 600 !important; transition: background 0.2s, transform 0.1s !important;
+    }
+    .nav-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .nav-mobile { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+    .nav-mobile span { display: block; width: 24px; height: 2px; background: var(--text); margin: 5px 0; transition: 0.3s; }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 140px 0 80px; text-align: center;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #dbeafe 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; border: 1px solid var(--border); border-radius: 100px;
+      padding: 6px 16px 6px 8px; font-size: 13px; font-weight: 500; color: var(--text-light);
+      margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    .hero-badge-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 64px); font-weight: 900; line-height: 1.1;
+      color: var(--primary); margin-bottom: 20px; letter-spacing: -0.02em;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px); color: var(--text-light);
+      max-width: 640px; margin: 0 auto 36px; line-height: 1.7;
+    }
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 10px; font-size: 16px;
+      font-weight: 600; text-decoration: none; transition: all 0.2s;
+      cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.5); }
+    .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg-alt); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .hero-stats {
+      display: flex; gap: 48px; justify-content: center; margin-top: 60px;
+      padding-top: 40px; border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .hero-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ===== APP PREVIEW ===== */
+    .preview {
+      padding: 0 0 100px; margin-top: -20px; position: relative; z-index: 2;
+    }
+    .preview-frame {
+      max-width: 1000px; margin: 0 auto; background: var(--primary);
+      border-radius: 16px; padding: 4px; box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0,0,0,0.1);
+    }
+    .preview-titlebar {
+      display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+      background: var(--primary-light); border-radius: 12px 12px 0 0;
+    }
+    .preview-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .preview-dot.r { background: #ef4444; }
+    .preview-dot.y { background: #f59e0b; }
+    .preview-dot.g { background: #10b981; }
+    .preview-content {
+      background: white; border-radius: 0 0 12px 12px; overflow: hidden;
+      aspect-ratio: 16/10; display: flex;
+    }
+    .preview-sidebar {
+      width: 200px; background: var(--primary); padding: 16px 0; flex-shrink: 0;
+    }
+    .preview-nav-item {
+      padding: 8px 20px; color: rgba(255,255,255,0.5); font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .preview-nav-item.active { color: white; background: rgba(255,255,255,0.1); border-right: 3px solid var(--accent); }
+    .preview-main { flex: 1; padding: 20px; }
+    .preview-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .preview-card {
+      background: var(--bg-alt); border-radius: 8px; padding: 14px;
+      border: 1px solid var(--border);
+    }
+    .preview-card-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .preview-card-value { font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+    .preview-card-change { font-size: 11px; color: var(--success); margin-top: 2px; }
+    .preview-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .preview-table th { text-align: left; padding: 8px 12px; background: var(--bg-alt); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .preview-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 600;
+    }
+    .preview-badge.offen { background: #fef3c7; color: #92400e; }
+    .preview-badge.bezahlt { background: #d1fae5; color: #065f46; }
+
+    /* ===== FEATURES ===== */
+    .features { padding: 100px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label {
+      display: inline-block; font-size: 13px; font-weight: 600;
+      color: var(--accent); text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; color: var(--primary); margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--text-light); max-width: 600px; margin: 0 auto; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 32px; transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); border-color: var(--accent); }
+    .feature-icon {
+      width: 56px; height: 56px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; margin-bottom: 20px;
+    }
+    .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+    .feature-card p { font-size: 14px; color: var(--text-light); line-height: 1.7; }
+    .feature-tag {
+      position: absolute; top: 16px; right: 16px; font-size: 11px;
+      font-weight: 600; padding: 3px 10px; border-radius: 100px;
+      background: var(--accent-light); color: var(--accent);
+    }
+
+    /* ===== DETAILS ===== */
+    .details { padding: 100px 0; background: var(--bg-alt); }
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .details-content h2 { font-size: 36px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
+    .details-content p { font-size: 16px; color: var(--text-light); margin-bottom: 24px; line-height: 1.8; }
+    .details-list { list-style: none; }
+    .details-list li {
+      display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+      font-size: 15px; color: var(--text);
+    }
+    .details-list li::before { content: '✓'; color: var(--success); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .details-visual {
+      background: white; border-radius: 16px; padding: 32px;
+      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+    }
+    .details-visual-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .details-visual-row:last-child { border: none; }
+    .details-visual-icon { font-size: 24px; flex-shrink: 0; }
+    .details-visual-text strong { display: block; font-size: 14px; color: var(--primary); }
+    .details-visual-text span { font-size: 13px; color: var(--text-muted); }
+
+    /* ===== PRICING ===== */
+    .pricing { padding: 100px 0; }
+    .pricing-card {
+      max-width: 520px; margin: 0 auto; background: white;
+      border: 2px solid var(--accent); border-radius: 20px;
+      padding: 48px; text-align: center; position: relative;
+      box-shadow: 0 20px 60px rgba(59,130,246,0.15);
+    }
+    .pricing-badge {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: white; padding: 6px 20px;
+      border-radius: 100px; font-size: 13px; font-weight: 600;
+    }
+    .pricing-card h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+    .pricing-card .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+    .pricing-amount { font-size: 56px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+    .pricing-amount span { font-size: 20px; font-weight: 500; color: var(--text-muted); }
+    .pricing-period { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+    .pricing-features { list-style: none; text-align: left; margin-bottom: 36px; }
+    .pricing-features li {
+      display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      font-size: 15px; color: var(--text); border-bottom: 1px solid var(--border);
+    }
+    .pricing-features li:last-child { border: none; }
+    .pricing-features li::before { content: '✓'; color: var(--success); font-weight: 700; }
+    .pricing-note { font-size: 13px; color: var(--text-muted); margin-top: 16px; }
+
+    /* ===== FAQ ===== */
+    .faq { padding: 100px 0; background: var(--bg-alt); }
+    .faq-list { max-width: 720px; margin: 0 auto; }
+    .faq-item {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.2s;
+    }
+    .faq-item:hover { box-shadow: var(--shadow); }
+    .faq-question {
+      width: 100%; padding: 20px 24px; background: none; border: none;
+      font-size: 16px; font-weight: 600; color: var(--primary); text-align: left;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      font-family: inherit;
+    }
+    .faq-question::after { content: '+'; font-size: 24px; color: var(--accent); transition: transform 0.3s; }
+    .faq-item.open .faq-question::after { transform: rotate(45deg); }
+    .faq-answer {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s;
+      font-size: 15px; color: var(--text-light); line-height: 1.7;
+    }
+    .faq-item.open .faq-answer { max-height: 300px; padding: 0 24px 20px; }
+
+    /* ===== CTA ===== */
+    .cta {
+      padding: 100px 0; text-align: center;
+      background: linear-gradient(135deg, var(--primary) 0%, #0f172a 100%);
+      color: white; position: relative; overflow: hidden;
+    }
+    .cta::before {
+      content: ''; position: absolute; top: -100px; right: -100px;
+      width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .cta h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 16px; }
+    .cta p { font-size: 18px; color: rgba(255,255,255,0.7); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .btn-cta { background: var(--accent); color: white; padding: 16px 36px; font-size: 18px; }
+    .btn-cta:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.4); }
+
+    /* ===== FOOTER ===== */
+    footer { padding: 60px 0 40px; background: var(--bg-dark); color: rgba(255,255,255,0.6); }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+    .footer-brand p { font-size: 14px; margin-top: 12px; line-height: 1.7; }
+    .footer-col h4 { color: white; font-size: 14px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .footer-col a { display: block; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 14px; padding: 4px 0; transition: color 0.2s; }
+    .footer-col a:hover { color: var(--accent); }
+    .footer-bottom {
+      padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; flex-wrap: wrap; gap: 12px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-mobile { display: block; }
+      .nav-links.open {
+        display: flex; flex-direction: column; position: absolute;
+        top: 72px; left: 0; right: 0; background: white;
+        padding: 24px; border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-lg); gap: 16px;
+      }
+      .hero-stats { flex-direction: column; gap: 24px; }
+      .preview-sidebar { display: none; }
+      .preview-cards { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: 1fr; gap: 40px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .fade-up {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <div class="nav-logo">H</div>
+        <div class="nav-brand-text">IMH<span>WS</span></div>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Funktionen</a>
+        <a href="#details">Mehr dazu</a>
+        <a href="#pricing">Preise</a>
+        <a href="#faq">FAQ</a>
+        <a href="#download" class="nav-cta">Download</a>
+      </div>
+      <button class="nav-mobile" id="navMobile" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Version 2.3.0 — Jetzt mit PDF-Vorschau & Briefkopf-Gestaltung
+      </div>
+      <h1>Die <span>Handwerker-Software</span><br>für dein ganzes Geschäft</h1>
+      <p>Angebote erstellen, Rechnungen versenden, Buchhaltung führen, Termine planen und Lager verwalten — alles in einer einzigen Desktop-App.</p>
+      <div class="hero-buttons">
+        <a href="#download" class="btn btn-primary">⬇ Kostenlos testen</a>
+        <a href="#features" class="btn btn-secondary">Alle Funktionen ansehen</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">30+</div>
+          <div class="hero-stat-label">Funktionen</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">100%</div>
+          <div class="hero-stat-label">Offline-fähig</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">Made in</div>
+          <div class="hero-stat-label">Germany</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Preview -->
+  <section class="preview">
+    <div class="container">
+      <div class="preview-frame fade-up">
+        <div class="preview-titlebar">
+          <div class="preview-dot r"></div>
+          <div class="preview-dot y"></div>
+          <div class="preview-dot g"></div>
+        </div>
+        <div class="preview-content">
+          <div class="preview-sidebar">
+            <div class="preview-nav-item active">📊 Dashboard</div>
+            <div class="preview-nav-item">👤 Kunden</div>
+            <div class="preview-nav-item">📋 Angebote</div>
+            <div class="preview-nav-item">🧾 Rechnungen</div>
+            <div class="preview-nav-item">💰 Einnahmen</div>
+            <div class="preview-nav-item">📅 Termine</div>
+            <div class="preview-nav-item">📦 Warenwirtschaft</div>
+            <div class="preview-nav-item">⚙️ Einstellungen</div>
+          </div>
+          <div class="preview-main">
+            <div class="preview-cards">
+              <div class="preview-card">
+                <div class="preview-card-label">Umsatz diesen Monat</div>
+                <div class="preview-card-value">12.480 €</div>
+                <div class="preview-card-change">↑ 18% zum Vormonat</div>
+              </div>
+              <div class="preview-card">
+                <div class="preview-card-label">Offene Rechnungen</div>
+                <div class="preview-card-value">3.250 €</div>
+                <div class="preview-card-change" style="color: var(--warning);">5 Rechnungen offen</div>
+              </div>
+              <div class="preview-card">
+                <div class="preview-card-label">Termine diese Woche</div>
+                <div class="preview-card-value">8</div>
+                <div class="preview-card-change">2 heute</div>
+              </div>
+            </div>
+            <table class="preview-table">
+              <thead>
+                <tr><th>Nr.</th><th>Kunde</th><th>Betrag</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>RE-48291</td><td>Müller GmbH</td><td>2.450,00 €</td><td><span class="preview-badge offen">Offen</span></td></tr>
+                <tr><td>RE-48285</td><td>Meister Bau</td><td>890,00 €</td><td><span class="preview-badge bezahlt">Bezahlt</span></td></tr>
+                <tr><td>RE-48280</td><td>Sanitär Peters</td><td>1.120,00 €</td><td><span class="preview-badge offen">Offen</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header fade-up">
+        <div class="section-label">Funktionen</div>
+        <h2 class="section-title">Alles was du brauchst —<br>nichts was du nicht brauchst</h2>
+        <p class="section-desc">Vom Angebot bis zur Buchführung — IMHWS begleitet dich durch den gesamten Geschäftsprozess.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #dbeafe;">📋</div>
+          <h3>Angebote erstellen</h3>
+          <p>Professionelle Angebote mit Positionen, Rabatten und PDF-Export. Per E-Mail direkt an den Kunden versenden.</p>
+          <div class="feature-tag">Kernfunktion</div>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #d1fae5;">🧾</div>
+          <h3>Rechnungen & Mahnungen</h3>
+          <p>Rechnungen mit Briefkopf erstellen, als PDF exportieren und versenden. Automatisiertes Mahnwesen mit Stufen.</p>
+          <div class="feature-tag">Kernfunktion</div>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #fef3c7;">📊</div>
+          <h3>Dashboard</h3>
+          <p>Umsatz, offene Rechnungen, Termine und Aufgaben — alles auf einen Blick in deinem persönlichen Dashboard.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #ede9fe;">📑</div>
+          <h3>Einfache & doppelte Buchführung</h3>
+          <p>Soll/Haben-Buchungen mit Kontenrahmen nach SKR03/04. USt-Voranmeldung und DATEV-Export inklusive.</p>
+          <div class="feature-tag">Buchhaltung</div>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #fce7f3;">📅</div>
+          <h3>Kalender & Termine</h3>
+          <p>Termine verwalten, Kunden zuweisen, ICS-Export für Google Calendar und Outlook. Nie wieder einen Termin vergessen.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #e0e7ff;">📦</div>
+          <h3>Warenwirtschaft</h3>
+          <p>Artikel verwalten, Lagerbestände tracken, Mindestbestand-Warnungen und automatische Bestellvorschläge.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #ccfbf1;">📄</div>
+          <h3>E-Rechnungen & ZUGFeRD</h3>
+          <p>E-Rechnungen im XRechnung-Format und ZUGFeRD-konforme PDFs für die EU-weite Rechnungsstellung.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #fef9c3;">🏦</div>
+          <h3>SEPA-Export</h3>
+          <p>SEPA-Überweisungen und Lastschriften als CSV exportieren — direkt importierbar in dein Banking.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #dbeafe;">🎨</div>
+          <h3>Briefkopf-Gestaltung</h3>
+          <p>Eigenes Logo, Firmenfarbe, Kopfzeile und Fußzeile — dein Corporate Design auf jedem Dokument.</p>
+          <div class="feature-tag">Neu</div>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #d1fae5;">📊</div>
+          <h3>Kassenbuch</h3>
+          <p>Bargeldbewegungen erfassen, Tagesabschlüsse machen und Kassensturz durchführen.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #ede9fe;">🔧</div>
+          <h3>Aufmaß & Unternehmer</h3>
+          <p>Aufmaße erfassen, Subunternehmer-Einsätze verwalten und Leistungen nachzeichnen.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #fce7f3;">🔄</div>
+          <h3>Automatisierung & Regeln</h3>
+          <p>Eigene Regeln erstellen, CSV-Import, DATANORM/BMEcat-Schnittstellen und GAEB-Import/Export.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Details -->
+  <section class="details" id="details">
+    <div class="container">
+      <div class="details-grid">
+        <div class="details-content fade-up">
+          <div class="section-label">Warum IMHWS?</div>
+          <h2>Für Handwerker gemacht,<br>nicht für Bürokraten</h2>
+          <p>IMHWS wurde spezilich für die Bedürfnisse von Handwerkern, Kleinunternehmen und Freiberuflern entwickelt. Kein over-engineered ERP-System, sondern genau das was du brauchst.</p>
+          <ul class="details-list">
+            <li>Desktop-App — deine Daten bleiben auf deinem Computer</li>
+            <li>Keine monatlichen Kosten, kein Abo, kein Abo-Falle</li>
+            <li>Funktioniert komplett offline — kein Internet nötig</li>
+            <li>SQLite-Datenbank — robust, schnell, portabel</li>
+            <li>Windows, macOS (Intel + Apple Silicon)</li>
+            <li>Export nach PDF, DATEV, CSV, ICS, SEPA, XRechnung</li>
+            <li>Import aus DATANORM, BMEcat, GAEB, CSV</li>
+            <li>Automatische Updates — immer aktuell</li>
+          </ul>
+        </div>
+        <div class="details-visual fade-up">
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🔒</div>
+            <div class="details-visual-text">
+              <strong>Deine Daten, dein Computer</strong>
+              <span>Keine Cloud-Zwang, kein Server-Setup nötig</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">⚡</div>
+            <div class="details-visual-text">
+              <strong>Blitzschnell</strong>
+              <span>SQLite — keine Wartezeiten, kein Internet nötig</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">💰</div>
+            <div class="details-visual-text">
+              <strong>Einmalzahlung</strong>
+              <span>Kein Abo, keine versteckten Kosten</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🇩🇪</div>
+            <div class="details-visual-text">
+              <strong>Made in Germany</strong>
+              <span>DSGVO-konform, deutsche Steuervorgaben</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🔄</div>
+            <div class="details-visual-text">
+              <strong>Kostenlose Updates</strong>
+              <span>Neue Funktionen und Verbesserungen inklusive</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🖥️</div>
+            <div class="details-visual-text">
+              <strong>Windows & macOS</strong>
+              <span>Intel und Apple Silicon unterstützt</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header fade-up">
+        <div class="section-label">Preise</div>
+        <h2 class="section-title">Einfach & fair</h2>
+        <p class="section-desc">Einmal zahlen, für immer nutzen. Kein Abo, keine Überraschungen.</p>
+      </div>
+      <div class="pricing-card fade-up">
+        <div class="pricing-badge">Empfohlen</div>
+        <h3>IMHWS Komplett</h3>
+        <div class="subtitle">Alle Funktionen, kein Abo</div>
+        <div class="pricing-amount">149 € <span>einmalig</span></div>
+        <div class="pricing-period">+ MwSt. — für immer dein</div>
+        <ul class="pricing-features">
+          <li>Alle 30+ Funktionen</li>
+          <li>Angebote, Rechnungen, Mahnungen</li>
+          <li>Einfache & doppelte Buchführung</li>
+          <li>Warenwirtschaft & Lagerverwaltung</li>
+          <li>PDF-Export mit eigenem Briefkopf</li>
+          <li>E-Rechnungen & ZUGFeRD</li>
+          <li>SEPA-Export & DATEV</li>
+          <li>Kostenlose Updates</li>
+          <li>Persönlicher Support</li>
+        </ul>
+        <a href="#download" class="btn btn-primary" style="width: 100%; justify-content: center;">Jetzt kaufen & downloaden</a>
+        <div class="pricing-note">Probezeit: 14 Tage kostenlos testen</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header fade-up">
+        <div class="section-label">Häufige Fragen</div>
+        <h2 class="section-title">Alles was du wissen musst</h2>
+      </div>
+      <div class="faq-list fade-up">
+        <div class="faq-item">
+          <button class="faq-question">Ist die Software auch für Mac nutzbar?</button>
+          <div class="faq-answer">Ja! IMHWS läuft auf Windows und macOS. Für macOS gibt es sowohl eine Version für Intel-Chips als auch für Apple Silicon (M1/M2/M3/M4).</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Brauche ich eine Internetverbindung?</button>
+          <div class="faq-answer">Nein. IMHWS läuft komplett offline. Deine Daten werden lokal auf deinem Computer gespeichert. Internet wird nur für den Download und E-Mail-Versand benötigt.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Kann ich meine bisherigen Daten importieren?</button>
+          <div class="faq-answer">Ja, du kannst Daten aus CSV-Dateien, DATANORM, BMEcat und GAEB importieren. Bei Bedarf helfen wir dir auch beim Umstieg aus anderen Programmen.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Was passiert nach der Kaufsicherung?</button>
+          <div class="faq-answer">Du erhältst eine Lizenz, die an deinen Computer gebunden ist. Alle zukünftigen Updates sind kostenlos inklusive. Bei einem Rechnerwechsel kannst du die Lizenz einmalig übertragen.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Gibt es eine Testversion?</button>
+          <div class="faq-answer">Ja, du kannst IMHWS 14 Tage lang komplett kostenlos und unverbindlich testen. Keine Kreditkarte nötig.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Unterstützt die Software E-Rechnungen?</button>
+          <div class="faq-answer">Ja, IMHWS unterstützt E-Rechnungen im XRechnung-Format sowie ZUGFeRD-konforme PDFs. Das ist ab 2025 für viele Unternehmen verpflichtend.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="download">
+    <div class="container">
+      <h2>Bereit loszulegen?</h2>
+      <p>Lade IMHWS jetzt kostenlos herunter und teste alle Funktionen 14 Tage lang ohne Verpflichtung.</p>
+      <div class="hero-buttons" style="justify-content: center;">
+        <a href="https://github.com/intrasaar/handwerker-software/releases/tag/v2.3.0" class="btn btn-cta" target="_blank">⬇ macOS herunterladen</a>
+        <a href="https://github.com/intrasaar/handwerker-software/releases/tag/v2.3.0" class="btn btn-secondary" style="color: white; border-color: rgba(255,255,255,0.2);" target="_blank">⬇ Windows herunterladen</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-brand" style="margin-bottom: 8px;">
+            <div class="nav-logo">H</div>
+            <div class="nav-brand-text" style="color: white;">IMH<span>WS</span></div>
+          </a>
+          <p>Die komplette Desktop-Software für Handwerker.<br>Entwickelt von intrasaar media.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Produkt</h4>
+          <a href="#features">Funktionen</a>
+          <a href="#pricing">Preise</a>
+          <a href="#download">Download</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="footer-col">
+          <h4>Unternehmen</h4>
+          <a href="https://intrasaar.de" target="_blank">intrasaar.de</a>
+          <a href="#">Impressum</a>
+          <a href="#">Datenschutz</a>
+        </div>
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="mailto:support@intrasaar.de">support@intrasaar.de</a>
+          <a href="https://github.com/intrasaar/handwerker-software" target="_blank">GitHub</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2025 intrasaar media. Alle Rechte vorbehalten.</span>
+        <span>Handwerker-Software v2.3.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // Mobile menu
+    const navMobile = document.getElementById('navMobile');
+    const navLinks = document.getElementById('navLinks');
+    navMobile.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+    });
+
+    // Close mobile menu on link click
+    navLinks.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const wasOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!wasOpen) item.classList.add('open');
+      });
+    });
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
