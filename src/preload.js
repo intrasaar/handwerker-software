@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('api', {
 
   // PDF
   exportPdf: (data) => ipcRenderer.invoke('export-pdf', data),
+  previewPdf: (data) => ipcRenderer.invoke('preview-pdf', data),
+  printPdf: (data) => ipcRenderer.invoke('print-pdf', data),
 
   // Buchungen (Einnahmen/Ausgaben)
   getBuchungen: (filters) => ipcRenderer.invoke('get-buchungen', filters),

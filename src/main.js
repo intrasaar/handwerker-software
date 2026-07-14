@@ -730,22 +730,31 @@ ipcMain.handle('rechnung-bezahlt', (event, id) => {
 });
 
 ipcMain.handle('angebot-zu-rechnung', (event, angebotId) => {
-  const angebot = db.prepare('SELECT * FROM angebote WHERE id = ?').get(angebotId);
-  if (!angebot) return null;
+  try {
+    const angebot = db.prepare('SELECT * FROM angebote WHERE id = ?').get(angebotId);
+    if (!angebot) {
+      console.error('angebot-zu-rechnung: Angebot nicht gefunden, id=', angebotId);
+      return null;
+    }
 
-  const nummer = 'RE-' + String(Date.now()).slice(-6);
-  const result = db.prepare('INSERT INTO rechnungen (nummer, kunden_id, titel, beschreibung, betrag_netto, mwst_satz, betrag_brutto, status, faellig_am) VALUES (?, ?, ?, ?, ?, ?, ?, ?, date("now", "+30 days"))')
-    .run(nummer, angebot.kunden_id, angebot.titel, angebot.beschreibung, angebot.betrag_netto, angebot.mwst_satz, angebot.betrag_brutto, 'offen');
-  const rechnungId = result.lastInsertRowid;
+    const nummer = 'RE-' + String(Date.now()).slice(-6);
+    const faelligAm = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const result = db.prepare('INSERT INTO rechnungen (nummer, kunden_id, titel, beschreibung, betrag_netto, mwst_satz, betrag_brutto, status, faellig_am) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(nummer, angebot.kunden_id, angebot.titel, angebot.beschreibung, angebot.betrag_netto, angebot.mwst_satz, angebot.betrag_brutto, 'offen', faelligAm);
+    const rechnungId = result.lastInsertRowid;
 
-  const positionen = db.prepare('SELECT * FROM angebote_positionen WHERE angebote_id = ?').all(angebotId);
-  const insert = db.prepare('INSERT INTO rechnungen_positionen (rechnungen_id, position, beschreibung, menge, einheit, einzelpreis, gesamt) VALUES (?, ?, ?, ?, ?, ?, ?)');
-  for (const pos of positionen) {
-    insert.run(rechnungId, pos.position, pos.beschreibung, pos.menge, pos.einheit, pos.einzelpreis, pos.gesamt);
+    const positionen = db.prepare('SELECT * FROM angebote_positionen WHERE angebote_id = ?').all(angebotId);
+    const insert = db.prepare('INSERT INTO rechnungen_positionen (rechnungen_id, position, beschreibung, menge, einheit, einzelpreis, gesamt) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    for (const pos of positionen) {
+      insert.run(rechnungId, pos.position, pos.beschreibung, pos.menge, pos.einheit, pos.einzelpreis, pos.gesamt);
+    }
+
+    db.prepare("UPDATE angebote SET status = 'rechnung' WHERE id = ?").run(angebotId);
+    return rechnungId;
+  } catch (err) {
+    console.error('angebot-zu-rechnung Fehler:', err.message);
+    return null;
   }
-
-  db.prepare("UPDATE angebote SET status = 'rechnung' WHERE id = ?").run(angebotId);
-  return rechnungId;
 });
 
 // ============ Termine ============
@@ -808,8 +817,9 @@ function drawBriefkopf(doc, inst, y) {
   if (inst.briefkopf_logo) {
     try {
       const logoBuf = Buffer.from(inst.briefkopf_logo.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-      doc.image(logoBuf, left, y, { width: 120, height: 60, fit: [120, 60] });
-      y += 68;
+      const logoWidth = right - left;
+      doc.image(logoBuf, left, y, { width: logoWidth, fit: [logoWidth, 80] });
+      y += 88;
     } catch (e) { /* Logo-Laden fehlgeschlagen */ }
   }
 
@@ -852,39 +862,42 @@ function drawBriefkopf(doc, inst, y) {
 function drawBrieffuss(doc, inst) {
   const left = 50;
   const right = doc.page.width - 50;
-  const y = doc.page.height - 60;
+  const fussY = doc.page.height - 90;
 
-  doc.fontSize(7).fillColor('#888');
-  doc.moveTo(left, y).lineTo(right, y).lineWidth(0.5).strokeColor('#ccc').stroke();
+  doc.fontSize(7).fillColor('#aaa');
+  doc.moveTo(left, fussY).lineTo(right, fussY).lineWidth(0.5).strokeColor('#ddd').stroke();
 
   const fussParts = [];
   if (inst.firma) fussParts.push(inst.firma);
   if (inst.anschrift) fussParts.push(inst.anschrift);
   if (inst.plz_ort) fussParts.push(inst.plz_ort);
-  doc.text(fussParts.join(' · '), left, y + 4, { width: right - left, align: 'center' });
+  if (fussParts.length) {
+    const text = fussParts.join(' · ');
+    const tw = doc.widthOfString(text);
+    doc.text(text, (left + right) / 2 - tw / 2, fussY + 6, { lineBreak: false, continued: false });
+  }
 
   const kontoParts = [];
   if (inst.iban) kontoParts.push(`IBAN: ${inst.iban}`);
   if (inst.bic) kontoParts.push(`BIC: ${inst.bic}`);
-  if (kontoParts.length) doc.text(kontoParts.join(' | '), left, y + 14, { width: right - left, align: 'center' });
+  if (kontoParts.length) {
+    const text = kontoParts.join(' | ');
+    const tw = doc.widthOfString(text);
+    doc.text(text, (left + right) / 2 - tw / 2, fussY + 16, { lineBreak: false, continued: false });
+  }
 
   if (inst.briefkopf_fusszeile) {
-    doc.text(inst.briefkopf_fusszeile, left, y + 24, { width: right - left, align: 'center' });
+    const text = inst.briefkopf_fusszeile;
+    const tw = doc.widthOfString(text);
+    doc.text(text, (left + right) / 2 - tw / 2, fussY + 26, { lineBreak: false, continued: false });
   }
 }
 
-ipcMain.handle('export-pdf', async (event, data) => {
-  const { filePath } = await dialog.showSaveDialog(mainWindow, {
-    title: 'PDF speichern',
-    defaultPath: `${data.nummer}.pdf`,
-    filters: [{ name: 'PDF', extensions: ['pdf'] }]
-  });
-  if (!filePath) return false;
-
+function generatePdfBuffer(data) {
   const PDFDocument = require('pdfkit');
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
-  const stream = fs.createWriteStream(filePath);
-  doc.pipe(stream);
+  const chunks = [];
+  doc.on('data', chunk => chunks.push(chunk));
 
   let inst;
   try {
@@ -1000,8 +1013,49 @@ ipcMain.handle('export-pdf', async (event, data) => {
   // Fußzeile
   drawBrieffuss(doc, inst);
 
-  doc.end();
-  return new Promise(resolve => stream.on('finish', () => resolve(true)));
+  return new Promise(resolve => {
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.end();
+  });
+}
+
+ipcMain.handle('export-pdf', async (event, data) => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'PDF speichern',
+    defaultPath: `${data.nummer}.pdf`,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }]
+  });
+  if (!filePath) return false;
+
+  const buffer = await generatePdfBuffer(data);
+  fs.writeFileSync(filePath, buffer);
+  return true;
+});
+
+ipcMain.handle('preview-pdf', async (event, data) => {
+  try {
+    const buffer = await generatePdfBuffer(data);
+    const tmpPath = path.join(os.tmpdir(), `${data.nummer || 'vorschau'}.pdf`);
+    fs.writeFileSync(tmpPath, buffer);
+    shell.openPath(tmpPath);
+    return true;
+  } catch (err) {
+    console.error('preview-pdf Fehler:', err.message);
+    return false;
+  }
+});
+
+ipcMain.handle('print-pdf', async (event, data) => {
+  try {
+    const buffer = await generatePdfBuffer(data);
+    const tmpPath = path.join(os.tmpdir(), `${data.nummer || 'druck'}.pdf`);
+    fs.writeFileSync(tmpPath, buffer);
+    shell.openPath(tmpPath);
+    return true;
+  } catch (err) {
+    console.error('print-pdf Fehler:', err.message);
+    return false;
+  }
 });
 
 // ============ Einstellungen ============

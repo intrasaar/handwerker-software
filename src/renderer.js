@@ -303,10 +303,17 @@ async function angebotAkzeptiert(id) {
 }
 
 async function angebotZuRechnung(id) {
-  const rechnungId = await api.angebotZuRechnung(id);
-  if (rechnungId) {
-    alert('Rechnung erstellt!');
-    navigateTo('rechnungen');
+  try {
+    const rechnungId = await api.angebotZuRechnung(id);
+    if (rechnungId) {
+      alert('Rechnung erstellt! Nummer: RE-' + String(Date.now()).slice(-6));
+      navigateTo('rechnungen');
+    } else {
+      alert('Fehler: Angebot nicht gefunden oder bereits umgewandelt.');
+    }
+  } catch (e) {
+    console.error('angebotZuRechnung Fehler:', e);
+    alert('Fehler beim Erstellen der Rechnung: ' + e.message);
   }
 }
 
@@ -374,14 +381,16 @@ async function viewAngebot(id) {
   `;
   document.getElementById('modal-footer').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
-    <button class="btn btn-primary" onclick="closeModal(); exportAngebotPdf(${a.id})">📄 PDF Export</button>
+    ${a.status === 'akzeptiert' ? `<button class="btn btn-primary" onclick="closeModal(); angebotZuRechnung(${a.id})">→ Rechnung</button>` : ''}
+    <button class="btn btn-secondary" onclick="closeModal(); previewAngebotPdf(${a.id})">👁 Vorschau</button>
+    <button class="btn btn-secondary" onclick="closeModal(); printAngebotPdf(${a.id})">🖨 Drucken</button>
+    <button class="btn btn-primary" onclick="closeModal(); exportAngebotPdf(${a.id})">💾 PDF Speichern</button>
   `;
   openModal();
 }
 
-async function exportAngebotPdf(id) {
-  const a = await api.getAngebot(id);
-  await api.exportPdf({
+function getAngebotPdfData(a) {
+  return {
     nummer: a.nummer,
     titel: `Angebot ${a.nummer}`,
     untertitel: a.titel,
@@ -394,7 +403,22 @@ async function exportAngebotPdf(id) {
     betrag_netto: a.betrag_netto,
     mwst_satz: a.mwst_satz,
     betrag_brutto: a.betrag_brutto
-  });
+  };
+}
+
+async function exportAngebotPdf(id) {
+  const a = await api.getAngebot(id);
+  await api.exportPdf(getAngebotPdfData(a));
+}
+
+async function previewAngebotPdf(id) {
+  const a = await api.getAngebot(id);
+  await api.previewPdf(getAngebotPdfData(a));
+}
+
+async function printAngebotPdf(id) {
+  const a = await api.getAngebot(id);
+  await api.printPdf(getAngebotPdfData(a));
 }
 
 // ============ Rechnungen ============
@@ -614,7 +638,9 @@ async function viewRechnung(id) {
     <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
     ${r.status === 'offen' ? `<button class="btn btn-secondary" onclick="closeModal(); showGutschriftForm(${r.id})" style="color:#f59e0b;">📉 Gutschrift</button>` : ''}
     ${r.status === 'offen' ? `<button class="btn btn-secondary" onclick="erstelleMahnung(${r.id})" style="color:#dc3545;">⚠️ Mahnung</button>` : ''}
-    <button class="btn btn-primary" onclick="closeModal(); exportRechnungPdf(${r.id})">📄 PDF Export</button>
+    <button class="btn btn-secondary" onclick="closeModal(); previewRechnungPdf(${r.id})">👁 Vorschau</button>
+    <button class="btn btn-secondary" onclick="closeModal(); printRechnungPdf(${r.id})">🖨 Drucken</button>
+    <button class="btn btn-primary" onclick="closeModal(); exportRechnungPdf(${r.id})">💾 PDF Speichern</button>
     <button class="btn btn-primary" onclick="exportERechnung(${r.id})" style="background:var(--accent-orange);">⚡ E-Rechnung</button>
   `;
   openModal();
@@ -665,9 +691,8 @@ async function erstelleMahnung(rechnungId) {
   }
 }
 
-async function exportRechnungPdf(id) {
-  const r = await api.getRechnung(id);
-  await api.exportPdf({
+function getRechnungPdfData(r) {
+  return {
     nummer: r.nummer,
     titel: `Rechnung ${r.nummer}`,
     untertitel: r.titel,
@@ -682,7 +707,22 @@ async function exportRechnungPdf(id) {
     betrag_netto: r.betrag_netto,
     mwst_satz: r.mwst_satz,
     betrag_brutto: r.betrag_brutto
-  });
+  };
+}
+
+async function exportRechnungPdf(id) {
+  const r = await api.getRechnung(id);
+  await api.exportPdf(getRechnungPdfData(r));
+}
+
+async function previewRechnungPdf(id) {
+  const r = await api.getRechnung(id);
+  await api.previewPdf(getRechnungPdfData(r));
+}
+
+async function printRechnungPdf(id) {
+  const r = await api.getRechnung(id);
+  await api.printPdf(getRechnungPdfData(r));
 }
 
 // ============ Termine / Kalender ============
@@ -1728,7 +1768,9 @@ async function loadMahnungen() {
       <td>
         ${m.status !== 'bezahlt' ? `<button class="btn btn-success btn-small" onclick="mahnungBezahlt(${m.id})">✅ Bezahlt</button>` : ''}
         ${m.status !== 'bezahlt' ? `<button class="btn btn-primary btn-small" onclick="sendeMahnungPerMail(${m.rechnung_id})">📧</button>` : ''}
-        <button class="btn btn-secondary btn-small" onclick="exportMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">📄</button>
+        <button class="btn btn-secondary btn-small" onclick="previewMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">👁</button>
+        <button class="btn btn-secondary btn-small" onclick="printMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">🖨</button>
+        <button class="btn btn-secondary btn-small" onclick="exportMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">💾</button>
       </td>
     </tr>
   `).join('');
@@ -1736,10 +1778,8 @@ async function loadMahnungen() {
 
 async function mahnungBezahlt(id) { await api.mahnungBezahlen(id); loadMahnungen(); }
 
-async function exportMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) {
-  const r = await api.getRechnung(rechnungId);
-  if (!r) return;
-  await api.exportPdf({
+function getMahnungPdfData(r, stufe, betrag, gebuehr, faelligBis) {
+  return {
     nummer: r.nummer,
     titel: `Mahnung Stufe ${stufe}`,
     untertitel: `Mahnung für Rechnung ${r.nummer}`,
@@ -1754,7 +1794,25 @@ async function exportMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) 
     betrag_netto: betrag / 1.19,
     mwst_satz: r.mwst_satz,
     betrag_brutto: betrag + gebuehr
-  });
+  };
+}
+
+async function exportMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) {
+  const r = await api.getRechnung(rechnungId);
+  if (!r) return;
+  await api.exportPdf(getMahnungPdfData(r, stufe, betrag, gebuehr, faelligBis));
+}
+
+async function previewMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) {
+  const r = await api.getRechnung(rechnungId);
+  if (!r) return;
+  await api.previewPdf(getMahnungPdfData(r, stufe, betrag, gebuehr, faelligBis));
+}
+
+async function printMahnungPdf(rechnungId, stufe, betrag, gebuehr, faelligBis) {
+  const r = await api.getRechnung(rechnungId);
+  if (!r) return;
+  await api.printPdf(getMahnungPdfData(r, stufe, betrag, gebuehr, faelligBis));
 }
 
 // ============ Aufmaß ============
