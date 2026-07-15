@@ -512,7 +512,7 @@ function createMenu() {
       submenu: [
         {
           label: `${APP_NAME} Hilfe`,
-          click: () => shell.openExternal('https://intrasaar.de/hilfe')
+          click: () => shell.openExternal('https://software.intrasaar.de/IMHWS/docs/bedienerhandbuch.html')
         },
         { type: 'separator' },
         {
