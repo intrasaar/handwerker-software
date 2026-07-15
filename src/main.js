@@ -7,7 +7,7 @@ const os = require('os');
 const nodemailer = require('nodemailer');
 const { spawn, execSync } = require('child_process');
 
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 const APP_NAME = 'Handwerker-Software';
 
 function xmlEsc(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
