@@ -512,7 +512,7 @@ function createMenu() {
       submenu: [
         {
           label: `${APP_NAME} Hilfe`,
-          click: () => shell.openExternal('https://handwerker-software.de/hilfe')
+          click: () => shell.openExternal('https://intrasaar.de/hilfe')
         },
         { type: 'separator' },
         {
