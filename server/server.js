@@ -841,6 +841,10 @@ httpServer.on('error', (err) => {
   console.error(`HTTP-Server Fehler auf Port ${HTTP_PORT}:`, err.message);
 });
 
+server.on('error', (err) => {
+  console.error(`HTTPS-Server Fehler auf Port ${PORT}:`, err.message);
+});
+
 httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
   httpReady = true;
   console.log(`HTTP-Server aktiv auf Port ${HTTP_PORT}`);
@@ -853,5 +857,13 @@ server.listen(PORT, '0.0.0.0', () => {
   printBanner();
 });
 
+app.use((err, req, res, next) => {
+  console.error('Unbehandelter Fehler:', err.message);
+  res.status(500).json({ error: 'Interner Serverfehler', detail: err.message });
+});
+
 process.on('SIGINT', () => { db.close(); process.exit(0); });
 process.on('SIGTERM', () => { db.close(); process.exit(0); });
+process.on('uncaughtException', (err) => {
+  console.error('Unbehandelte Ausnahme:', err.message);
+});

@@ -2182,6 +2182,7 @@ ipcMain.handle('save-aufgabe', (event, data) => {
 
 ipcMain.handle('delete-aufgabe', (event, id) => {
   db.prepare('DELETE FROM aufgaben WHERE id = ?').run(id);
+  return true;
 });
 
 ipcMain.handle('get-aufgaben-statistik', () => {
@@ -2325,6 +2326,7 @@ ipcMain.handle('save-buchung-soll-haben', (event, data) => {
 
 ipcMain.handle('delete-buchung-soll-haben', (event, id) => {
   db.prepare('DELETE FROM konto_bewegungen WHERE id = ?').run(id);
+  return true;
 });
 
 ipcMain.handle('get-konten-saldo', (event, kontoNr) => {
@@ -2543,6 +2545,9 @@ const SERVER_HTTP_PORT = 8080;
 const SERVER_HTTPS_PORT = 8443;
 
 function getServerDir() {
+  if (app.isPackaged) {
+    return path.join(path.dirname(app.getPath('exe')), 'resources', 'app.asar.unpacked', 'server');
+  }
   return path.join(app.getAppPath(), 'server');
 }
 
@@ -2581,7 +2586,8 @@ function startServer() {
     env: {
       ...process.env,
       PORT: SERVER_HTTPS_PORT,
-      HTTP_PORT: SERVER_HTTPS_PORT,
+      HTTP_PORT: SERVER_HTTP_PORT,
+      API_KEY: 'imhws-integriert-lokal',
       DATA_DIR: path.join(dataDir, 'server-data')
     }
   });

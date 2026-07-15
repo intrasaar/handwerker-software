@@ -21,6 +21,9 @@
       "src/**/*",
       "server/**/*"
     ],
+    "asarUnpack": [
+      "server/**/*"
+    ],
     "mac": {
       "category": "public.app-category.business",
       "target": [
