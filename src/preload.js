@@ -177,6 +177,12 @@ contextBridge.exposeInMainWorld('api', {
   syncFull: () => ipcRenderer.invoke('sync-full'),
   getSyncStatus: () => ipcRenderer.invoke('get-sync-status'),
 
+  // Integrierter Server
+  startServer: () => ipcRenderer.invoke('start-server'),
+  stopServer: () => ipcRenderer.invoke('stop-server'),
+  getServerLog: () => ipcRenderer.invoke('get-server-log'),
+  onServerLog: (callback) => ipcRenderer.on('server-log', (event, msg) => callback(msg)),
+
   // Navigation (Menu)
   onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
   onShowLicense: (callback) => ipcRenderer.on('show-license', () => callback()),

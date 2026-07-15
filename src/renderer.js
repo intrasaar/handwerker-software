@@ -1612,6 +1612,22 @@ document.getElementById('license-key-input').addEventListener('keydown', (e) => 
   if (e.key === 'Enter') document.getElementById('btn-activate').click();
 });
 
+// Hardware-ID kopieren
+document.getElementById('btn-copy-fp').addEventListener('click', async () => {
+  const fp = document.getElementById('fingerprint-display').textContent;
+  try {
+    await navigator.clipboard.writeText(fp);
+    document.getElementById('btn-copy-fp').textContent = 'Kopiert!';
+    setTimeout(() => { document.getElementById('btn-copy-fp').textContent = 'Kopieren'; }, 2000);
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(document.getElementById('fingerprint-display'));
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+});
+
 // ============ Menu-Navigation ============
 if (api.onNavigate) {
   api.onNavigate((page) => navigateTo(page));
@@ -2153,18 +2169,54 @@ async function saveServerEinstellungen() {
   const serverUrl = document.getElementById('set-server-url').value;
   const serverKey = document.getElementById('set-server-key').value;
   const clientId = document.getElementById('set-client-id').value;
+  
+  // In einstellungen.json speichern (damit main.js es liest)
+  const current = await api.getEinstellungen();
+  current.modus = modus;
+  current.server_url = serverUrl;
+  current.server_key = serverKey;
+  current.client_id = clientId;
+  await api.saveEinstellungen(current);
+  
+  // Fuer Kompatibilitaet auch in localStorage
   localStorage.setItem('hw-modus', modus);
   localStorage.setItem('hw-server-url', serverUrl);
   localStorage.setItem('hw-server-key', serverKey);
   localStorage.setItem('hw-client-id', clientId);
-  showServerStatus('Einstellungen gespeichert.', 'success');
+
+  if (modus === 'server' && !serverUrl) {
+    document.getElementById('set-server-url').value = 'http://localhost:8080';
+    current.server_url = 'http://localhost:8080';
+    await api.saveEinstellungen(current);
+  }
+
+  if (modus === 'server') {
+    showServerStatus('Server wird gestartet...', 'pending');
+    const result = await api.startServer();
+    if (result.success) {
+      showServerStatus('Server gestartet! Verbinde zu http://localhost:8080', 'success');
+    } else {
+      showServerStatus('Server-Start fehlgeschlagen: ' + (result.error || 'Unbekannt'), 'error');
+    }
+  } else {
+    showServerStatus('Einstellungen gespeichert.', 'success');
+  }
 }
 
-function loadServerEinstellungen() {
-  document.getElementById('set-modus').value = localStorage.getItem('hw-modus') || 'lokal';
-  document.getElementById('set-server-url').value = localStorage.getItem('hw-server-url') || '';
-  document.getElementById('set-server-key').value = localStorage.getItem('hw-server-key') || '';
-  document.getElementById('set-client-id').value = localStorage.getItem('hw-client-id') || '';
+async function loadServerEinstellungen() {
+  try {
+    const s = await api.getEinstellungen();
+    document.getElementById('set-modus').value = s.modus || 'lokal';
+    document.getElementById('set-server-url').value = s.server_url || '';
+    document.getElementById('set-server-key').value = s.server_key || '';
+    document.getElementById('set-client-id').value = s.client_id || '';
+  } catch(e) {
+    // Fallback auf localStorage
+    document.getElementById('set-modus').value = localStorage.getItem('hw-modus') || 'lokal';
+    document.getElementById('set-server-url').value = localStorage.getItem('hw-server-url') || '';
+    document.getElementById('set-server-key').value = localStorage.getItem('hw-server-key') || '';
+    document.getElementById('set-client-id').value = localStorage.getItem('hw-client-id') || '';
+  }
 }
 
 async function testServerVerbindung() {

@@ -802,22 +802,7 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 }
 
 const connectedClients = new Set();
-
-server.listen(PORT, '0.0.0.0', () => {
-  const localIP = getLocalIP();
-  console.log('');
-  console.log('═══════════════════════════════════════════════');
-  console.log('  Handwerker-Software Server v1.0.0');
-  console.log('═══════════════════════════════════════════════');
-  console.log(`  Status:     https://localhost:${PORT}/api/health`);
-  console.log(`  Netzwerk:   https://${localIP}:${PORT}/api/health`);
-  console.log(`  API-Key:    ${API_KEY}`);
-  console.log(`  Datenbank:  ${dbPath}`);
-  console.log('═══════════════════════════════════════════════');
-  console.log('');
-  console.log('API-Key in der App unter Einstellungen > Server eintragen.');
-  console.log('');
-});
+const HTTP_PORT = process.env.HTTP_PORT || 8080;
 
 function getLocalIP() {
   const os = require('os');
@@ -831,6 +816,42 @@ function getLocalIP() {
   }
   return '127.0.0.1';
 }
+
+const localIP = getLocalIP();
+const httpServer = http.createServer(app);
+
+let httpsReady = false;
+let httpReady = false;
+
+function printBanner() {
+  if (!httpsReady || !httpReady) return;
+  console.log('');
+  console.log('═══════════════════════════════════════════════');
+  console.log('  Handwerker-Software Server v1.0.0');
+  console.log('═══════════════════════════════════════════════');
+  console.log(`  HTTPS:      https://localhost:${PORT}/api/health`);
+  console.log(`  HTTP:       http://${localIP}:${HTTP_PORT}/api/health`);
+  console.log(`  API-Key:    ${API_KEY}`);
+  console.log(`  Datenbank:  ${dbPath}`);
+  console.log('═══════════════════════════════════════════════');
+  console.log('');
+}
+
+httpServer.on('error', (err) => {
+  console.error(`HTTP-Server Fehler auf Port ${HTTP_PORT}:`, err.message);
+});
+
+httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+  httpReady = true;
+  console.log(`HTTP-Server aktiv auf Port ${HTTP_PORT}`);
+  printBanner();
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  httpsReady = true;
+  console.log(`HTTPS-Server aktiv auf Port ${PORT}`);
+  printBanner();
+});
 
 process.on('SIGINT', () => { db.close(); process.exit(0); });
 process.on('SIGTERM', () => { db.close(); process.exit(0); });

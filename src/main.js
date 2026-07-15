@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
 const nodemailer = require('nodemailer');
+const { spawn, execSync } = require('child_process');
 
 const APP_VERSION = '2.3.0';
 const APP_NAME = 'Handwerker-Software';
@@ -48,7 +49,8 @@ function generateLicenseKey(fingerprint, tage) {
   const ablauf = now + (tage || 30) * 24 * 60 * 60 * 1000;
   const payload = `${fingerprint}|${ablauf}`;
   const hmac = crypto.createHmac('sha256', LICENSE_SECRET).update(payload).digest('hex').substring(0, 16);
-  return `HW-${Buffer.from(payload).toString('base64').replace(/[=+/]/g, '')}.${hmac}`;
+  const b64 = Buffer.from(payload).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `HW-${b64}.${hmac}`;
 }
 
 function validateLicenseKey(key, fingerprint) {
@@ -57,7 +59,8 @@ function validateLicenseKey(key, fingerprint) {
     const parts = key.substring(3).split('.');
     if (parts.length !== 2) return { valid: false, grund: 'Ungültiges Format' };
 
-    const payload = Buffer.from(parts[0], 'base64').toString('utf-8');
+    const b64 = parts[0].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = Buffer.from(b64, 'base64').toString('utf-8');
     const hmac = parts[1];
 
     const payloadHmac = crypto.createHmac('sha256', LICENSE_SECRET).update(payload).digest('hex').substring(0, 16);
@@ -2532,3 +2535,122 @@ setInterval(async () => {
     } catch (e) {}
   }
 }, 60000);
+
+// ============ Integrierter Server ============
+
+let serverProcess = null;
+const SERVER_HTTP_PORT = 8080;
+const SERVER_HTTPS_PORT = 8443;
+
+function getServerDir() {
+  return path.join(app.getAppPath(), 'server');
+}
+
+async function installServerDeps() {
+  const serverDir = getServerDir();
+  const nodeModulesPath = path.join(serverDir, 'node_modules');
+  if (fs.existsSync(nodeModulesPath)) return true;
+
+  try {
+    console.log('Server-Dependencies werden installiert...');
+    execSync('npm install --production', { cwd: serverDir, stdio: 'pipe', timeout: 120000 });
+    console.log('Server-Dependencies installiert.');
+    return true;
+  } catch (e) {
+    console.error('Server npm install fehlgeschlagen:', e.message);
+    return false;
+  }
+}
+
+function startServer() {
+  if (serverProcess) {
+    console.log('Server läuft bereits (PID:', serverProcess.pid, ')');
+    return true;
+  }
+
+  const serverDir = getServerDir();
+  if (!fs.existsSync(path.join(serverDir, 'server.js'))) {
+    console.error('server.js nicht gefunden:', serverDir);
+    return false;
+  }
+
+  const nodePath = process.execPath;
+  serverProcess = spawn(nodePath, [path.join(serverDir, 'server.js')], {
+    cwd: serverDir,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      PORT: SERVER_HTTPS_PORT,
+      HTTP_PORT: SERVER_HTTPS_PORT,
+      DATA_DIR: path.join(dataDir, 'server-data')
+    }
+  });
+
+  serverProcess.stdout.on('data', (data) => {
+    const msg = data.toString();
+    console.log('[Server]', msg.trim());
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('server-log', msg.trim());
+    }
+  });
+
+  serverProcess.stderr.on('data', (data) => {
+    console.error('[Server-Fehler]', data.toString().trim());
+  });
+
+  serverProcess.on('exit', (code) => {
+    console.log('Server beendet mit Code:', code);
+    serverProcess = null;
+  });
+
+  return true;
+}
+
+function stopServer() {
+  if (serverProcess) {
+    serverProcess.kill();
+    serverProcess = null;
+    console.log('Server gestoppt.');
+  }
+}
+
+async function ensureServerRunning() {
+  const config = getServerConfig();
+  if (config && config.url) return true;
+
+  const installed = await installServerDeps();
+  if (!installed) return false;
+
+  startServer();
+
+  const settingsPath = path.join(dataDir, 'einstellungen.json');
+  let settings = {};
+  if (fs.existsSync(settingsPath)) {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  }
+  settings.modus = 'server';
+  settings.server_url = `http://localhost:${SERVER_HTTPS_PORT}`;
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+  return true;
+}
+
+ipcMain.handle('start-server', async () => {
+  const installed = await installServerDeps();
+  if (!installed) return { success: false, error: 'npm install fehlgeschlagen' };
+  startServer();
+  return { success: true };
+});
+
+ipcMain.handle('stop-server', async () => {
+  stopServer();
+  return { success: true };
+});
+
+ipcMain.handle('get-server-log', () => {
+  return serverProcess ? { running: true, pid: serverProcess.pid } : { running: false };
+});
+
+app.on('before-quit', () => {
+  stopServer();
+});

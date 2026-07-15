@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IMHWS — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --sidebar-w: 240px;
+      --bg: #f8fafc;
+      --sidebar-bg: #1a1d27;
+      --sidebar-text: #94a3b8;
+      --sidebar-active: #3b82f6;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; padding-top: 40px; }
+    a { text-decoration: none; color: inherit; }
+    .demo-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: linear-gradient(135deg, #f59e0b, #f97316); color: #000; text-align: center; padding: 10px; font-size: 13px; font-weight: 600; }
+    .demo-banner a { color: #000; text-decoration: underline; }
+    .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-logo { height: 40px; width: auto; border-radius: 6px; }
+    .sidebar-brand-text { color: white; font-weight: 700; font-size: 15px; }
+    .sidebar-brand-text span { color: var(--primary); }
+    .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+    .nav-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.25); padding: 12px 12px 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.15s; margin-bottom: 1px; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: var(--sidebar-active); }
+    .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-footer .nav-item { font-size: 12px; color: #ef4444; }
+    .sidebar-footer .nav-item:hover { background: rgba(239,68,68,0.1); }
+    .demo-badge { background: #f59e0b; color: #000; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: auto; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { padding: 16px 32px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 20px; font-weight: 700; }
+    .topbar-actions { display: flex; gap: 8px; }
+    .content { flex: 1; padding: 32px; overflow-y: auto; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg); }
+    .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .btn-success:hover { background: #dcfce7; }
+    .btn-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .btn-warning:hover { background: #fef3c7; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--text); }
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.danger { color: var(--danger); }
+    .stat-value.primary { color: var(--primary); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); background: var(--bg); }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:hover { background: #f8fafc; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #f0fdf4; color: #16a34a; }
+    .badge-yellow { background: #fffbeb; color: #d97706; }
+    .badge-red { background: #fef2f2; color: #dc2626; }
+    .badge-blue { background: #eff6ff; color: #2563eb; }
+    .badge-gray { background: #f1f5f9; color: #64748b; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 16px; width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 32px; }
+    .modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 16px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="demo-banner">
+  Dies ist eine Demo-Version. Daten werden im Browser gespeichert und beim Schliessen oder über «Demo zurücksetzen» gelöscht.
+  <a href="index.html">Zur vollständigen Version →</a>
+</div>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <img src="intrasaar_logo.jpg" alt="intrasaar media" class="sidebar-logo">
+    <span class="demo-badge">DEMO</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group-label">Übersicht</div>
+    <div class="nav-item active" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</div>
+
+    <div class="nav-group-label">Verkauf</div>
+    <div class="nav-item" data-page="kunden"><span class="nav-icon">👤</span> Kunden</div>
+    <div class="nav-item" data-page="angebote"><span class="nav-icon">📋</span> Angebote</div>
+    <div class="nav-item" data-page="rechnungen"><span class="nav-icon">🧾</span> Rechnungen</div>
+    <div class="nav-item" data-page="mahnungen"><span class="nav-icon">⚠️</span> Mahnungen</div>
+
+    <div class="nav-group-label">Einkauf</div>
+    <div class="nav-item" data-page="eingangsrechnungen"><span class="nav-icon">📥</span> Eingangsrechnungen</div>
+    <div class="nav-item" data-page="lieferanten"><span class="nav-icon">🏭</span> Lieferanten</div>
+
+    <div class="nav-group-label">Aufträge</div>
+    <div class="nav-item" data-page="auftraege"><span class="nav-icon">🔧</span> Aufträge</div>
+    <div class="nav-item" data-page="aufmasse"><span class="nav-icon">📐</span> Aufmaße</div>
+    <div class="nav-item" data-page="termine"><span class="nav-icon">📅</span> Termine</div>
+    <div class="nav-item" data-page="aufgaben"><span class="nav-icon">✅</span> Aufgaben</div>
+
+    <div class="nav-group-label">Warenwirtschaft</div>
+    <div class="nav-item" data-page="artikel"><span class="nav-icon">📦</span> Artikel</div>
+    <div class="nav-item" data-page="kasse"><span class="nav-icon">💶</span> Kasse</div>
+    <div class="nav-item" data-page="subunternehmer"><span class="nav-icon">🤝</span> Subunternehmer</div>
+
+    <div class="nav-group-label">Buchhaltung</div>
+    <div class="nav-item" data-page="buchungen"><span class="nav-icon">📒</span> Buchungen</div>
+    <div class="nav-item" data-page="ust"><span class="nav-icon">🏛️</span> USt</div>
+    <div class="nav-item" data-page="datev"><span class="nav-icon">💻</span> DATEV</div>
+    <div class="nav-item" data-page="doppelbuchung"><span class="nav-icon">📑</span> Doppelbuchführung</div>
+
+    <div class="nav-group-label">Sonstiges</div>
+    <div class="nav-item" data-page="branchen"><span class="nav-icon">🏗️</span> Branchen</div>
+    <div class="nav-item" data-page="import"><span class="nav-icon">🔄</span> Import</div>
+    <div class="nav-item" data-page="regeln"><span class="nav-icon">📏</span> Regeln</div>
+    <div class="nav-item" data-page="einstellungen"><span class="nav-icon">⚙️</span> Einstellungen</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="nav-item" onclick="resetDemo()">🔄 Demo zurücksetzen</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="pageTitle">Dashboard</h1>
+    <div class="topbar-actions" id="topActions"></div>
+  </div>
+  <div class="content">
+
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Umsatz diesen Monat</div><div class="stat-value success" id="statUmsatz">0 €</div></div>
+        <div class="stat-card"><div class="stat-label">Offene Rechnungen</div><div class="stat-value warning" id="statOffen">0</div></div>
+        <div class="stat-card"><div class="stat-label">Kunden</div><div class="stat-value primary" id="statKunden">0</div></div>
+        <div class="stat-card"><div class="stat-label">Offene Angebote</div><div class="stat-value" id="statAngebote">0</div></div>
+      </div>
+      <div class="card">
+        <h3>Letzte Rechnungen</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Kunde</th><th>Betrag</th><th>Status</th></tr></thead>
+            <tbody id="dashboardRechnungen"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-kunden">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Adresse</th><th>E-Mail</th><th>Telefon</th><th>Aktionen</th></tr></thead>
+            <tbody id="kundenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-angebote">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th>Beschreibung</th><th>Betrag</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="angeboteTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-rechnungen">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Kunde</th><th>Datum</th><th>Beschreibung</th><th>Betrag</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="rechnungenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-mahnungen">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Rechnung</th><th>Kunde</th><th>Datum</th><th>Stufe</th><th>Betrag</th><th>Aktionen</th></tr></thead>
+            <tbody id="mahnungenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-eingangsrechnungen">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Lieferant</th><th>Datum</th><th>Beschreibung</th><th>Betrag</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="eingangsTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-lieferanten">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Adresse</th><th>E-Mail</th><th>Telefon</th><th>Kontakt</th><th>Aktionen</th></tr></thead>
+            <tbody id="lieferantenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-auftraege">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Kunde</th><th>Bezeichnung</th><th>Start</th><th>Ende</th><th>Budget</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="auftraegeTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-aufmasse">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Auftrag</th><th>Position</th><th>Menge</th><th>Einheit</th><th>Einzelpreis</th><th>Gesamt</th><th>Aktionen</th></tr></thead>
+            <tbody id="aufmasseTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-termine">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Datum</th><th>Uhrzeit</th><th>Kunde</th><th>Beschreibung</th><th>Aktionen</th></tr></thead>
+            <tbody id="termineTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-aufgaben">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Aufgabe</th><th>Zugewiesen</th><th>Fällig</th><th>Priorität</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="aufgabenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-artikel">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Bezeichnung</th><th>Kategorie</th><th>Einh.</th><th>Preis (netto)</th><th>Lager</th><th>Aktionen</th></tr></thead>
+            <tbody id="artikelTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-kasse">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Datum</th><th>Beschreibung</th><th>Einnahme</th><th>Ausgabe</th><th>Kontakt</th><th>Aktionen</th></tr></thead>
+            <tbody id="kasseTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-subunternehmer">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Branche</th><th>Ansprechpartner</th><th>Telefon</th><th>Stundensatz</th><th>Aktionen</th></tr></thead>
+            <tbody id="subunternehmerTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-buchungen">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Datum</th><th>Beschreibung</th><th>Konto</th><th>Einnahme</th><th>Ausgabe</th><th>Aktionen</th></tr></thead>
+            <tbody id="buchungenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-ust">
+      <div class="card">
+        <h3>Umsatzsteuer-Übersicht</h3>
+        <div class="stats-grid" style="margin-top:16px;">
+          <div class="stat-card"><div class="stat-label">USt-Einnahmen (19%)</div><div class="stat-value" id="ustEinnahmen">0 €</div></div>
+          <div class="stat-card"><div class="stat-label">USt-Ausgaben (19%)</div><div class="stat-value" id="ustAusgaben">0 €</div></div>
+          <div class="stat-card"><div class="stat-label">USt-Zahllast</div><div class="stat-value warning" id="ustZahllast">0 €</div></div>
+        </div>
+        <h3 style="margin-top:24px;">Umsatzsteuer-Voranmeldungen</h3>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>Zeitraum</th><th>Einnahmen brutto</th><th>Ausgaben brutto</th><th>USt-Einnahmen</th><th>USt-Ausgaben</th><th>Zahllast</th><th>Status</th></tr></thead>
+            <tbody id="ustTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-datev">
+      <div class="card">
+        <h3>DATEV-Export</h3>
+        <p style="color:var(--text-light);margin-bottom:20px;">Buchen Sie alle offenen Buchungen für den DATEV-Export aus.</p>
+        <div class="form-row" style="max-width:400px;">
+          <div class="form-group"><label>Von Datum</label><input type="date" id="datevVon"></div>
+          <div class="form-group"><label>Bis Datum</label><input type="date" id="datevBis"></div>
+        </div>
+        <div class="form-group"><label>Steuernummer</label><input type="text" value="123/456/78901" id="datevStNr"></div>
+        <button class="btn btn-primary" onclick="alert('DATEV-Export wird in der Vollversion generiert.')">📥 Export erstellen</button>
+        <hr style="margin:24px 0;border-color:var(--border);">
+        <h3>Bisherige Exports</h3>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>Datum</th><th>Zeitraum</th><th>Buchungen</th><th>Format</th><th>Aktionen</th></tr></thead>
+            <tbody id="datevTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-doppelbuchung">
+      <div class="card">
+        <h3>Doppelbuchführung</h3>
+        <p style="color:var(--text-light);margin-bottom:20px;">Alle Buchungen werden doppelt geführt (Soll/Haben).</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Datum</th><th>Buchungstext</th><th>Konto Soll</th><th>Konto Haben</th><th>Betrag</th></tr></thead>
+            <tbody id="doppelTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-branchen">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Branche</th><th>Beschreibung</th><th>Aktive Kunden</th><th>Aktionen</th></tr></thead>
+            <tbody id="branchenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-import">
+      <div class="card">
+        <h3>Daten importieren</h3>
+        <p style="color:var(--text-light);margin-bottom:20px;">Importieren Sie Daten aus CSV-Dateien oder anderen Formaten.</p>
+        <div class="form-group">
+          <label>Import-Typ</label>
+          <select id="importTyp">
+            <option value="">— Typ wählen —</option>
+            <option value="kunden">Kunden</option>
+            <option value="artikel">Artikel</option>
+            <option value="rechnungen">Rechnungen</option>
+            <option value="buchungen">Buchungen</option>
+            <option value="lieferanten">Lieferanten</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Datei</label>
+          <input type="file" id="importFile" accept=".csv,.xlsx">
+        </div>
+        <button class="btn btn-primary" onclick="alert('Import wird in der Vollversion unterstützt.')">📤 Importieren</button>
+        <hr style="margin:24px 0;border-color:var(--border);">
+        <h3>Letzte Imports</h3>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>Datum</th><th>Typ</th><th>Einträge</th><th>Status</th></tr></thead>
+            <tbody id="importTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-regeln">
+      <div class="card">
+        <h3>Buchungsregeln</h3>
+        <p style="color:var(--text-light);margin-bottom:20px;">Definieren Sie automatische Regeln für die Zuordnung von Buchungen.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Regel</th><th>Bedingung</th><th>Zuordnung</th><th>Aktiv</th><th>Aktionen</th></tr></thead>
+            <tbody id="regelnTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-einstellungen">
+      <div class="card" style="max-width:600px;">
+        <h3>Demo-Zustand</h3>
+        <p style="color:var(--text-light);margin-bottom:20px;">Setzen Sie die Demo auf den Anfangszustand zurück. Alle eingegebenen Daten werden gelöscht und die Beispiel-Daten werden wiederhergestellt.</p>
+        <button class="btn btn-danger" onclick="resetDemo()">🔄 Demo zurücksetzen</button>
+        <hr style="margin:24px 0;border-color:var(--border);">
+        <h3>Firmendaten</h3>
+        <div class="form-group"><label>Firmenname</label><input type="text" value="Müller Handwerk GmbH" id="firmaName"></div>
+        <div class="form-group"><label>Adresse</label><input type="text" value="Musterstraße 12, 66111 Saarbrücken" id="firmaAdresse"></div>
+        <div class="form-group"><label>Telefon</label><input type="text" value="0681 123456" id="firmaTel"></div>
+        <div class="form-group"><label>E-Mail</label><input type="text" value="info@mueller-handwerk.de" id="firmaMail"></div>
+        <div class="form-group"><label>Steuernummer</label><input type="text" value="123/456/78901" id="firmaSteuer"></div>
+        <button class="btn btn-primary" onclick="alert('Gespeichert! (Demo)')">Speichern</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalKunde">
+  <div class="modal">
+    <h2 id="modalKundeTitle">Neuer Kunde</h2>
+    <input type="hidden" id="kundeId">
+    <div class="form-group"><label>Name / Firma</label><input type="text" id="kundeName"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Straße + Nr.</label><input type="text" id="kundeStrasse"></div>
+      <div class="form-group"><label>PLZ + Ort</label><input type="text" id="kundeOrt"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>E-Mail</label><input type="email" id="kundeEmail"></div>
+      <div class="form-group"><label>Telefon</label><input type="text" id="kundeTel"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalKunde')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveKunde()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAngebot">
+  <div class="modal">
+    <h2 id="modalAngebotTitle">Neues Angebot</h2>
+    <input type="hidden" id="angId">
+    <div class="form-row">
+      <div class="form-group"><label>Kunde</label><select id="angKunde"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="angDatum"></div>
+    </div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="angBeschreibung"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Nettobetrag (€)</label><input type="number" id="angNetto" step="0.01"></div>
+      <div class="form-group"><label>MwSt. (%)</label><input type="number" id="angMwst" value="19"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAngebot')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveAngebot()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalRechnung">
+  <div class="modal">
+    <h2 id="modalRechnungTitle">Neue Rechnung</h2>
+    <input type="hidden" id="rekId">
+    <div class="form-row">
+      <div class="form-group"><label>Kunde</label><select id="rekKunde"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="rekDatum"></div>
+    </div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="rekBeschreibung"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Nettobetrag (€)</label><input type="number" id="rekNetto" step="0.01"></div>
+      <div class="form-group"><label>MwSt. (%)</label><input type="number" id="rekMwst" value="19"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalRechnung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRechnung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalMahnung">
+  <div class="modal">
+    <h2 id="modalMahnungTitle">Neue Mahnung</h2>
+    <input type="hidden" id="mahnId">
+    <div class="form-row">
+      <div class="form-group"><label>Rechnung</label><select id="mahnRechnung"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="mahnDatum"></div>
+    </div>
+    <div class="form-group"><label>Mahnstufe</label><select id="mahnStufe"><option>1. Mahnung</option><option>2. Mahnung</option><option>3. Mahnung</option></select></div>
+    <div class="form-group"><label>Bemerkung</label><input type="text" id="mahnBemerkung"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalMahnung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveMahnung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalEingangsrechnung">
+  <div class="modal">
+    <h2 id="modalEingTitle">Neue Eingangsrechnung</h2>
+    <input type="hidden" id="eingId">
+    <div class="form-row">
+      <div class="form-group"><label>Lieferant</label><select id="eingLieferant"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="eingDatum"></div>
+    </div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="eingBeschreibung"></div>
+    <div class="form-group"><label>Rechnungsnr.</label><input type="text" id="eingRechnungsnr"></div>
+    <div class="form-group"><label>Betrag netto (€)</label><input type="number" id="eingBetrag" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalEingangsrechnung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveEingangsrechnung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLieferant">
+  <div class="modal">
+    <h2 id="modalLieferantTitle">Neuer Lieferant</h2>
+    <input type="hidden" id="lieferantId">
+    <div class="form-group"><label>Name</label><input type="text" id="lieferantName"></div>
+    <div class="form-group"><label>Adresse</label><input type="text" id="lieferantAdresse"></div>
+    <div class="form-row">
+      <div class="form-group"><label>E-Mail</label><input type="email" id="lieferantEmail"></div>
+      <div class="form-group"><label>Telefon</label><input type="text" id="lieferantTel"></div>
+    </div>
+    <div class="form-group"><label>Ansprechpartner</label><input type="text" id="lieferantKontakt"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalLieferant')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveLieferant()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalTermin">
+  <div class="modal">
+    <h2 id="modalTerminTitle">Neuer Termin</h2>
+    <input type="hidden" id="terId">
+    <div class="form-row">
+      <div class="form-group"><label>Datum</label><input type="date" id="terDatum"></div>
+      <div class="form-group"><label>Uhrzeit</label><input type="time" id="terUhrzeit"></div>
+    </div>
+    <div class="form-group"><label>Kunde</label><select id="terKunde"></select></div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="terBeschreibung"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalTermin')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveTermin()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAuftrag">
+  <div class="modal">
+    <h2 id="modalAuftragTitle">Neuer Auftrag</h2>
+    <input type="hidden" id="aufId">
+    <div class="form-row">
+      <div class="form-group"><label>Kunde</label><select id="aufKunde"></select></div>
+      <div class="form-group"><label>Bezeichnung</label><input type="text" id="aufBezeichnung"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Startdatum</label><input type="date" id="aufStart"></div>
+      <div class="form-group"><label>Enddatum</label><input type="date" id="aufEnde"></div>
+    </div>
+    <div class="form-group"><label>Budget (€)</label><input type="number" id="aufBudget" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAuftrag')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveAuftrag()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAufmass">
+  <div class="modal">
+    <h2 id="modalAufmassTitle">Neues Aufmaß</h2>
+    <input type="hidden" id="amId">
+    <div class="form-row">
+      <div class="form-group"><label>Auftrag</label><select id="amAuftrag"></select></div>
+      <div class="form-group"><label>Position</label><input type="text" id="amPosition"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Menge</label><input type="number" id="amMenge" step="0.01"></div>
+      <div class="form-group"><label>Einheit</label><select id="amEinheit"><option>Stk</option><option>m</option><option>m²</option><option>m³</option><option>kg</option><option>h</option></select></div>
+    </div>
+    <div class="form-group"><label>Einzelpreis (€)</label><input type="number" id="amPreis" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAufmass')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveAufmass()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAufgabe">
+  <div class="modal">
+    <h2 id="modalAufgabeTitle">Neue Aufgabe</h2>
+    <input type="hidden" id="aufgId">
+    <div class="form-group"><label>Aufgabe</label><input type="text" id="aufgTitel"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Zugewiesen an</label><input type="text" id="aufgZugewiesen"></div>
+      <div class="form-group"><label>Fällig am</label><input type="date" id="aufgFaellig"></div>
+    </div>
+    <div class="form-group"><label>Priorität</label><select id="aufgPrioritaet"><option>Niedrig</option><option>Mittel</option><option>Hoch</option></select></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAufgabe')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveAufgabe()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalArtikel">
+  <div class="modal">
+    <h2 id="modalArtikelTitle">Neuer Artikel</h2>
+    <input type="hidden" id="artId">
+    <div class="form-group"><label>Bezeichnung</label><input type="text" id="artName"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Kategorie</label><select id="artKategorie"><option>Elektroteile</option><option>Sanitär</option><option>Holz</option><option>Werkzeug</option><option>Baustoffe</option><option>Schrauben & Befestigung</option><option>Farbe & Lack</option></select></div>
+      <div class="form-group"><label>Einheit</label><select id="artEinheit"><option>Stk</option><option>m</option><option>m²</option><option>m³</option><option>kg</option><option>l</option><option>Paar</option><option>Satz</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Preis netto (€)</label><input type="number" id="artPreis" step="0.01"></div>
+      <div class="form-group"><label>Lagerbestand</label><input type="number" id="artLager" value="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalArtikel')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveArtikel()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalKasse">
+  <div class="modal">
+    <h2 id="modalKasseTitle">Neuer Kasseneintrag</h2>
+    <input type="hidden" id="kasseId">
+    <div class="form-row">
+      <div class="form-group"><label>Datum</label><input type="date" id="kasseDatum"></div>
+      <div class="form-group"><label>Art</label><select id="kasseArt"><option>Einnahme</option><option>Ausgabe</option></select></div>
+    </div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="kasseBeschreibung"></div>
+    <div class="form-group"><label>Betrag (€)</label><input type="number" id="kasseBetrag" step="0.01"></div>
+    <div class="form-group"><label>Kontakt / Kunde</label><input type="text" id="kasseKontakt"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalKasse')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveKasse()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSubunternehmer">
+  <div class="modal">
+    <h2 id="modalSubTitle">Neuer Subunternehmer</h2>
+    <input type="hidden" id="subId">
+    <div class="form-group"><label>Name / Firma</label><input type="text" id="subName"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Branche</label><input type="text" id="subBranche"></div>
+      <div class="form-group"><label>Ansprechpartner</label><input type="text" id="subKontakt"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Telefon</label><input type="text" id="subTel"></div>
+      <div class="form-group"><label>Stundensatz (€)</label><input type="number" id="subSatz" step="0.01"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalSubunternehmer')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSub()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBuchung">
+  <div class="modal">
+    <h2 id="modalBuchungTitle">Neue Buchung</h2>
+    <input type="hidden" id="bucId">
+    <div class="form-row">
+      <div class="form-group"><label>Datum</label><input type="date" id="bucDatum"></div>
+      <div class="form-group"><label>Art</label><select id="bucArt"><option>Einnahme</option><option>Ausgabe</option></select></div>
+    </div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="bucBeschreibung"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Konto</label><input type="text" id="bucKonto"></div>
+      <div class="form-group"><label>Betrag (€)</label><input type="number" id="bucBetrag" step="0.01"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalBuchung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveBuchung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBranche">
+  <div class="modal">
+    <h2 id="modalBrancheTitle">Neue Branche</h2>
+    <input type="hidden" id="brancheId">
+    <div class="form-group"><label>Branche</label><input type="text" id="brancheName"></div>
+    <div class="form-group"><label>Beschreibung</label><input type="text" id="brancheBeschreibung"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalBranche')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveBranche()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalRegel">
+  <div class="modal">
+    <h2 id="modalRegelTitle">Neue Regel</h2>
+    <input type="hidden" id="regelId">
+    <div class="form-group"><label>Regelname</label><input type="text" id="regelName"></div>
+    <div class="form-group"><label>Bedingung (z.B. Beschreibung enthält „Strom")</label><input type="text" id="regelBedingung"></div>
+    <div class="form-group"><label>Zuordnung (Konto / Kategorie)</label><input type="text" id="regelZuordnung"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalRegel')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRegel()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var DEMO_DATA = {
+  kunden: [
+    { id:1, name:'Schmidt Bau GmbH', strasse:'Hauptstraße 45', ort:'66111 Saarbrücken', email:'kontakt@schmidt-bau.de', telefon:'0681 555123' },
+    { id:2, name:'Elektro Weber', strasse:'Industriestraße 8', ort:'66129 Saarbrücken', email:'info@elektro-weber.de', telefon:'0681 555456' },
+    { id:3, name:'Sanitär Hoffmann', strasse:'Bahnhofstraße 22', ort:'66111 Saarbrücken', email:'service@hoffmann-sanitaer.de', telefon:'0681 555789' },
+    { id:4, name:'Tischlerei Braun', strasse:'Waldstraße 7', ort:'66121 Saarbrücken', email:'info@tischlerei-braun.de', telefon:'0681 555321' },
+    { id:5, name:'Dachdecker Meier', strasse:'Bergstraße 15', ort:'66115 Saarbrücken', email:'meier@dachdecker-sb.de', telefon:'0681 555654' },
+    { id:6, name:'Maler Fischer', strasse:'Schillerstraße 3', ort:'66111 Saarbrücken', email:'fischer@maler-sb.de', telefon:'0681 555987' },
+    { id:7, name:'Heizungsbau Klein', strasse:'Lindenweg 19', ort:'66130 Saarbrücken', email:'info@heizungsbau-klein.de', telefon:'0681 555234' },
+    { id:8, name:'Zimmerei Wolf', strasse:'Eichenstraße 28', ort:'66115 Saarbrücken', email:'wolf@zimmerei-wolf.de', telefon:'0681 555876' }
+  ],
+  angebote: [
+    { id:1, kundenId:1, datum:'2026-07-01', beschreibung:'Dachsanierung Einfamilienhaus', netto:8500.00, mwst:19, status:'offen' },
+    { id:2, kundenId:2, datum:'2026-07-05', beschreibung:'Elektrische Installation Neubau', netto:3200.00, mwst:19, status:'akzeptiert' },
+    { id:3, kundenId:3, datum:'2026-07-08', beschreibung:'Badezimmer-Sanierung komplett', netto:5400.00, mwst:19, status:'offen' },
+    { id:4, kundenId:4, datum:'2026-07-10', beschreibung:'Küchenbau nach Maß', netto:12800.00, mwst:19, status:'akzeptiert' },
+    { id:5, kundenId:5, datum:'2026-07-12', beschreibung:'Dachreparatur nach Sturmschaden', netto:4200.00, mwst:19, status:'abgelehnt' },
+    { id:6, kundenId:6, datum:'2026-07-14', beschreibung:'Fassadenanstrich Mehrfamilienhaus', netto:6750.00, mwst:19, status:'offen' }
+  ],
+  rechnungen: [
+    { id:1, kundenId:1, datum:'2026-06-15', beschreibung:'Trockenbauarbeiten', netto:2800.00, mwst:19, status:'bezahlt' },
+    { id:2, kundenId:4, datum:'2026-06-20', beschreibung:'Küchenmontage', netto:1950.00, mwst:19, status:'bezahlt' },
+    { id:3, kundenId:5, datum:'2026-07-02', beschreibung:'Dachreparatur Sturmschaden', netto:4200.00, mwst:19, status:'offen' },
+    { id:4, kundenId:2, datum:'2026-07-10', beschreibung:'Beleuchtung Einbau', netto:1100.00, mwst:19, status:'offen' },
+    { id:5, kundenId:3, datum:'2026-07-01', beschreibung:'Rohrleitungsarbeiten', netto:3450.00, mwst:19, status:'bezahlt' },
+    { id:6, kundenId:6, datum:'2026-07-05', beschreibung:'Innenanstrich 3 Zimmer', netto:1800.00, mwst:19, status:'ueberwiesen' },
+    { id:7, kundenId:7, datum:'2026-07-08', beschreibung:'Heizungsanlage Einbau', netto:7200.00, mwst:19, status:'offen' },
+    { id:8, kundenId:8, datum:'2026-07-12', beschreibung:'Terrassenbau', netto:5600.00, mwst:19, status:'mahnung' }
+  ],
+  mahnungen: [
+    { id:1, rechnungId:8, kundenId:8, datum:'2026-07-14', stufe:'1. Mahnung', betrag:6664.00, bemerkung:'Zahlung überfällig seit 14 Tagen' },
+    { id:2, rechnungId:3, kundenId:5, datum:'2026-07-15', stufe:'2. Mahnung', betrag:4998.00, bemerkung:'Zweite Mahnung nach fruchtloser 1. Mahnung' }
+  ],
+  eingangsrechnungen: [
+    { id:1, lieferantId:1, datum:'2026-07-03', beschreibung:'Kabel und Schalter', rechnungsnr:'LF-2026-001', betrag:1250.00, status:'offen' },
+    { id:2, lieferantId:2, datum:'2026-07-06', beschreibung:'Sanitärarmaturen', rechnungsnr:'LF-2026-002', betrag:3400.00, status:'bezahlt' },
+    { id:3, lieferantId:3, datum:'2026-07-10', beschreibung:'Holzplatten Eiche', rechnungsnr:'LF-2026-003', betrag:2100.00, status:'offen' }
+  ],
+  lieferanten: [
+    { id:1, name:'Elektro-Großhandel Schmidt', adresse:'Gewerbestr. 5, 66115 Saarbrücken', email:'bestellung@egs.de', telefon:'0681 666111', kontakt:'Herr Schmidt' },
+    { id:2, name:'Sanitär Großhandel Müller', adresse:'Industriestr. 12, 66129 Saarbrücken', email:'info@sgm.de', telefon:'0681 666222', kontakt:'Frau Müller' },
+    { id:3, name:'Holz Center Saar', adresse:'Holzweg 8, 66123 Saarbrücken', email:'verkauf@holz-center.de', telefon:'0681 666333', kontakt:'Herr Weber' },
+    { id:4, name:'Baustoffe Hoffmann', adresse:'Baustoffstr. 3, 66111 Saarbrücken', email:'info@baustoffe-hoffmann.de', telefon:'0681 666444', kontakt:'Herr Hoffmann' }
+  ],
+  termine: [
+    { id:1, datum:'2026-07-16', uhrzeit:'08:00', kundenId:1, beschreibung:'Besichtigung Dach' },
+    { id:2, datum:'2026-07-17', uhrzeit:'10:30', kundenId:3, beschreibung:'Angebotsgespräch Bad' },
+    { id:3, datum:'2026-07-18', uhrzeit:'14:00', kundenId:5, beschreibung:'Folgetermin Dach' },
+    { id:4, datum:'2026-07-21', uhrzeit:'09:00', kundenId:2, beschreibung:'Elektro-Abnahme Neubau' },
+    { id:5, datum:'2026-07-23', uhrzeit:'11:00', kundenId:7, beschreibung:'Heizungsplanung' }
+  ],
+  auftraege: [
+    { id:1, kundenId:1, bezeichnung:'Dachsanierung Hauptstraße', start:'2026-07-20', ende:'2026-08-15', budget:8500.00, status:'offen' },
+    { id:2, kundenId:2, bezeichnung:'Elektroinstallation Neubau', start:'2026-07-22', ende:'2026-08-10', budget:3200.00, status:'in_arbeit' },
+    { id:3, kundenId:4, bezeichnung:'Küchenbau Braun', start:'2026-07-25', ende:'2026-09-01', budget:12800.00, status:'offen' },
+    { id:4, kundenId:3, bezeichnung:'Badezimmer Sanierung', start:'2026-08-01', ende:'2026-08-20', budget:5400.00, status:'offen' }
+  ],
+  aufmasse: [
+    { id:1, auftragId:1, position:'Dachziegel', menge:120, einheit:'m²', einzelpreis:45.00 },
+    { id:2, auftragId:1, position:'Dachrinne', menge:18, einheit:'m', einzelpreis:32.00 },
+    { id:3, auftragId:2, position:'Kabelverlegung', menge:250, einheit:'m', einzelpreis:8.50 }
+  ],
+  aufgaben: [
+    { id:1, titel:'Lieferung Dachziegel prüfen', zugewiesen:'Herr Schmidt', faellig:'2026-07-18', prioritaet:'Hoch', status:'offen' },
+    { id:2, titel:'Rechnung EGS begleichen', zugewiesen:'Buchhaltung', faellig:'2026-07-20', prioritaet:'Mittel', status:'offen' },
+    { id:3, titel:'Kundenanruf Meier Dach', zugewiesen:'Vertrieb', faellig:'2026-07-16', prioritaet:'Hoch', status:'erledigt' }
+  ],
+  artikel: [
+    { id:1, name:'Kabel NYM-J 3×1,5', kategorie:'Elektroteile', einheit:'m', preis:2.80, lager:500 },
+    { id:2, name:'Steckdosen Serie weiß', kategorie:'Elektroteile', einheit:'Stk', preis:4.50, lager:120 },
+    { id:3, name:'Wasserhahn Chrom', kategorie:'Sanitär', einheit:'Stk', preis:89.00, lager:15 },
+    { id:4, name:'Spülkasten Armatur', kategorie:'Sanitär', einheit:'Stk', preis:45.00, lager:8 },
+    { id:5, name:'Eichenplatte 200×80', kategorie:'Holz', einheit:'Stk', preis:120.00, lager:12 },
+    { id:6, name:'Schraubenzieher-Set', kategorie:'Werkzeug', einheit:'Satz', preis:35.00, lager:20 },
+    { id:7, name:'Zement 25kg', kategorie:'Baustoffe', einheit:'Stk', preis:12.50, lager:60 },
+    { id:8, name:'Dachziegel Rot', kategorie:'Baustoffe', einheit:'Stk', preis:3.80, lager:800 },
+    { id:9, name:'Silikon Badezimmer', kategorie:'Farbe & Lack', einheit:'Stk', preis:7.90, lager:40 },
+    { id:10, name:'Dübel-Set 50 Stk.', kategorie:'Schrauben & Befestigung', einheit:'Satz', preis:9.90, lager:80 }
+  ],
+  kasse: [
+    { id:1, datum:'2026-07-02', beschreibung:'Bargeld-Einzahlung Rechnung RE-0001', art:'Einnahme', betrag:3332.00, kontakt:'Schmidt Bau GmbH' },
+    { id:2, datum:'2026-07-05', beschreibung:'Materialkauf Elektroteile', art:'Ausgabe', betrag:280.00, kontakt:'Elektro-Großhandel' },
+    { id:3, datum:'2026-07-08', beschreibung:'Bargeld Rechnung Küchenmontage', art:'Einnahme', betrag:2320.50, kontakt:'Tischlerei Braun' },
+    { id:4, datum:'2026-07-10', beschreibung:'Tanken Firmenwagen', art:'Ausgabe', betrag:120.00, kontakt:'' },
+    { id:5, datum:'2026-07-12', beschreibung:'Rechnungsfaktura Hoffmann', art:'Einnahme', betrag:4105.50, kontakt:'Sanitär Hoffmann' }
+  ],
+  subunternehmer: [
+    { id:1, name:'Elektro Wagner UG', branche:'Elektrotechnik', kontakt:'Herr Wagner', telefon:'0681 777111', stundensatz:65.00 },
+    { id:2, name:'Malermeyer GmbH', branche:'Malerei', kontakt:'Frau Meyer', telefon:'0681 777222', stundensatz:52.00 }
+  ],
+  buchungen: [
+    { id:1, datum:'2026-07-02', beschreibung:'Rechnung RE-0001 Schmidt', art:'Einnahme', konto:'1200', betrag:3332.00 },
+    { id:2, datum:'2026-07-03', beschreibung:'Materialkauf Kabel', art:'Ausgabe', konto:'3400', betrag:1250.00 },
+    { id:3, datum:'2026-07-05', beschreibung:'Rechnung RE-0002 Braun', art:'Einnahme', konto:'1200', betrag:2320.50 },
+    { id:4, datum:'2026-07-06', beschreibung:'Sanitärarmaturen', art:'Ausgabe', konto:'3400', betrag:3400.00 },
+    { id:5, datum:'2026-07-08', beschreibung:'Rechnung RE-0005 Hoffmann', art:'Einnahme', konto:'1200', betrag:4105.50 },
+    { id:6, datum:'2026-07-10', beschreibung:'Lohn Subunternehmer Wagner', art:'Ausgabe', konto:'3600', betrag:2600.00 },
+    { id:7, datum:'2026-07-12', beschreibung:'Miete Werkstatt', art:'Ausgabe', konto:'3800', betrag:1500.00 },
+    { id:8, datum:'2026-07-13', beschreibung:'Rechnung RE-0006 Fischer', art:'Einnahme', konto:'1200', betrag:2142.00 },
+    { id:9, datum:'2026-07-14', beschreibung:'Versicherung betrieblich', art:'Ausgabe', konto:'3900', betrag:480.00 },
+    { id:10, datum:'2026-07-15', beschreibung:'Rechnung RE-0007 Klein', art:'Einnahme', konto:'1200', betrag:8568.00 }
+  ],
+  ustVoranmeldungen: [
+    { id:1, zeitraum:'Q2 2026', einnahmenBrutto:21288.50, ausgabenBrutto:8750.00, ustEinnahmen:4044.82, ustAusgaben:1662.50, zahllast:2382.32, status:'abgegeben' },
+    { id:2, zeitraum:'Q3 2026 (aktuell)', einnahmenBrutto:18534.00, ausgabenBrutto:5230.00, ustEinnahmen:3521.46, ustAusgaben:993.70, zahllast:2527.76, status:'offen' }
+  ],
+  branchen: [
+    { id:1, name:'Elektro', beschreibung:'Elektroinstallationen, Beleuchtung, Smart Home' },
+    { id:2, name:'Sanitär', beschreibung:'Wasserinstallation, Heizung, Bäder' },
+    { id:3, name:'Tischlerei', beschreibung:'Möbelbau, Innenausbau, Terrassen' },
+    { id:4, name:'Dachdecker', beschreibung:'Dachsanierung, Dacheindeckung, Abdichtung' },
+    { id:5, name:'Maler', beschreibung:'Anstrich, Fassade, Verputz' }
+  ],
+  regeln: [
+    { id:1, name:'Stromkosten', bedingung:'Beschreibung enthält „Strom"', zuordnung:'Konto 4200 - Strom', aktiv:true },
+    { id:2, name:'Mietkosten', bedingung:'Beschreibung enthält „Miete"', zuordnung:'Konto 3800 - Miete', aktiv:true },
+    { id:3, name:'Material', bedingung:'Konto ist 3400', zuordnung:'Kategorie: Material', aktiv:true },
+    { id:4, name:'Lohnkosten', bedingung:'Beschreibung enthält „Lohn" oder „Gehalt"', zuordnung:'Konto 3600 - Löhne', aktiv:false }
+  ],
+  datevExports: [
+    { id:1, datum:'2026-07-01', zeitraum:'Juni 2026', anzahl:14, format:'CSV' }
+  ],
+  importProtokoll: [
+    { id:1, datum:'2026-07-01', typ:'Kunden', eintraege:5, status:'Erfolgreich' }
+  ],
+  nextId: 200
+};
+
+function loadData() {
+  var stored = localStorage.getItem('imhws_demo');
+  if (stored) return JSON.parse(stored);
+  return JSON.parse(JSON.stringify(DEMO_DATA));
+}
+
+function saveData(d) {
+  localStorage.setItem('imhws_demo', JSON.stringify(d));
+}
+
+function resetDemo() {
+  if (confirm('Demo wirklich zurücksetzen? Alle Daten werden gelöscht und die Beispiel-Daten werden wiederhergestellt.')) {
+    localStorage.removeItem('imhws_demo');
+    location.reload();
+  }
+}
+
+var data = loadData();
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function fmt(n) { return Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtDate(d) { if (!d) return '—'; var parts = d.split('-'); return parts[2] + '.' + parts[1] + '.' + parts[0]; }
+function today() { var n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); }
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(function(ov) {
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('open'); });
+});
+
+function populateKundenSelect(selectId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var current = sel.value;
+  sel.innerHTML = '<option value="">— Kunde wählen —</option>' + data.kunden.map(function(k) { return '<option value="' + k.id + '">' + esc(k.name) + '</option>'; }).join('');
+  if (current) sel.value = current;
+}
+
+function populateLieferantenSelect(selectId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var current = sel.value;
+  sel.innerHTML = '<option value="">— Lieferant wählen —</option>' + data.lieferanten.map(function(l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
+  if (current) sel.value = current;
+}
+
+function populateRechnungenSelect(selectId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var current = sel.value;
+  sel.innerHTML = '<option value="">— Rechnung wählen —</option>' + data.rechnungen.map(function(r) {
+    var k = data.kunden.find(function(ku) { return ku.id === r.kundenId; });
+    return '<option value="' + r.id + '">RE-' + String(r.id).padStart(4,'0') + ' (' + esc(k ? k.name : '—') + ')</option>';
+  }).join('');
+  if (current) sel.value = current;
+}
+
+function populateAuftraegeSelect(selectId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var current = sel.value;
+  sel.innerHTML = '<option value="">— Auftrag wählen —</option>' + data.auftraege.map(function(a) {
+    return '<option value="' + a.id + '">AU-' + String(a.id).padStart(4,'0') + ' ' + esc(a.bezeichnung) + '</option>';
+  }).join('');
+  if (current) sel.value = current;
+}
+
+function clearForm(ids) { ids.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; }); }
+
+function getKundenName(id) { var k = data.kunden.find(function(x) { return x.id === id; }); return k ? k.name : '—'; }
+function getLieferantName(id) { var l = data.lieferanten.find(function(x) { return x.id === id; }); return l ? l.name : '—'; }
+function getAuftragBezeichnung(id) { var a = data.auftraege.find(function(x) { return x.id === id; }); return a ? a.bezeichnung : '—'; }
+function getRechnungLabel(id) { var r = data.rechnungen.find(function(x) { return x.id === id; }); return r ? 'RE-' + String(r.id).padStart(4,'0') : '—'; }
+
+function badgeForStatus(status) {
+  var map = { bezahlt:'badge-green', akzeptiert:'badge-green', erledigt:'badge-green', abgegeben:'badge-green', offen:'badge-yellow', in_arbeit:'badge-blue', ueberwiesen:'badge-blue', abgelehnt:'badge-red', storniert:'badge-red', mahnung:'badge-red' };
+  return '<span class="badge ' + (map[status] || 'badge-gray') + '">' + esc(status.replace('_', ' ')) + '</span>';
+}
+
+var navItems = document.querySelectorAll('.nav-item[data-page]');
+var currentPage = 'dashboard';
+
+navItems.forEach(function(item) {
+  item.addEventListener('click', function() {
+    navItems.forEach(function(i) { i.classList.remove('active'); });
+    item.classList.add('active');
+    currentPage = item.dataset.page;
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var pg = document.getElementById('page-' + currentPage);
+    if (pg) pg.classList.add('active');
+    document.getElementById('pageTitle').textContent = item.textContent.trim();
+    updateActions(currentPage);
+    renderAll();
+  });
+});
+
+function updateActions(page) {
+  var el = document.getElementById('topActions');
+  var actions = {
+    kunden: '<button class="btn btn-primary" onclick="openNewKunde()">+ Neuer Kunde</button>',
+    angebote: '<button class="btn btn-primary" onclick="openNewAngebot()">+ Neues Angebot</button>',
+    rechnungen: '<button class="btn btn-primary" onclick="openNewRechnung()">+ Neue Rechnung</button>',
+    mahnungen: '<button class="btn btn-primary" onclick="openNewMahnung()">+ Neue Mahnung</button>',
+    eingangsrechnungen: '<button class="btn btn-primary" onclick="openNewEingangsrechnung()">+ Neue Eingangsrechnung</button>',
+    lieferanten: '<button class="btn btn-primary" onclick="openNewLieferant()">+ Neuer Lieferant</button>',
+    termine: '<button class="btn btn-primary" onclick="openNewTermin()">+ Neuer Termin</button>',
+    auftraege: '<button class="btn btn-primary" onclick="openNewAuftrag()">+ Neuer Auftrag</button>',
+    aufmasse: '<button class="btn btn-primary" onclick="openNewAufmass()">+ Neues Aufmaß</button>',
+    aufgaben: '<button class="btn btn-primary" onclick="openNewAufgabe()">+ Neue Aufgabe</button>',
+    artikel: '<button class="btn btn-primary" onclick="openNewArtikel()">+ Neuer Artikel</button>',
+    kasse: '<button class="btn btn-primary" onclick="openNewKasse()">+ Neuer Eintrag</button>',
+    subunternehmer: '<button class="btn btn-primary" onclick="openNewSub()">+ Neuer Subunternehmer</button>',
+    buchungen: '<button class="btn btn-primary" onclick="openNewBuchung()">+ Neue Buchung</button>',
+    branchen: '<button class="btn btn-primary" onclick="openNewBranche()">+ Neue Branche</button>',
+    regeln: '<button class="btn btn-primary" onclick="openNewRegel()">+ Neue Regel</button>'
+  };
+  el.innerHTML = actions[page] || '';
+}
+
+function renderAll() {
+  renderDashboard();
+  renderKunden();
+  renderAngebote();
+  renderRechnungen();
+  renderMahnungen();
+  renderEingangsrechnungen();
+  renderLieferanten();
+  renderTermine();
+  renderAuftraege();
+  renderAufmasse();
+  renderAufgaben();
+  renderArtikel();
+  renderKasse();
+  renderSubunternehmer();
+  renderBuchungen();
+  renderUst();
+  renderDatev();
+  renderDoppelbuchung();
+  renderBranchen();
+  renderRegeln();
+}
+
+function renderDashboard() {
+  var now = new Date();
+  var monat = now.getMonth();
+  var jahr = now.getFullYear();
+  var umsatz = 0;
+  data.rechnungen.forEach(function(r) {
+    var d = new Date(r.datum);
+    if (d.getMonth() === monat && d.getFullYear() === jahr) { umsatz += r.netto * (1 + r.mwst / 100); }
+  });
+  var offen = data.rechnungen.filter(function(r) { return r.status === 'offen'; }).length;
+  var offeneAngebote = data.angebote.filter(function(a) { return a.status === 'offen'; }).length;
+
+  document.getElementById('statUmsatz').textContent = fmt(umsatz) + ' €';
+  document.getElementById('statOffen').textContent = offen;
+  document.getElementById('statKunden').textContent = data.kunden.length;
+  document.getElementById('statAngebote').textContent = offeneAngebote;
+
+  var tbody = document.getElementById('dashboardRechnungen');
+  var last = data.rechnungen.slice().sort(function(a, b) { return b.datum.localeCompare(a.datum); }).slice(0, 5);
+  tbody.innerHTML = last.map(function(r) {
+    var brutto = r.netto * (1 + r.mwst / 100);
+    return '<tr><td>RE-' + String(r.id).padStart(4,'0') + '</td><td>' + esc(getKundenName(r.kundenId)) + '</td><td>' + fmt(brutto) + ' €</td><td>' + badgeForStatus(r.status) + '</td></tr>';
+  }).join('');
+}
+
+function renderKunden() {
+  var tbody = document.getElementById('kundenTabelle');
+  tbody.innerHTML = data.kunden.map(function(k) {
+    return '<tr><td><strong>' + esc(k.name) + '</strong></td><td>' + esc(k.strasse) + ', ' + esc(k.ort) + '</td><td>' + esc(k.email) + '</td><td>' + esc(k.telefon) + '</td><td><button class="btn btn-secondary btn-sm" onclick="editKunde(' + k.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteKunde(' + k.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewKunde() { clearForm(['kundeId','kundeName','kundeStrasse','kundeOrt','kundeEmail','kundeTel']); document.getElementById('modalKundeTitle').textContent = 'Neuer Kunde'; openModal('modalKunde'); }
+function editKunde(id) { var k = data.kunden.find(function(x) { return x.id === id; }); if (!k) return; document.getElementById('kundeId').value = k.id; document.getElementById('kundeName').value = k.name; document.getElementById('kundeStrasse').value = k.strasse; document.getElementById('kundeOrt').value = k.ort; document.getElementById('kundeEmail').value = k.email; document.getElementById('kundeTel').value = k.telefon; document.getElementById('modalKundeTitle').textContent = 'Kunde bearbeiten'; openModal('modalKunde'); }
+function saveKunde() {
+  var id = document.getElementById('kundeId').value;
+  var obj = { name: document.getElementById('kundeName').value, strasse: document.getElementById('kundeStrasse').value, ort: document.getElementById('kundeOrt').value, email: document.getElementById('kundeEmail').value, telefon: document.getElementById('kundeTel').value };
+  if (id) { var idx = data.kunden.findIndex(function(k) { return k.id === Number(id); }); if (idx !== -1) { data.kunden[idx] = Object.assign(data.kunden[idx], obj); } }
+  else { obj.id = data.nextId++; data.kunden.push(obj); }
+  saveData(data); closeModal('modalKunde'); renderAll();
+}
+function deleteKunde(id) { if (!confirm('Kunde wirklich löschen?')) return; data.kunden = data.kunden.filter(function(k) { return k.id !== id; }); saveData(data); renderAll(); }
+
+function renderAngebote() {
+  populateKundenSelect('angKunde');
+  var tbody = document.getElementById('angeboteTabelle');
+  tbody.innerHTML = data.angebote.map(function(a) {
+    var brutto = a.netto * (1 + a.mwst / 100);
+    var statusBtns = '';
+    if (a.status === 'offen') statusBtns = '<button class="btn btn-success btn-sm" onclick="updateAngebotStatus(' + a.id + ',\'akzeptiert\')">✓ Akzeptiert</button> <button class="btn btn-danger btn-sm" onclick="updateAngebotStatus(' + a.id + ',\'abgelehnt\')">✗ Abgelehnt</button> ';
+    return '<tr><td>AN-' + String(a.id).padStart(4,'0') + '</td><td>' + esc(getKundenName(a.kundenId)) + '</td><td>' + fmtDate(a.datum) + '</td><td>' + esc(a.beschreibung) + '</td><td>' + fmt(brutto) + ' €</td><td>' + badgeForStatus(a.status) + '</td><td>' + statusBtns + '<button class="btn btn-secondary btn-sm" onclick="editAngebot(' + a.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteAngebot(' + a.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewAngebot() { clearForm(['angId','angDatum','angBeschreibung','angNetto']); populateKundenSelect('angKunde'); document.getElementById('angMwst').value = '19'; document.getElementById('modalAngebotTitle').textContent = 'Neues Angebot'; openModal('modalAngebot'); }
+function editAngebot(id) { var a = data.angebote.find(function(x) { return x.id === id; }); if (!a) return; populateKundenSelect('angKunde'); document.getElementById('angId').value = a.id; document.getElementById('angKunde').value = a.kundenId; document.getElementById('angDatum').value = a.datum; document.getElementById('angBeschreibung').value = a.beschreibung; document.getElementById('angNetto').value = a.netto; document.getElementById('angMwst').value = a.mwst; document.getElementById('modalAngebotTitle').textContent = 'Angebot bearbeiten'; openModal('modalAngebot'); }
+function saveAngebot() {
+  var id = document.getElementById('angId').value;
+  var obj = { kundenId: Number(document.getElementById('angKunde').value), datum: document.getElementById('angDatum').value, beschreibung: document.getElementById('angBeschreibung').value, netto: Number(document.getElementById('angNetto').value), mwst: Number(document.getElementById('angMwst').value) };
+  if (id) { var idx = data.angebote.findIndex(function(a) { return a.id === Number(id); }); if (idx !== -1) { obj.status = data.angebote[idx].status; data.angebote[idx] = Object.assign(data.angebote[idx], obj); } }
+  else { obj.id = data.nextId++; obj.status = 'offen'; data.angebote.push(obj); }
+  saveData(data); closeModal('modalAngebot'); renderAll();
+}
+function updateAngebotStatus(id, status) { var a = data.angebote.find(function(x) { return x.id === id; }); if (a) { a.status = status; saveData(data); renderAll(); } }
+function deleteAngebot(id) { if (!confirm('Angebot wirklich löschen?')) return; data.angebote = data.angebote.filter(function(a) { return a.id !== id; }); saveData(data); renderAll(); }
+
+function renderRechnungen() {
+  populateKundenSelect('rekKunde');
+  var tbody = document.getElementById('rechnungenTabelle');
+  tbody.innerHTML = data.rechnungen.map(function(r) {
+    var brutto = r.netto * (1 + r.mwst / 100);
+    var statusBtns = '';
+    if (r.status !== 'bezahlt') statusBtns = '<button class="btn btn-success btn-sm" onclick="updateRechnungStatus(' + r.id + ',\'bezahlt\')">✓ Bezahlt</button> ';
+    if (r.status === 'offen') statusBtns += '<button class="btn btn-warning btn-sm" onclick="updateRechnungStatus(' + r.id + ',\'ueberwiesen\')">€ Überwiesen</button> ';
+    if (r.status === 'bezahlt' || r.status === 'ueberwiesen') statusBtns = '<button class="btn btn-secondary btn-sm" onclick="updateRechnungStatus(' + r.id + ',\'offen\')">↺ Offen</button> ';
+    return '<tr><td>RE-' + String(r.id).padStart(4,'0') + '</td><td>' + esc(getKundenName(r.kundenId)) + '</td><td>' + fmtDate(r.datum) + '</td><td>' + esc(r.beschreibung) + '</td><td>' + fmt(brutto) + ' €</td><td>' + badgeForStatus(r.status) + '</td><td>' + statusBtns + '<button class="btn btn-secondary btn-sm" onclick="editRechnung(' + r.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteRechnung(' + r.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewRechnung() { clearForm(['rekId','rekDatum','rekBeschreibung','rekNetto']); populateKundenSelect('rekKunde'); document.getElementById('rekMwst').value = '19'; document.getElementById('modalRechnungTitle').textContent = 'Neue Rechnung'; openModal('modalRechnung'); }
+function editRechnung(id) { var r = data.rechnungen.find(function(x) { return x.id === id; }); if (!r) return; populateKundenSelect('rekKunde'); document.getElementById('rekId').value = r.id; document.getElementById('rekKunde').value = r.kundenId; document.getElementById('rekDatum').value = r.datum; document.getElementById('rekBeschreibung').value = r.beschreibung; document.getElementById('rekNetto').value = r.netto; document.getElementById('rekMwst').value = r.mwst; document.getElementById('modalRechnungTitle').textContent = 'Rechnung bearbeiten'; openModal('modalRechnung'); }
+function saveRechnung() {
+  var id = document.getElementById('rekId').value;
+  var obj = { kundenId: Number(document.getElementById('rekKunde').value), datum: document.getElementById('rekDatum').value, beschreibung: document.getElementById('rekBeschreibung').value, netto: Number(document.getElementById('rekNetto').value), mwst: Number(document.getElementById('rekMwst').value) };
+  if (id) { var idx = data.rechnungen.findIndex(function(r) { return r.id === Number(id); }); if (idx !== -1) { obj.status = data.rechnungen[idx].status; data.rechnungen[idx] = Object.assign(data.rechnungen[idx], obj); } }
+  else { obj.id = data.nextId++; obj.status = 'offen'; data.rechnungen.push(obj); }
+  saveData(data); closeModal('modalRechnung'); renderAll();
+}
+function updateRechnungStatus(id, status) { var r = data.rechnungen.find(function(x) { return x.id === id; }); if (r) { r.status = status; saveData(data); renderAll(); } }
+function deleteRechnung(id) { if (!confirm('Rechnung wirklich löschen?')) return; data.rechnungen = data.rechnungen.filter(function(r) { return r.id !== id; }); saveData(data); renderAll(); }
+
+function renderMahnungen() {
+  populateRechnungenSelect('mahnRechnung');
+  var tbody = document.getElementById('mahnungenTabelle');
+  tbody.innerHTML = data.mahnungen.map(function(m) {
+    return '<tr><td>MA-' + String(m.id).padStart(4,'0') + '</td><td>' + getRechnungLabel(m.rechnungId) + '</td><td>' + esc(getKundenName(m.kundenId)) + '</td><td>' + fmtDate(m.datum) + '</td><td>' + badgeForStatus(m.stufe === '1. Mahnung' ? 'offen' : m.stufe === '2. Mahnung' ? 'in_arbeit' : 'mahnung') + ' ' + esc(m.stufe) + '</td><td>' + fmt(m.betrag) + ' €</td><td><button class="btn btn-danger btn-sm" onclick="deleteMahnung(' + m.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewMahnung() { clearForm(['mahnId','mahnDatum','mahnBemerkung']); populateRechnungenSelect('mahnRechnung'); document.getElementById('mahnStufe').selectedIndex = 0; document.getElementById('modalMahnungTitle').textContent = 'Neue Mahnung'; openModal('modalMahnung'); }
+function saveMahnung() {
+  var rId = Number(document.getElementById('mahnRechnung').value);
+  var r = data.rechnungen.find(function(x) { return x.id === rId; });
+  var m = { id: data.nextId++, rechnungId: rId, kundenId: r ? r.kundenId : 0, datum: document.getElementById('mahnDatum').value, stufe: document.getElementById('mahnStufe').value, betrag: r ? r.netto * (1 + r.mwst / 100) : 0, bemerkung: document.getElementById('mahnBemerkung').value };
+  data.mahnungen.push(m);
+  saveData(data); closeModal('modalMahnung'); renderAll();
+}
+function deleteMahnung(id) { if (!confirm('Mahnung wirklich löschen?')) return; data.mahnungen = data.mahnungen.filter(function(m) { return m.id !== id; }); saveData(data); renderAll(); }
+
+function renderEingangsrechnungen() {
+  populateLieferantenSelect('eingLieferant');
+  var tbody = document.getElementById('eingangsTabelle');
+  tbody.innerHTML = data.eingangsrechnungen.map(function(e) {
+    var statusBtns = '';
+    if (e.status !== 'bezahlt') statusBtns = '<button class="btn btn-success btn-sm" onclick="updateEingStatus(' + e.id + ',\'bezahlt\')">✓ Bezahlt</button> ';
+    return '<tr><td>ER-' + String(e.id).padStart(4,'0') + '</td><td>' + esc(getLieferantName(e.lieferantId)) + '</td><td>' + fmtDate(e.datum) + '</td><td>' + esc(e.beschreibung) + '</td><td>' + fmt(e.betrag) + ' €</td><td>' + badgeForStatus(e.status) + '</td><td>' + statusBtns + '<button class="btn btn-secondary btn-sm" onclick="editEing(' + e.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteEing(' + e.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewEingangsrechnung() { clearForm(['eingId','eingDatum','eingBeschreibung','eingRechnungsnr','eingBetrag']); populateLieferantenSelect('eingLieferant'); document.getElementById('modalEingTitle').textContent = 'Neue Eingangsrechnung'; openModal('modalEingangsrechnung'); }
+function editEing(id) { var e = data.eingangsrechnungen.find(function(x) { return x.id === id; }); if (!e) return; populateLieferantenSelect('eingLieferant'); document.getElementById('eingId').value = e.id; document.getElementById('eingLieferant').value = e.lieferantId; document.getElementById('eingDatum').value = e.datum; document.getElementById('eingBeschreibung').value = e.beschreibung; document.getElementById('eingRechnungsnr').value = e.rechnungsnr; document.getElementById('eingBetrag').value = e.betrag; document.getElementById('modalEingTitle').textContent = 'Eingangsrechnung bearbeiten'; openModal('modalEingangsrechnung'); }
+function saveEingangsrechnung() {
+  var id = document.getElementById('eingId').value;
+  var obj = { lieferantId: Number(document.getElementById('eingLieferant').value), datum: document.getElementById('eingDatum').value, beschreibung: document.getElementById('eingBeschreibung').value, rechnungsnr: document.getElementById('eingRechnungsnr').value, betrag: Number(document.getElementById('eingBetrag').value) };
+  if (id) { var idx = data.eingangsrechnungen.findIndex(function(e) { return e.id === Number(id); }); if (idx !== -1) { obj.status = data.eingangsrechnungen[idx].status; data.eingangsrechnungen[idx] = Object.assign(data.eingangsrechnungen[idx], obj); } }
+  else { obj.id = data.nextId++; obj.status = 'offen'; data.eingangsrechnungen.push(obj); }
+  saveData(data); closeModal('modalEingangsrechnung'); renderAll();
+}
+function updateEingStatus(id, status) { var e = data.eingangsrechnungen.find(function(x) { return x.id === id; }); if (e) { e.status = status; saveData(data); renderAll(); } }
+function deleteEing(id) { if (!confirm('Eingangsrechnung wirklich löschen?')) return; data.eingangsrechnungen = data.eingangsrechnungen.filter(function(e) { return e.id !== id; }); saveData(data); renderAll(); }
+
+function renderLieferanten() {
+  var tbody = document.getElementById('lieferantenTabelle');
+  tbody.innerHTML = data.lieferanten.map(function(l) {
+    return '<tr><td><strong>' + esc(l.name) + '</strong></td><td>' + esc(l.adresse) + '</td><td>' + esc(l.email) + '</td><td>' + esc(l.telefon) + '</td><td>' + esc(l.kontakt) + '</td><td><button class="btn btn-secondary btn-sm" onclick="editLieferant(' + l.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteLieferant(' + l.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewLieferant() { clearForm(['lieferantId','lieferantName','lieferantAdresse','lieferantEmail','lieferantTel','lieferantKontakt']); document.getElementById('modalLieferantTitle').textContent = 'Neuer Lieferant'; openModal('modalLieferant'); }
+function editLieferant(id) { var l = data.lieferanten.find(function(x) { return x.id === id; }); if (!l) return; document.getElementById('lieferantId').value = l.id; document.getElementById('lieferantName').value = l.name; document.getElementById('lieferantAdresse').value = l.adresse; document.getElementById('lieferantEmail').value = l.email; document.getElementById('lieferantTel').value = l.telefon; document.getElementById('lieferantKontakt').value = l.kontakt; document.getElementById('modalLieferantTitle').textContent = 'Lieferant bearbeiten'; openModal('modalLieferant'); }
+function saveLieferant() {
+  var id = document.getElementById('lieferantId').value;
+  var obj = { name: document.getElementById('lieferantName').value, adresse: document.getElementById('lieferantAdresse').value, email: document.getElementById('lieferantEmail').value, telefon: document.getElementById('lieferantTel').value, kontakt: document.getElementById('lieferantKontakt').value };
+  if (id) { var idx = data.lieferanten.findIndex(function(l) { return l.id === Number(id); }); if (idx !== -1) { data.lieferanten[idx] = Object.assign(data.lieferanten[idx], obj); } }
+  else { obj.id = data.nextId++; data.lieferanten.push(obj); }
+  saveData(data); closeModal('modalLieferant'); renderAll();
+}
+function deleteLieferant(id) { if (!confirm('Lieferant wirklich löschen?')) return; data.lieferanten = data.lieferanten.filter(function(l) { return l.id !== id; }); saveData(data); renderAll(); }
+
+function renderTermine() {
+  populateKundenSelect('terKunde');
+  var tbody = document.getElementById('termineTabelle');
+  var sorted = data.termine.slice().sort(function(a, b) { return (a.datum + a.uhrzeit).localeCompare(b.datum + b.uhrzeit); });
+  tbody.innerHTML = sorted.map(function(t) {
+    return '<tr><td>' + fmtDate(t.datum) + '</td><td>' + esc(t.uhrzeit) + '</td><td>' + esc(getKundenName(t.kundenId)) + '</td><td>' + esc(t.beschreibung) + '</td><td><button class="btn btn-secondary btn-sm" onclick="editTermin(' + t.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteTermin(' + t.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewTermin() { clearForm(['terId','terDatum','terUhrzeit','terBeschreibung']); populateKundenSelect('terKunde'); document.getElementById('modalTerminTitle').textContent = 'Neuer Termin'; openModal('modalTermin'); }
+function editTermin(id) { var t = data.termine.find(function(x) { return x.id === id; }); if (!t) return; populateKundenSelect('terKunde'); document.getElementById('terId').value = t.id; document.getElementById('terDatum').value = t.datum; document.getElementById('terUhrzeit').value = t.uhrzeit; document.getElementById('terKunde').value = t.kundenId; document.getElementById('terBeschreibung').value = t.beschreibung; document.getElementById('modalTerminTitle').textContent = 'Termin bearbeiten'; openModal('modalTermin'); }
+function saveTermin() {
+  var id = document.getElementById('terId').value;
+  var obj = { datum: document.getElementById('terDatum').value, uhrzeit: document.getElementById('terUhrzeit').value, kundenId: Number(document.getElementById('terKunde').value), beschreibung: document.getElementById('terBeschreibung').value };
+  if (id) { var idx = data.termine.findIndex(function(t) { return t.id === Number(id); }); if (idx !== -1) { data.termine[idx] = Object.assign(data.termine[idx], obj); } }
+  else { obj.id = data.nextId++; data.termine.push(obj); }
+  saveData(data); closeModal('modalTermin'); renderAll();
+}
+function deleteTermin(id) { if (!confirm('Termin wirklich löschen?')) return; data.termine = data.termine.filter(function(t) { return t.id !== id; }); saveData(data); renderAll(); }
+
+function renderAuftraege() {
+  populateKundenSelect('aufKunde');
+  var tbody = document.getElementById('auftraegeTabelle');
+  tbody.innerHTML = data.auftraege.map(function(a) {
+    var st = a.status === 'in_arbeit' ? 'badge-blue' : a.status === 'fertig' ? 'badge-green' : 'badge-yellow';
+    var label = a.status === 'in_arbeit' ? 'In Arbeit' : a.status === 'fertig' ? 'Fertig' : 'Offen';
+    var statusBtns = '';
+    if (a.status === 'offen') statusBtns = '<button class="btn btn-warning btn-sm" onclick="updateAuftragStatus(' + a.id + ',\'in_arbeit\')">▶ Starten</button> ';
+    if (a.status === 'in_arbeit') statusBtns = '<button class="btn btn-success btn-sm" onclick="updateAuftragStatus(' + a.id + ',\'fertig\')">✓ Fertig</button> ';
+    return '<tr><td>AU-' + String(a.id).padStart(4,'0') + '</td><td>' + esc(getKundenName(a.kundenId)) + '</td><td>' + esc(a.bezeichnung) + '</td><td>' + fmtDate(a.start) + '</td><td>' + fmtDate(a.ende) + '</td><td>' + fmt(a.budget) + ' €</td><td><span class="badge ' + st + '">' + label + '</span></td><td>' + statusBtns + '<button class="btn btn-secondary btn-sm" onclick="editAuftrag(' + a.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteAuftrag(' + a.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewAuftrag() { clearForm(['aufId','aufBezeichnung','aufStart','aufEnde','aufBudget']); populateKundenSelect('aufKunde'); document.getElementById('modalAuftragTitle').textContent = 'Neuer Auftrag'; openModal('modalAuftrag'); }
+function editAuftrag(id) { var a = data.auftraege.find(function(x) { return x.id === id; }); if (!a) return; populateKundenSelect('aufKunde'); document.getElementById('aufId').value = a.id; document.getElementById('aufKunde').value = a.kundenId; document.getElementById('aufBezeichnung').value = a.bezeichnung; document.getElementById('aufStart').value = a.start; document.getElementById('aufEnde').value = a.ende; document.getElementById('aufBudget').value = a.budget; document.getElementById('modalAuftragTitle').textContent = 'Auftrag bearbeiten'; openModal('modalAuftrag'); }
+function saveAuftrag() {
+  var id = document.getElementById('aufId').value;
+  var obj = { kundenId: Number(document.getElementById('aufKunde').value), bezeichnung: document.getElementById('aufBezeichnung').value, start: document.getElementById('aufStart').value, ende: document.getElementById('aufEnde').value, budget: Number(document.getElementById('aufBudget').value) };
+  if (id) { var idx = data.auftraege.findIndex(function(a) { return a.id === Number(id); }); if (idx !== -1) { obj.status = data.auftraege[idx].status; data.auftraege[idx] = Object.assign(data.auftraege[idx], obj); } }
+  else { obj.id = data.nextId++; obj.status = 'offen'; data.auftraege.push(obj); }
+  saveData(data); closeModal('modalAuftrag'); renderAll();
+}
+function updateAuftragStatus(id, status) { var a = data.auftraege.find(function(x) { return x.id === id; }); if (a) { a.status = status; saveData(data); renderAll(); } }
+function deleteAuftrag(id) { if (!confirm('Auftrag wirklich löschen?')) return; data.auftraege = data.auftraege.filter(function(a) { return a.id !== id; }); saveData(data); renderAll(); }
+
+function renderAufmasse() {
+  populateAuftraegeSelect('amAuftrag');
+  var tbody = document.getElementById('aufmasseTabelle');
+  tbody.innerHTML = data.aufmasse.map(function(am) {
+    var gesamt = am.menge * am.einzelpreis;
+    return '<tr><td>AM-' + String(am.id).padStart(4,'0') + '</td><td>' + getAuftragBezeichnung(am.auftragId) + '</td><td>' + esc(am.position) + '</td><td>' + am.menge + '</td><td>' + esc(am.einheit) + '</td><td>' + fmt(am.einzelpreis) + ' €</td><td>' + fmt(gesamt) + ' €</td><td><button class="btn btn-secondary btn-sm" onclick="editAufmass(' + am.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteAufmass(' + am.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewAufmass() { clearForm(['amId','amPosition','amMenge','amPreis']); populateAuftraegeSelect('amAuftrag'); document.getElementById('amEinheit').selectedIndex = 0; document.getElementById('modalAufmassTitle').textContent = 'Neues Aufmaß'; openModal('modalAufmass'); }
+function editAufmass(id) { var am = data.aufmasse.find(function(x) { return x.id === id; }); if (!am) return; populateAuftraegeSelect('amAuftrag'); document.getElementById('amId').value = am.id; document.getElementById('amAuftrag').value = am.auftragId; document.getElementById('amPosition').value = am.position; document.getElementById('amMenge').value = am.menge; document.getElementById('amEinheit').value = am.einheit; document.getElementById('amPreis').value = am.einzelpreis; document.getElementById('modalAufmassTitle').textContent = 'Aufmaß bearbeiten'; openModal('modalAufmass'); }
+function saveAufmass() {
+  var id = document.getElementById('amId').value;
+  var obj = { auftragId: Number(document.getElementById('amAuftrag').value), position: document.getElementById('amPosition').value, menge: Number(document.getElementById('amMenge').value), einheit: document.getElementById('amEinheit').value, einzelpreis: Number(document.getElementById('amPreis').value) };
+  if (id) { var idx = data.aufmasse.findIndex(function(a) { return a.id === Number(id); }); if (idx !== -1) { data.aufmasse[idx] = Object.assign(data.aufmasse[idx], obj); } }
+  else { obj.id = data.nextId++; data.aufmasse.push(obj); }
+  saveData(data); closeModal('modalAufmass'); renderAll();
+}
+function deleteAufmass(id) { if (!confirm('Aufmaß wirklich löschen?')) return; data.aufmasse = data.aufmasse.filter(function(a) { return a.id !== id; }); saveData(data); renderAll(); }
+
+function renderAufgaben() {
+  var tbody = document.getElementById('aufgabenTabelle');
+  tbody.innerHTML = data.aufgaben.map(function(a) {
+    var pBadge = a.prioritaet === 'Hoch' ? 'badge-red' : a.prioritaet === 'Mittel' ? 'badge-yellow' : 'badge-gray';
+    var statusBtns = '';
+    if (a.status !== 'erledigt') statusBtns = '<button class="btn btn-success btn-sm" onclick="updateAufgabeStatus(' + a.id + ',\'erledigt\')">✓ Erledigt</button> ';
+    else statusBtns = '<button class="btn btn-secondary btn-sm" onclick="updateAufgabeStatus(' + a.id + ',\'offen\')">↺ Offen</button> ';
+    return '<tr><td>' + esc(a.titel) + '</td><td>' + esc(a.zugewiesen) + '</td><td>' + fmtDate(a.faellig) + '</td><td><span class="badge ' + pBadge + '">' + esc(a.prioritaet) + '</span></td><td>' + badgeForStatus(a.status) + '</td><td>' + statusBtns + '<button class="btn btn-secondary btn-sm" onclick="editAufgabe(' + a.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteAufgabe(' + a.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewAufgabe() { clearForm(['aufgId','aufgTitel','aufgZugewiesen','aufgFaellig']); document.getElementById('aufgPrioritaet').selectedIndex = 1; document.getElementById('modalAufgabeTitle').textContent = 'Neue Aufgabe'; openModal('modalAufgabe'); }
+function editAufgabe(id) { var a = data.aufgaben.find(function(x) { return x.id === id; }); if (!a) return; document.getElementById('aufgId').value = a.id; document.getElementById('aufgTitel').value = a.titel; document.getElementById('aufgZugewiesen').value = a.zugewiesen; document.getElementById('aufgFaellig').value = a.faellig; document.getElementById('aufgPrioritaet').value = a.prioritaet; document.getElementById('modalAufgabeTitle').textContent = 'Aufgabe bearbeiten'; openModal('modalAufgabe'); }
+function saveAufgabe() {
+  var id = document.getElementById('aufgId').value;
+  var obj = { titel: document.getElementById('aufgTitel').value, zugewiesen: document.getElementById('aufgZugewiesen').value, faellig: document.getElementById('aufgFaellig').value, prioritaet: document.getElementById('aufgPrioritaet').value };
+  if (id) { var idx = data.aufgaben.findIndex(function(a) { return a.id === Number(id); }); if (idx !== -1) { obj.status = data.aufgaben[idx].status; data.aufgaben[idx] = Object.assign(data.aufgaben[idx], obj); } }
+  else { obj.id = data.nextId++; obj.status = 'offen'; data.aufgaben.push(obj); }
+  saveData(data); closeModal('modalAufgabe'); renderAll();
+}
+function updateAufgabeStatus(id, status) { var a = data.aufgaben.find(function(x) { return x.id === id; }); if (a) { a.status = status; saveData(data); renderAll(); } }
+function deleteAufgabe(id) { if (!confirm('Aufgabe wirklich löschen?')) return; data.aufgaben = data.aufgaben.filter(function(a) { return a.id !== id; }); saveData(data); renderAll(); }
+
+function renderArtikel() {
+  var tbody = document.getElementById('artikelTabelle');
+  tbody.innerHTML = data.artikel.map(function(a) {
+    var lagerBadge = a.lager < 10 ? 'badge-red' : a.lager < 30 ? 'badge-yellow' : 'badge-green';
+    return '<tr><td>AR-' + String(a.id).padStart(4,'0') + '</td><td>' + esc(a.name) + '</td><td>' + esc(a.kategorie) + '</td><td>' + esc(a.einheit) + '</td><td>' + fmt(a.preis) + ' €</td><td><span class="badge ' + lagerBadge + '">' + a.lager + ' ' + esc(a.einheit) + '</span></td><td><button class="btn btn-secondary btn-sm" onclick="editArtikel(' + a.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteArtikel(' + a.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewArtikel() { clearForm(['artId','artName','artPreis','artLager']); document.getElementById('artKategorie').selectedIndex = 0; document.getElementById('artEinheit').selectedIndex = 0; document.getElementById('artLager').value = '0'; document.getElementById('modalArtikelTitle').textContent = 'Neuer Artikel'; openModal('modalArtikel'); }
+function editArtikel(id) { var a = data.artikel.find(function(x) { return x.id === id; }); if (!a) return; document.getElementById('artId').value = a.id; document.getElementById('artName').value = a.name; document.getElementById('artKategorie').value = a.kategorie; document.getElementById('artEinheit').value = a.einheit; document.getElementById('artPreis').value = a.preis; document.getElementById('artLager').value = a.lager; document.getElementById('modalArtikelTitle').textContent = 'Artikel bearbeiten'; openModal('modalArtikel'); }
+function saveArtikel() {
+  var id = document.getElementById('artId').value;
+  var obj = { name: document.getElementById('artName').value, kategorie: document.getElementById('artKategorie').value, einheit: document.getElementById('artEinheit').value, preis: Number(document.getElementById('artPreis').value), lager: Number(document.getElementById('artLager').value) };
+  if (id) { var idx = data.artikel.findIndex(function(a) { return a.id === Number(id); }); if (idx !== -1) { data.artikel[idx] = Object.assign(data.artikel[idx], obj); } }
+  else { obj.id = data.nextId++; data.artikel.push(obj); }
+  saveData(data); closeModal('modalArtikel'); renderAll();
+}
+function deleteArtikel(id) { if (!confirm('Artikel wirklich löschen?')) return; data.artikel = data.artikel.filter(function(a) { return a.id !== id; }); saveData(data); renderAll(); }
+
+function renderKasse() {
+  var tbody = document.getElementById('kasseTabelle');
+  tbody.innerHTML = data.kasse.map(function(k) {
+    var einnahme = k.art === 'Einnahme' ? fmt(k.betrag) + ' €' : '';
+    var ausgabe = k.art === 'Ausgabe' ? fmt(k.betrag) + ' €' : '';
+    return '<tr><td>' + fmtDate(k.datum) + '</td><td>' + esc(k.beschreibung) + '</td><td>' + (einnahme ? '<span style="color:var(--success);font-weight:600;">+' + einnahme + '</span>' : '—') + '</td><td>' + (ausgabe ? '<span style="color:var(--danger);font-weight:600;">-' + ausgabe + '</span>' : '—') + '</td><td>' + esc(k.kontakt) + '</td><td><button class="btn btn-secondary btn-sm" onclick="editKasse(' + k.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteKasse(' + k.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewKasse() { clearForm(['kasseId','kasseDatum','kasseBeschreibung','kasseBetrag','kasseKontakt']); document.getElementById('kasseArt').selectedIndex = 0; document.getElementById('modalKasseTitle').textContent = 'Neuer Kasseneintrag'; openModal('modalKasse'); }
+function editKasse(id) { var k = data.kasse.find(function(x) { return x.id === id; }); if (!k) return; document.getElementById('kasseId').value = k.id; document.getElementById('kasseDatum').value = k.datum; document.getElementById('kasseArt').value = k.art; document.getElementById('kasseBeschreibung').value = k.beschreibung; document.getElementById('kasseBetrag').value = k.betrag; document.getElementById('kasseKontakt').value = k.kontakt; document.getElementById('modalKasseTitle').textContent = 'Kasseneintrag bearbeiten'; openModal('modalKasse'); }
+function saveKasse() {
+  var id = document.getElementById('kasseId').value;
+  var obj = { datum: document.getElementById('kasseDatum').value, art: document.getElementById('kasseArt').value, beschreibung: document.getElementById('kasseBeschreibung').value, betrag: Number(document.getElementById('kasseBetrag').value), kontakt: document.getElementById('kasseKontakt').value };
+  if (id) { var idx = data.kasse.findIndex(function(k) { return k.id === Number(id); }); if (idx !== -1) { data.kasse[idx] = Object.assign(data.kasse[idx], obj); } }
+  else { obj.id = data.nextId++; data.kasse.push(obj); }
+  saveData(data); closeModal('modalKasse'); renderAll();
+}
+function deleteKasse(id) { if (!confirm('Kasseneintrag wirklich löschen?')) return; data.kasse = data.kasse.filter(function(k) { return k.id !== id; }); saveData(data); renderAll(); }
+
+function renderSubunternehmer() {
+  var tbody = document.getElementById('subunternehmerTabelle');
+  tbody.innerHTML = data.subunternehmer.map(function(s) {
+    return '<tr><td><strong>' + esc(s.name) + '</strong></td><td>' + esc(s.branche) + '</td><td>' + esc(s.kontakt) + '</td><td>' + esc(s.telefon) + '</td><td>' + fmt(s.stundensatz) + ' €/h</td><td><button class="btn btn-secondary btn-sm" onclick="editSub(' + s.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteSub(' + s.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewSub() { clearForm(['subId','subName','subBranche','subKontakt','subTel','subSatz']); document.getElementById('modalSubTitle').textContent = 'Neuer Subunternehmer'; openModal('modalSubunternehmer'); }
+function editSub(id) { var s = data.subunternehmer.find(function(x) { return x.id === id; }); if (!s) return; document.getElementById('subId').value = s.id; document.getElementById('subName').value = s.name; document.getElementById('subBranche').value = s.branche; document.getElementById('subKontakt').value = s.kontakt; document.getElementById('subTel').value = s.telefon; document.getElementById('subSatz').value = s.stundensatz; document.getElementById('modalSubTitle').textContent = 'Subunternehmer bearbeiten'; openModal('modalSubunternehmer'); }
+function saveSub() {
+  var id = document.getElementById('subId').value;
+  var obj = { name: document.getElementById('subName').value, branche: document.getElementById('subBranche').value, kontakt: document.getElementById('subKontakt').value, telefon: document.getElementById('subTel').value, stundensatz: Number(document.getElementById('subSatz').value) };
+  if (id) { var idx = data.subunternehmer.findIndex(function(s) { return s.id === Number(id); }); if (idx !== -1) { data.subunternehmer[idx] = Object.assign(data.subunternehmer[idx], obj); } }
+  else { obj.id = data.nextId++; data.subunternehmer.push(obj); }
+  saveData(data); closeModal('modalSubunternehmer'); renderAll();
+}
+function deleteSub(id) { if (!confirm('Subunternehmer wirklich löschen?')) return; data.subunternehmer = data.subunternehmer.filter(function(s) { return s.id !== id; }); saveData(data); renderAll(); }
+
+function renderBuchungen() {
+  var tbody = document.getElementById('buchungenTabelle');
+  tbody.innerHTML = data.buchungen.map(function(b) {
+    var einnahme = b.art === 'Einnahme' ? fmt(b.betrag) + ' €' : '';
+    var ausgabe = b.art === 'Ausgabe' ? fmt(b.betrag) + ' €' : '';
+    return '<tr><td>' + fmtDate(b.datum) + '</td><td>' + esc(b.beschreibung) + '</td><td>' + esc(b.konto) + '</td><td>' + (einnahme ? '<span style="color:var(--success);font-weight:600;">+' + einnahme + '</span>' : '—') + '</td><td>' + (ausgabe ? '<span style="color:var(--danger);font-weight:600;">-' + ausgabe + '</span>' : '—') + '</td><td><button class="btn btn-secondary btn-sm" onclick="editBuchung(' + b.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteBuchung(' + b.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewBuchung() { clearForm(['bucId','bucDatum','bucBeschreibung','bucKonto','bucBetrag']); document.getElementById('bucArt').selectedIndex = 0; document.getElementById('modalBuchungTitle').textContent = 'Neue Buchung'; openModal('modalBuchung'); }
+function editBuchung(id) { var b = data.buchungen.find(function(x) { return x.id === id; }); if (!b) return; document.getElementById('bucId').value = b.id; document.getElementById('bucDatum').value = b.datum; document.getElementById('bucArt').value = b.art; document.getElementById('bucBeschreibung').value = b.beschreibung; document.getElementById('bucKonto').value = b.konto; document.getElementById('bucBetrag').value = b.betrag; document.getElementById('modalBuchungTitle').textContent = 'Buchung bearbeiten'; openModal('modalBuchung'); }
+function saveBuchung() {
+  var id = document.getElementById('bucId').value;
+  var obj = { datum: document.getElementById('bucDatum').value, art: document.getElementById('bucArt').value, beschreibung: document.getElementById('bucBeschreibung').value, konto: document.getElementById('bucKonto').value, betrag: Number(document.getElementById('bucBetrag').value) };
+  if (id) { var idx = data.buchungen.findIndex(function(b) { return b.id === Number(id); }); if (idx !== -1) { data.buchungen[idx] = Object.assign(data.buchungen[idx], obj); } }
+  else { obj.id = data.nextId++; data.buchungen.push(obj); }
+  saveData(data); closeModal('modalBuchung'); renderAll();
+}
+function deleteBuchung(id) { if (!confirm('Buchung wirklich löschen?')) return; data.buchungen = data.buchungen.filter(function(b) { return b.id !== id; }); saveData(data); renderAll(); }
+
+function renderUst() {
+  var einnahmen = 0;
+  var ausgaben = 0;
+  data.buchungen.forEach(function(b) {
+    var brutto = b.betrag;
+    if (b.art === 'Einnahme') einnahmen += brutto * 0.19;
+    else ausgaben += brutto * 0.19;
+  });
+  var zahllast = einnahmen - ausgaben;
+  document.getElementById('ustEinnahmen').textContent = fmt(einnahmen) + ' €';
+  document.getElementById('ustAusgaben').textContent = fmt(ausgaben) + ' €';
+  document.getElementById('ustZahllast').textContent = fmt(zahllast) + ' €';
+
+  var tbody = document.getElementById('ustTabelle');
+  tbody.innerHTML = data.ustVoranmeldungen.map(function(u) {
+    return '<tr><td>' + esc(u.zeitraum) + '</td><td>' + fmt(u.einnahmenBrutto) + ' €</td><td>' + fmt(u.ausgabenBrutto) + ' €</td><td>' + fmt(u.ustEinnahmen) + ' €</td><td>' + fmt(u.ustAusgaben) + ' €</td><td><strong>' + fmt(u.zahllast) + ' €</strong></td><td>' + badgeForStatus(u.status) + '</td></tr>';
+  }).join('');
+}
+
+function renderDatev() {
+  var tbody = document.getElementById('datevTabelle');
+  tbody.innerHTML = data.datevExports.map(function(e) {
+    return '<tr><td>' + fmtDate(e.datum) + '</td><td>' + esc(e.zeitraum) + '</td><td>' + e.anzahl + '</td><td>' + esc(e.format) + '</td><td><button class="btn btn-secondary btn-sm" onclick="alert(\'Download in der Vollversion.\')">📥 Herunterladen</button></td></tr>';
+  }).join('');
+}
+
+function renderDoppelbuchung() {
+  var tbody = document.getElementById('doppelTabelle');
+  var buchungen = data.buchungen.slice().sort(function(a, b) { return a.datum.localeCompare(b.datum); });
+  tbody.innerHTML = buchungen.map(function(b) {
+    var sollKonto = b.art === 'Einnahme' ? '1200' : b.konto;
+    var habenKonto = b.art === 'Einnahme' ? b.konto : '1200';
+    return '<tr><td>' + fmtDate(b.datum) + '</td><td>' + esc(b.beschreibung) + '</td><td>' + esc(sollKonto) + '</td><td>' + esc(habenKonto) + '</td><td>' + fmt(b.betrag) + ' €</td></tr>';
+  }).join('');
+}
+
+function renderBranchen() {
+  var tbody = document.getElementById('branchenTabelle');
+  var brancheKundeMap = { 'Elektro': 2, 'Sanitär': 3, 'Tischlerei': 4, 'Dachdecker': 5, 'Maler': 6 };
+  tbody.innerHTML = data.branchen.map(function(b) {
+    var count = 0;
+    data.kunden.forEach(function(k) {
+      var brancheName = '';
+      Object.keys(brancheKundeMap).forEach(function(bk) { if (brancheKundeMap[bk] === k.id) brancheName = bk; });
+      if (brancheName === b.name) count++;
+    });
+    if (count === 0) count = Math.floor(Math.random() * 3) + 1;
+    return '<tr><td><strong>' + esc(b.name) + '</strong></td><td>' + esc(b.beschreibung) + '</td><td>' + count + '</td><td><button class="btn btn-secondary btn-sm" onclick="editBranche(' + b.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteBranche(' + b.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewBranche() { clearForm(['brancheId','brancheName','brancheBeschreibung']); document.getElementById('modalBrancheTitle').textContent = 'Neue Branche'; openModal('modalBranche'); }
+function editBranche(id) { var b = data.branchen.find(function(x) { return x.id === id; }); if (!b) return; document.getElementById('brancheId').value = b.id; document.getElementById('brancheName').value = b.name; document.getElementById('brancheBeschreibung').value = b.beschreibung; document.getElementById('modalBrancheTitle').textContent = 'Branche bearbeiten'; openModal('modalBranche'); }
+function saveBranche() {
+  var id = document.getElementById('brancheId').value;
+  var obj = { name: document.getElementById('brancheName').value, beschreibung: document.getElementById('brancheBeschreibung').value };
+  if (id) { var idx = data.branchen.findIndex(function(b) { return b.id === Number(id); }); if (idx !== -1) { data.branchen[idx] = Object.assign(data.branchen[idx], obj); } }
+  else { obj.id = data.nextId++; data.branchen.push(obj); }
+  saveData(data); closeModal('modalBranche'); renderAll();
+}
+function deleteBranche(id) { if (!confirm('Branche wirklich löschen?')) return; data.branchen = data.branchen.filter(function(b) { return b.id !== id; }); saveData(data); renderAll(); }
+
+function renderRegeln() {
+  var tbody = document.getElementById('regelnTabelle');
+  tbody.innerHTML = data.regeln.map(function(r) {
+    var activeBadge = r.aktiv ? '<span class="badge badge-green">Aktiv</span>' : '<span class="badge badge-gray">Inaktiv</span>';
+    return '<tr><td><strong>' + esc(r.name) + '</strong></td><td>' + esc(r.bedingung) + '</td><td>' + esc(r.zuordnung) + '</td><td>' + activeBadge + '</td><td><button class="btn btn-secondary btn-sm" onclick="editRegel(' + r.id + ')">Bearbeiten</button> <button class="btn btn-danger btn-sm" onclick="deleteRegel(' + r.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewRegel() { clearForm(['regelId','regelName','regelBedingung','regelZuordnung']); document.getElementById('modalRegelTitle').textContent = 'Neue Regel'; openModal('modalRegel'); }
+function editRegel(id) { var r = data.regeln.find(function(x) { return x.id === id; }); if (!r) return; document.getElementById('regelId').value = r.id; document.getElementById('regelName').value = r.name; document.getElementById('regelBedingung').value = r.bedingung; document.getElementById('regelZuordnung').value = r.zuordnung; document.getElementById('modalRegelTitle').textContent = 'Regel bearbeiten'; openModal('modalRegel'); }
+function saveRegel() {
+  var id = document.getElementById('regelId').value;
+  var obj = { name: document.getElementById('regelName').value, bedingung: document.getElementById('regelBedingung').value, zuordnung: document.getElementById('regelZuordnung').value };
+  if (id) { var idx = data.regeln.findIndex(function(r) { return r.id === Number(id); }); if (idx !== -1) { obj.aktiv = data.regeln[idx].aktiv; data.regeln[idx] = Object.assign(data.regeln[idx], obj); } }
+  else { obj.id = data.nextId++; obj.aktiv = true; data.regeln.push(obj); }
+  saveData(data); closeModal('modalRegel'); renderAll();
+}
+function deleteRegel(id) { if (!confirm('Regel wirklich löschen?')) return; data.regeln = data.regeln.filter(function(r) { return r.id !== id; }); saveData(data); renderAll(); }
+
+updateActions('dashboard');
+renderAll();
+</script>
+</body>
+</html>

@@ -45,18 +45,16 @@
     }
     nav.scrolled { box-shadow: var(--shadow); }
     .nav-inner {
-      max-width: 1200px; margin: 0 auto; padding: 0 24px;
-      display: flex; align-items: center; justify-content: space-between; height: 72px;
+      max-width: 100%; margin: 0 auto; padding: 0;
+      display: flex; align-items: center; justify-content: space-between; height: 90px;
     }
-    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-brand { display: flex; align-items: center; text-decoration: none; flex: 1; height: 100%; }
     .nav-logo {
-      width: 40px; height: 40px; background: var(--primary); border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: 800; font-size: 18px;
+      width: 100%; height: 100%; object-fit: contain; border-radius: 0;
     }
-    .nav-brand-text { font-weight: 700; font-size: 18px; color: var(--text); }
+    .nav-brand-text { display: none; }
     .nav-brand-text span { color: var(--accent); }
-    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links { display: none; }
     .nav-links a {
       text-decoration: none; color: var(--text-light); font-size: 14px;
       font-weight: 500; transition: color 0.2s;
@@ -67,12 +65,12 @@
       border-radius: 8px; font-weight: 600 !important; transition: background 0.2s, transform 0.1s !important;
     }
     .nav-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .nav-mobile { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+    .nav-mobile { display: none; }
     .nav-mobile span { display: block; width: 24px; height: 2px; background: var(--text); margin: 5px 0; transition: 0.3s; }
 
     /* ===== HERO ===== */
     .hero {
-      padding: 140px 0 80px; text-align: center;
+      padding: 160px 0 80px; text-align: center;
       background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #dbeafe 100%);
       position: relative; overflow: hidden;
     }
@@ -215,31 +213,79 @@
     .details-visual-text span { font-size: 13px; color: var(--text-muted); }
 
     /* ===== PRICING ===== */
-    .pricing { padding: 100px 0; }
-    .pricing-card {
-      max-width: 520px; margin: 0 auto; background: white;
-      border: 2px solid var(--accent); border-radius: 20px;
-      padding: 48px; text-align: center; position: relative;
-      box-shadow: 0 20px 60px rgba(59,130,246,0.15);
+    /* ===== COMPARISON ===== */
+    .comparison { padding: 100px 0; background: var(--bg-alt); }
+    .comparison-table {
+      width: 100%; max-width: 900px; margin: 0 auto; border-collapse: separate;
+      border-spacing: 0; border-radius: 16px; overflow: hidden;
+      box-shadow: var(--shadow-lg); background: var(--bg);
     }
+    .comparison-table thead th {
+      padding: 20px 24px; font-size: 15px; font-weight: 700;
+      text-align: center; color: var(--bg); border-bottom: none;
+    }
+    .comparison-table thead th:first-child { text-align: left; background: var(--primary-light); }
+    .comparison-table thead th.us { background: var(--accent); color: white; }
+    .comparison-table thead th.comp { background: #4b5563; }
+    .comparison-table tbody td {
+      padding: 14px 24px; font-size: 14px; color: var(--text);
+      border-bottom: 1px solid var(--border); text-align: center;
+    }
+    .comparison-table tbody td:first-child { text-align: left; font-weight: 500; }
+    .comparison-table tbody tr:last-child td { border-bottom: none; }
+    .comparison-table tbody tr:hover { background: var(--bg-alt); }
+    .comparison-table .check { color: var(--success); font-weight: 700; font-size: 18px; }
+    .comparison-table .cross { color: #ef4444; font-weight: 700; font-size: 18px; }
+    .comparison-table .price-cell { font-weight: 700; color: var(--primary); white-space: nowrap; }
+    .comparison-table .us-price { color: var(--accent); font-weight: 800; }
+    .comparison-note {
+      max-width: 700px; margin: 32px auto 0; text-align: center;
+      font-size: 14px; color: var(--text-muted); line-height: 1.7;
+    }
+    @media (max-width: 768px) {
+      .comparison-table { font-size: 12px; }
+      .comparison-table thead th, .comparison-table tbody td { padding: 10px 12px; }
+    }
+
+    /* ===== PRICING ===== */
+    .pricing { padding: 100px 0; }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      max-width: 1000px; margin: 0 auto;
+    }
+    .pricing-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 16px;
+      padding: 40px 32px; position: relative; text-align: center;
+      box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .pricing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+    .pricing-card.featured { border-color: var(--accent); box-shadow: 0 20px 60px rgba(59,130,246,0.15); }
     .pricing-badge {
       position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
       background: var(--accent); color: white; padding: 6px 20px;
       border-radius: 100px; font-size: 13px; font-weight: 600;
     }
-    .pricing-card h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
-    .pricing-card .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
-    .pricing-amount { font-size: 56px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
-    .pricing-amount span { font-size: 20px; font-weight: 500; color: var(--text-muted); }
-    .pricing-period { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
-    .pricing-features { list-style: none; text-align: left; margin-bottom: 36px; }
+    .pricing-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+    .pricing-card .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .pricing-amount { font-size: 44px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+    .pricing-amount span { font-size: 16px; font-weight: 500; color: var(--text-muted); }
+    .pricing-period { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .pricing-features { list-style: none; text-align: left; margin-bottom: 32px; }
     .pricing-features li {
-      display: flex; align-items: center; gap: 12px; padding: 10px 0;
-      font-size: 15px; color: var(--text); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; padding: 7px 0;
+      font-size: 14px; color: var(--text); border-bottom: 1px solid var(--border);
     }
     .pricing-features li:last-child { border: none; }
     .pricing-features li::before { content: '✓'; color: var(--success); font-weight: 700; }
     .pricing-note { font-size: 13px; color: var(--text-muted); margin-top: 16px; }
+    .pricing-usp {
+      max-width: 800px; margin: 48px auto 0; text-align: center;
+      background: var(--bg-alt); border-radius: 12px; padding: 32px;
+      border: 1px solid var(--border);
+    }
+    .pricing-usp h4 { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+    .pricing-usp p { font-size: 15px; color: var(--text-light); line-height: 1.7; }
+    @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
 
     /* ===== FAQ ===== */
     .faq { padding: 100px 0; background: var(--bg-alt); }
@@ -324,12 +370,12 @@
   <nav id="navbar">
     <div class="nav-inner">
       <a href="#" class="nav-brand">
-        <div class="nav-logo">H</div>
-        <div class="nav-brand-text">IMH<span>WS</span></div>
+        <img src="intrasaar_logo.jpg" alt="intrasaar media" class="nav-logo">
       </a>
       <div class="nav-links" id="navLinks">
         <a href="#features">Funktionen</a>
         <a href="#details">Mehr dazu</a>
+        <a href="#vergleich">Vergleich</a>
         <a href="#pricing">Preise</a>
         <a href="#faq">FAQ</a>
         <a href="#download" class="nav-cta">Download</a>
@@ -347,10 +393,12 @@
         <span class="hero-badge-dot"></span>
         Version 2.3.0 — Jetzt mit PDF-Vorschau & Briefkopf-Gestaltung
       </div>
-      <h1>Die <span>Handwerker-Software</span><br>für dein ganzes Geschäft</h1>
+      <h1>Die <span>Handwerker-Software</span><br>für Ihr ganzes Geschäft</h1>
       <p>Angebote erstellen, Rechnungen versenden, Buchhaltung führen, Termine planen und Lager verwalten — alles in einer einzigen Desktop-App.</p>
       <div class="hero-buttons">
-        <a href="#download" class="btn btn-primary">⬇ Kostenlos testen</a>
+        <a href="checkout.html" class="btn btn-primary">Jetzt kaufen</a>
+        <a href="demo.html" class="btn btn-secondary">🖥️ Online-Demo testen</a>
+        <a href="docs/bedienerhandbuch.html" class="btn btn-secondary">📖 Bedienungsanleitung</a>
         <a href="#features" class="btn btn-secondary">Alle Funktionen ansehen</a>
       </div>
       <div class="hero-stats">
@@ -429,8 +477,8 @@
     <div class="container">
       <div class="section-header fade-up">
         <div class="section-label">Funktionen</div>
-        <h2 class="section-title">Alles was du brauchst —<br>nichts was du nicht brauchst</h2>
-        <p class="section-desc">Vom Angebot bis zur Buchführung — IMHWS begleitet dich durch den gesamten Geschäftsprozess.</p>
+        <h2 class="section-title">Alles was Sie brauchen —<br>nichts was Sie nicht brauchen</h2>
+        <p class="section-desc">Vom Angebot bis zur Buchführung — IMHWS begleitet Sie durch den gesamten Geschäftsprozess.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card fade-up">
@@ -448,7 +496,7 @@
         <div class="feature-card fade-up">
           <div class="feature-icon" style="background: #fef3c7;">📊</div>
           <h3>Dashboard</h3>
-          <p>Umsatz, offene Rechnungen, Termine und Aufgaben — alles auf einen Blick in deinem persönlichen Dashboard.</p>
+          <p>Umsatz, offene Rechnungen, Termine und Aufgaben — alles auf einen Blick in Ihrem persönlichen Dashboard.</p>
         </div>
         <div class="feature-card fade-up">
           <div class="feature-icon" style="background: #ede9fe;">📑</div>
@@ -474,12 +522,12 @@
         <div class="feature-card fade-up">
           <div class="feature-icon" style="background: #fef9c3;">🏦</div>
           <h3>SEPA-Export</h3>
-          <p>SEPA-Überweisungen und Lastschriften als CSV exportieren — direkt importierbar in dein Banking.</p>
+          <p>SEPA-Überweisungen und Lastschriften als CSV exportieren — direkt importierbar in Ihr Banking.</p>
         </div>
         <div class="feature-card fade-up">
           <div class="feature-icon" style="background: #dbeafe;">🎨</div>
           <h3>Briefkopf-Gestaltung</h3>
-          <p>Eigenes Logo, Firmenfarbe, Kopfzeile und Fußzeile — dein Corporate Design auf jedem Dokument.</p>
+          <p>Eigenes Logo, Firmenfarbe, Kopfzeile und Fußzeile — Ihr Corporate Design auf jedem Dokument.</p>
           <div class="feature-tag">Neu</div>
         </div>
         <div class="feature-card fade-up">
@@ -497,6 +545,26 @@
           <h3>Automatisierung & Regeln</h3>
           <p>Eigene Regeln erstellen, CSV-Import, DATANORM/BMEcat-Schnittstellen und GAEB-Import/Export.</p>
         </div>
+        <div class="feature-card fade-up" style="grid-column: 1 / -1; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6;">
+          <div style="display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px;">
+              <div class="feature-icon" style="background: #3b82f6; color: white; width: 48px; height: 48px; font-size: 22px;">📱</div>
+              <h3 style="margin-top: 12px;">Monteur-App für Android</h3>
+              <p>Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften — direkt auf dem Bau. Daten synchronisieren sich mit der Desktop-Software.</p>
+              <div class="feature-tag" style="background: #3b82f6; color: white;">Neu — Inklusive</div>
+            </div>
+            <div style="flex: 1; min-width: 280px;">
+              <ul style="list-style: none; font-size: 14px; color: var(--text-light);">
+                <li style="padding: 4px 0;">⏱️ Zeiterfassung mit Timer</li>
+                <li style="padding: 4px 0;">📋 Rapporte & Berichte</li>
+                <li style="padding: 4px 0;">📐 Aufmaße mit Kamera</li>
+                <li style="padding: 4px 0;">📦 Inventur & Lieferscheine</li>
+                <li style="padding: 4px 0;">✍️ Unterschriften erfassen</li>
+                <li style="padding: 4px 0;">🔄 Sync mit Desktop-App</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -508,9 +576,9 @@
         <div class="details-content fade-up">
           <div class="section-label">Warum IMHWS?</div>
           <h2>Für Handwerker gemacht,<br>nicht für Bürokraten</h2>
-          <p>IMHWS wurde spezilich für die Bedürfnisse von Handwerkern, Kleinunternehmen und Freiberuflern entwickelt. Kein over-engineered ERP-System, sondern genau das was du brauchst.</p>
+          <p>IMHWS wurde speziell für die Bedürfnisse von Handwerkern, Kleinunternehmen und Freiberuflern entwickelt. Kein over-engineered ERP-System, sondern genau das was Sie brauchen.</p>
           <ul class="details-list">
-            <li>Desktop-App — deine Daten bleiben auf deinem Computer</li>
+            <li>Desktop-App — Ihre Daten bleiben auf Ihrem Computer</li>
             <li>Keine monatlichen Kosten, kein Abo, kein Abo-Falle</li>
             <li>Funktioniert komplett offline — kein Internet nötig</li>
             <li>SQLite-Datenbank — robust, schnell, portabel</li>
@@ -524,7 +592,7 @@
           <div class="details-visual-row">
             <div class="details-visual-icon">🔒</div>
             <div class="details-visual-text">
-              <strong>Deine Daten, dein Computer</strong>
+              <strong>Ihre Daten, Ihr Computer</strong>
               <span>Keine Cloud-Zwang, kein Server-Setup nötig</span>
             </div>
           </div>
@@ -568,33 +636,208 @@
     </div>
   </section>
 
+  <!-- Comparison -->
+  <section class="comparison" id="vergleich">
+    <div class="container">
+      <div class="section-header fade-up">
+        <div class="section-label">Vergleich</div>
+        <h2 class="section-title">IMHWS vs. Cloud-Lösungen</h2>
+        <p class="section-desc">Was Sie bei anderen Anbietern zahlen — und was bei uns anders ist.</p>
+      </div>
+      <table class="comparison-table fade-up">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="us">IMHWS</th>
+            <th class="comp">Sage Handwerk</th>
+            <th class="comp">Lexware</th>
+            <th class="comp">plancraft</th>
+            <th class="comp">ToolTime</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kosten pro Jahr</td>
+            <td class="price-cell us-price">249–649 € einmalig</td>
+            <td class="price-cell">ab 540 €/Jahr</td>
+            <td class="price-cell">ab 384 €/Jahr</td>
+            <td class="price-cell">ab 479 €/Jahr</td>
+            <td class="price-cell">ab 948 €/Jahr</td>
+          </tr>
+          <tr>
+            <td>Nach 5 Jahren gezahlt</td>
+            <td class="price-cell us-price">249–649 €</td>
+            <td class="price-cell">2.700+ €</td>
+            <td class="price-cell">1.920+ €</td>
+            <td class="price-cell">2.395+ €</td>
+            <td class="price-cell">4.740+ €</td>
+          </tr>
+          <tr>
+            <td>Lauflende Kosten</td>
+            <td class="check">Nie</td>
+            <td class="cross">Jeden Monat</td>
+            <td class="cross">Jeden Monat</td>
+            <td class="cross">Jeden Monat</td>
+            <td class="cross">Jeden Monat</td>
+          </tr>
+          <tr>
+            <td>Daten lokal gespeichert</td>
+            <td class="check">✓</td>
+            <td class="cross">✗ Cloud</td>
+            <td class="cross">✗ Cloud</td>
+            <td class="cross">✗ Cloud</td>
+            <td class="cross">✗ Cloud</td>
+          </tr>
+          <tr>
+            <td>Offline nutzbar</td>
+            <td class="check">✓</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+          </tr>
+          <tr>
+            <td>Kein Internet nötig</td>
+            <td class="check">✓</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+          </tr>
+          <tr>
+            <td>Kostenlose Updates</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>DSGVO-konform (kein US-Server)</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Buchhaltung inklusive</td>
+            <td class="check">✓</td>
+            <td class="cross">✗ extra</td>
+            <td class="check">✓</td>
+            <td class="cross">✗ extra</td>
+            <td class="cross">✗ extra</td>
+          </tr>
+          <tr>
+            <td>DATEV-Export</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>E-Rechnungen (XRechnung)</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Lizenzübertragung bei Rechnerwechsel</td>
+            <td class="check">✓ einmalig</td>
+            <td class="cross">Nein — neu mieten</td>
+            <td class="cross">Nein — neu mieten</td>
+            <td class="cross">Nein — neu mieten</td>
+            <td class="cross">Nein — neu mieten</td>
+          </tr>
+          <tr>
+            <td>Mobile Monteur-App</td>
+            <td class="check">✓ inklusive</td>
+            <td class="check">✓</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="comparison-note">* Alle Cloud-Preise basieren auf den günstigsten Tarifen mit 1 Nutzer (Stand Juli 2026). Bei steigender Nutzerzahl verdoppeln sich die Kosten bei Cloud-Anbietern — bei IMHWS bleibt der Preis gleich.</p>
+    </div>
+  </section>
+
   <!-- Pricing -->
   <section class="pricing" id="pricing">
     <div class="container">
       <div class="section-header fade-up">
         <div class="section-label">Preise</div>
-        <h2 class="section-title">Einfach & fair</h2>
-        <p class="section-desc">Einmal zahlen, für immer nutzen. Kein Abo, keine Überraschungen.</p>
+        <h2 class="section-title">Einmal zahlen, für immer nutzen</h2>
+        <p class="section-desc">Kein Abo, keine laufenden Kosten. Wählen Sie die Lizenz, die zu Ihrem Betrieb passt.</p>
       </div>
-      <div class="pricing-card fade-up">
-        <div class="pricing-badge">Empfohlen</div>
-        <h3>IMHWS Komplett</h3>
-        <div class="subtitle">Alle Funktionen, kein Abo</div>
-        <div class="pricing-amount">149 € <span>einmalig</span></div>
-        <div class="pricing-period">+ MwSt. — für immer dein</div>
-        <ul class="pricing-features">
-          <li>Alle 30+ Funktionen</li>
-          <li>Angebote, Rechnungen, Mahnungen</li>
-          <li>Einfache & doppelte Buchführung</li>
-          <li>Warenwirtschaft & Lagerverwaltung</li>
-          <li>PDF-Export mit eigenem Briefkopf</li>
-          <li>E-Rechnungen & ZUGFeRD</li>
-          <li>SEPA-Export & DATEV</li>
-          <li>Kostenlose Updates</li>
-          <li>Persönlicher Support</li>
-        </ul>
-        <a href="#download" class="btn btn-primary" style="width: 100%; justify-content: center;">Jetzt kaufen & downloaden</a>
-        <div class="pricing-note">Probezeit: 14 Tage kostenlos testen</div>
+      <div class="pricing-grid fade-up">
+        <!-- Basis -->
+        <div class="pricing-card">
+          <h3>Basis</h3>
+          <div class="subtitle">Das Wichtigste für den Start</div>
+          <div class="pricing-amount">249 € <span>einmalig</span></div>
+          <div class="pricing-period">+ MwSt.</div>
+          <ul class="pricing-features">
+            <li>Angebote & Rechnungen</li>
+            <li>Kundenverwaltung</li>
+            <li>Mahnungen</li>
+            <li>Terminplanung</li>
+            <li>Aufgabenverwaltung</li>
+            <li>PDF-Export mit Briefkopf</li>
+            <li>📱 Monteur-App (Android)</li>
+            <li>Kostenlose Updates</li>
+          </ul>
+          <a href="checkout.html?plan=basis" class="btn btn-secondary" style="width: 100%; justify-content: center;">Auswählen</a>
+          <div class="pricing-note">14 Tage kostenlos testen</div>
+        </div>
+        <!-- Pro -->
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Empfohlen</div>
+          <h3>Pro</h3>
+          <div class="subtitle">Für wachsende Betriebe</div>
+          <div class="pricing-amount">449 € <span>einmalig</span></div>
+          <div class="pricing-period">+ MwSt.</div>
+          <ul class="pricing-features">
+            <li>Alles aus Basis</li>
+            <li>Auftragsverwaltung</li>
+            <li>Aufmaße & Kalkulation</li>
+            <li>Artikel & Warenwirtschaft</li>
+            <li>Kassenbuch</li>
+            <li>Subunternehmer & Lieferanten</li>
+            <li>Eingangsrechnungen</li>
+            <li>E-Rechnungen & ZUGFeRD</li>
+            <li>📱 Monteur-App (Android)</li>
+          </ul>
+          <a href="checkout.html?plan=pro" class="btn btn-primary" style="width: 100%; justify-content: center;">Auswählen</a>
+          <div class="pricing-note">14 Tage kostenlos testen</div>
+        </div>
+        <!-- Komplett -->
+        <div class="pricing-card">
+          <h3>Komplett</h3>
+          <div class="subtitle">Volle Buchhaltung inklusive</div>
+          <div class="pricing-amount">649 € <span>einmalig</span></div>
+          <div class="pricing-period">+ MwSt.</div>
+          <ul class="pricing-features">
+            <li>Alles aus Pro</li>
+            <li>Einfache Buchführung</li>
+            <li>Doppelte Buchführung</li>
+            <li>Umsatzsteuer-Voranmeldung</li>
+            <li>DATEV-Export</li>
+            <li>SEPA-Export</li>
+            <li>📱 Monteur-App (Android)</li>
+            <li>Persönlicher Support</li>
+          </ul>
+          <a href="checkout.html?plan=komplett" class="btn btn-secondary" style="width: 100%; justify-content: center;">Auswählen</a>
+          <div class="pricing-note">14 Tage kostenlos testen</div>
+        </div>
+      </div>
+      <div class="pricing-usp fade-up">
+        <h4>Kein Abo. Keine Cloud. Volle Kontrolle.</h4>
+        <p>Während andere Anbieter 40–120 € pro Monat und Nutzer verlangen und Ihre Daten in der Cloud speichern, läuft IMHWS komplett auf Ihrem Computer. Einmal kaufen, für immer nutzen. Ihre Daten bleiben bei Ihnen.</p>
       </div>
     </div>
   </section>
@@ -604,7 +847,7 @@
     <div class="container">
       <div class="section-header fade-up">
         <div class="section-label">Häufige Fragen</div>
-        <h2 class="section-title">Alles was du wissen musst</h2>
+        <h2 class="section-title">Alles was Sie wissen müssen</h2>
       </div>
       <div class="faq-list fade-up">
         <div class="faq-item">
@@ -613,23 +856,27 @@
         </div>
         <div class="faq-item">
           <button class="faq-question">Brauche ich eine Internetverbindung?</button>
-          <div class="faq-answer">Nein. IMHWS läuft komplett offline. Deine Daten werden lokal auf deinem Computer gespeichert. Internet wird nur für den Download und E-Mail-Versand benötigt.</div>
+          <div class="faq-answer">Nein. IMHWS läuft komplett offline. Ihre Daten werden lokal auf Ihrem Computer gespeichert. Internet wird nur für den Download und E-Mail-Versand benötigt.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question">Kann ich meine bisherigen Daten importieren?</button>
-          <div class="faq-answer">Ja, du kannst Daten aus CSV-Dateien, DATANORM, BMEcat und GAEB importieren. Bei Bedarf helfen wir dir auch beim Umstieg aus anderen Programmen.</div>
+          <div class="faq-answer">Ja, Sie können Daten aus CSV-Dateien, DATANORM, BMEcat und GAEB importieren. Bei Bedarf helfen wir Ihnen auch beim Umstieg aus anderen Programmen.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question">Was passiert nach der Kaufsicherung?</button>
-          <div class="faq-answer">Du erhältst eine Lizenz, die an deinen Computer gebunden ist. Alle zukünftigen Updates sind kostenlos inklusive. Bei einem Rechnerwechsel kannst du die Lizenz einmalig übertragen.</div>
+          <button class="faq-question">Kann ich später upgraden?</button>
+          <div class="faq-answer">Ja! Sie können jederzeit von Basis auf Pro oder Komplett upgraden. Sie zahlen nur die Differenz zum aktuellen Preis.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question">Gibt es eine Testversion?</button>
-          <div class="faq-answer">Ja, du kannst IMHWS 14 Tage lang komplett kostenlos und unverbindlich testen. Keine Kreditkarte nötig.</div>
+          <div class="faq-answer">Ja, Sie können IMHWS 14 Tage lang komplett kostenlos und unverbindlich testen. Keine Kreditkarte nötig.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question">Unterstützt die Software E-Rechnungen?</button>
           <div class="faq-answer">Ja, IMHWS unterstützt E-Rechnungen im XRechnung-Format sowie ZUGFeRD-konforme PDFs. Das ist ab 2025 für viele Unternehmen verpflichtend.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Gibt es auch eine mobile App?</button>
+          <div class="faq-answer">Ja! Die Monteur-App für Android ist in allen Lizenzpaketen inklusive. Damit können Ihre Mitarbeiter vor Ort Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften erfassen — offline und synchronisiert mit der Desktop-Software.</div>
         </div>
       </div>
     </div>
@@ -639,10 +886,13 @@
   <section class="cta" id="download">
     <div class="container">
       <h2>Bereit loszulegen?</h2>
-      <p>Lade IMHWS jetzt kostenlos herunter und teste alle Funktionen 14 Tage lang ohne Verpflichtung.</p>
-      <div class="hero-buttons" style="justify-content: center;">
-        <a href="https://github.com/intrasaar/handwerker-software/releases/tag/v2.3.0" class="btn btn-cta" target="_blank">⬇ macOS herunterladen</a>
-        <a href="https://github.com/intrasaar/handwerker-software/releases/tag/v2.3.0" class="btn btn-secondary" style="color: white; border-color: rgba(255,255,255,0.2);" target="_blank">⬇ Windows herunterladen</a>
+      <p>Laden Sie IMHWS jetzt kostenlos herunter und testen Sie alle Funktionen 14 Tage lang ohne Verpflichtung.</p>
+      <div class="hero-buttons" style="justify-content: center; flex-wrap: wrap; gap: 12px;">
+        <a href="demo.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">🖥️ Online-Demo testen</a>
+        <a href="docs/bedienerhandbuch.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">📖 Bedienungsanleitung</a>
+        <a href="v2.3.0/Handwerker-Software-2.3.0.dmg" class="btn btn-cta" target="_blank">⬇ macOS Intel herunterladen</a>
+        <a href="v2.3.0/Handwerker-Software-2.3.0-arm64.dmg" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);" target="_blank">⬇ macOS Apple Silicon herunterladen</a>
+        <a href="v2.3.0/Handwerker-Software.Setup.2.3.0.exe" class="btn btn-secondary" style="background: transparent; color: white; border-color: rgba(255,255,255,0.3);" target="_blank">⬇ Windows herunterladen</a>
       </div>
     </div>
   </section>
@@ -653,28 +903,29 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="#" class="nav-brand" style="margin-bottom: 8px;">
-            <div class="nav-logo">H</div>
-            <div class="nav-brand-text" style="color: white;">IMH<span>WS</span></div>
+            <img src="intrasaar_logo.jpg" alt="intrasaar media" style="height: 40px; width: auto;">
           </a>
           <p>Die komplette Desktop-Software für Handwerker.<br>Entwickelt von intrasaar media.</p>
         </div>
         <div class="footer-col">
           <h4>Produkt</h4>
           <a href="#features">Funktionen</a>
+          <a href="#vergleich">Vergleich</a>
           <a href="#pricing">Preise</a>
           <a href="#download">Download</a>
           <a href="#faq">FAQ</a>
+          <a href="docs/bedienerhandbuch.html">Bedienungsanleitung</a>
         </div>
         <div class="footer-col">
           <h4>Unternehmen</h4>
           <a href="https://intrasaar.de" target="_blank">intrasaar.de</a>
-          <a href="#">Impressum</a>
-          <a href="#">Datenschutz</a>
+          <a href="impressum.html">Impressum</a>
+          <a href="datenschutz.html">Datenschutz</a>
+          <a href="agb.html">AGB</a>
         </div>
         <div class="footer-col">
           <h4>Support</h4>
-          <a href="mailto:support@intrasaar.de">support@intrasaar.de</a>
-          <a href="https://github.com/intrasaar/handwerker-software" target="_blank">GitHub</a>
+          <a href="mailto:kontakt@intrasaar.de">kontakt@intrasaar.de</a>
         </div>
       </div>
       <div class="footer-bottom">

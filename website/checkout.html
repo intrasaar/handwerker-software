@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bestellen — IMHWS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --primary: #3b82f6; --primary-hover: #2563eb; --text: #1e293b; --text-light: #64748b; --text-muted: #94a3b8; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --success: #10b981; --radius: 12px; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    a { text-decoration: none; color: inherit; }
+    .header { background: white; border-bottom: 1px solid var(--border); padding: 0; display: flex; align-items: center; justify-content: space-between; height: 90px; overflow: hidden; }
+    .header-brand { display: flex; align-items: center; flex: 1; height: 100%; }
+    .header-logo { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+    .header a { color: var(--primary); font-size: 14px; font-weight: 500; padding-right: 24px; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+    h1 { font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: var(--text-light); font-size: 16px; margin-bottom: 40px; }
+
+    .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+    .plan { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius); padding: 28px 24px; cursor: pointer; transition: all 0.2s; position: relative; text-align: center; }
+    .plan:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .plan.selected { border-color: var(--primary); background: #eff6ff; }
+    .plan-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; display: none; }
+    .plan.selected .plan-badge { display: block; }
+    .plan h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .plan .price { font-size: 36px; font-weight: 900; color: var(--primary); margin: 12px 0 4px; }
+    .plan .price span { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+    .plan .period { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .plan ul { list-style: none; text-align: left; font-size: 13px; }
+    .plan li { padding: 5px 0; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+    .plan li::before { content: '✓'; color: var(--success); font-weight: 700; font-size: 12px; }
+
+    .checkout-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; }
+    .checkout-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s;
+    }
+    .form-group input:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .order-summary { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+    .order-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+    .order-row.total { border-top: 2px solid var(--border); margin-top: 8px; padding-top: 12px; font-weight: 700; font-size: 16px; }
+
+    .paypal-area { text-align: center; }
+    #paypal-button-container { display: inline-block; min-height: 50px; }
+    .pay-note { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+
+    .success { display: none; text-align: center; padding: 60px 20px; }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: var(--success); }
+    .success p { color: var(--text-light); font-size: 15px; margin-bottom: 8px; }
+    .success .license-key { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 16px; font-weight: 600; margin: 20px auto; max-width: 400px; word-break: break-all; }
+
+    .back-link { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 14px; font-weight: 500; margin-bottom: 24px; }
+
+    @media (max-width: 768px) { .plans { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <img src="intrasaar_logo.jpg" alt="intrasaar media" class="header-logo">
+  </div>
+  <a href="index.html">← Zurück</a>
+</div>
+  <a href="index.html">← Zurück zur Startseite</a>
+</div>
+
+<div class="container">
+
+  <!-- Checkout Flow -->
+  <div id="checkout-flow">
+    <h1>IMHWS kaufen</h1>
+    <p class="subtitle">Wählen Sie Ihre Lizenz und bezahlen Sie sicher per PayPal.</p>
+
+    <!-- Step 1: Plan auswählen -->
+    <div class="plans" id="plans">
+      <div class="plan" data-plan="basis" onclick="selectPlan('basis')">
+        <div class="plan-badge">Ausgewählt</div>
+        <h3>Basis</h3>
+        <div class="price">249 €</div>
+        <div class="period">einmalig + MwSt.</div>
+        <ul>
+          <li>Angebote & Rechnungen</li>
+          <li>Kundenverwaltung</li>
+          <li>Mahnungen</li>
+          <li>Terminplanung</li>
+          <li>Aufgabenverwaltung</li>
+          <li>PDF-Export mit Briefkopf</li>
+        </ul>
+      </div>
+      <div class="plan" data-plan="pro" onclick="selectPlan('pro')">
+        <div class="plan-badge">Ausgewählt</div>
+        <h3>Pro</h3>
+        <div class="price">449 €</div>
+        <div class="period">einmalig + MwSt.</div>
+        <ul>
+          <li>Alles aus Basis</li>
+          <li>Auftragsverwaltung</li>
+          <li>Aufmaße & Kalkulation</li>
+          <li>Artikel & Warenwirtschaft</li>
+          <li>Kassenbuch</li>
+          <li>Subunternehmer & Lieferanten</li>
+          <li>Eingangsrechnungen</li>
+          <li>E-Rechnungen & ZUGFeRD</li>
+        </ul>
+      </div>
+      <div class="plan" data-plan="komplett" onclick="selectPlan('komplett')">
+        <div class="plan-badge">Ausgewählt</div>
+        <h3>Komplett</h3>
+        <div class="price">649 €</div>
+        <div class="period">einmalig + MwSt.</div>
+        <ul>
+          <li>Alles aus Pro</li>
+          <li>Einfache Buchführung</li>
+          <li>Doppelte Buchführung</li>
+          <li>Umsatzsteuer-Voranmeldung</li>
+          <li>DATEV-Export</li>
+          <li>SEPA-Export</li>
+          <li>Persönlicher Support</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 2: Kundendaten -->
+    <div class="checkout-section" id="customer-section" style="display:none;">
+      <h2>Ihre Daten</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vorname</label>
+          <input type="text" id="vorname" placeholder="Max">
+        </div>
+        <div class="form-group">
+          <label>Nachname / Firma</label>
+          <input type="text" id="nachname" placeholder="Mustermann GmbH">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>E-Mail-Adresse</label>
+        <input type="email" id="email" placeholder="max@mustermann.de">
+        <div class="form-note">An diese Adresse erhalten Sie den Lizenzschlüssel.</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Straße + Nr.</label>
+          <input type="text" id="strasse" placeholder="Musterstraße 1">
+        </div>
+        <div class="form-group">
+          <label>PLZ + Ort</label>
+          <input type="text" id="ort" placeholder="66111 Saarbrücken">
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Bestellübersicht + PayPal -->
+    <div class="checkout-section" id="payment-section" style="display:none;">
+      <h2>Bestellübersicht</h2>
+      <div class="order-summary">
+        <div class="order-row">
+          <span>IMHWS <span id="order-plan-name">—</span></span>
+          <span id="order-plan-price">— €</span>
+        </div>
+        <div class="order-row">
+          <span>+ 19% MwSt.</span>
+          <span id="order-mwst">— €</span>
+        </div>
+        <div class="order-row total">
+          <span>Gesamtbetrag</span>
+          <span id="order-total">— €</span>
+        </div>
+      </div>
+
+      <div class="paypal-area">
+        <div id="paypal-button-container"></div>
+        <p class="pay-note">Sichere Zahlung über PayPal. Sie werden nach der Zahlung zum Lizenzschlüssel weitergeleitet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="success" id="success-page">
+    <div class="success-icon">✅</div>
+    <h2>Vielen Dank für Ihren Kauf!</h2>
+    <p>Ihre Bestellung wurde erfolgreich bearbeitet.</p>
+    <p>Ihr Lizenzschlüssel:</p>
+    <div class="license-key" id="license-key">—</div>
+    <p style="margin-top: 20px;">Den Lizenzschlüssel haben wir auch an Ihre E-Mail-Adresse gesendet.</p>
+    <p style="margin-top: 8px;"><a href="index.html" style="color: var(--primary); font-weight: 500;">← Zurück zur Startseite</a></p>
+  </div>
+
+</div>
+
+<script>
+const PLANS = {
+  basis:    { name: 'Basis',    netto: 249.00 },
+  pro:      { name: 'Pro',      netto: 449.00 },
+  komplett: { name: 'Komplett', netto: 649.00 }
+};
+
+const PAYPAL_CLIENT_ID = 'DEIN_PAYPAL_CLIENT_ID';
+let selectedPlan = null;
+let paypalReady = false;
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan').forEach(p => p.classList.remove('selected'));
+  document.querySelector(`[data-plan="${plan}"]`).classList.add('selected');
+  document.getElementById('customer-section').style.display = 'block';
+  document.getElementById('payment-section').style.display = 'block';
+  updateOrderSummary();
+  window.scrollTo({ top: document.getElementById('customer-section').offsetTop - 20, behavior: 'smooth' });
+}
+
+function updateOrderSummary() {
+  if (!selectedPlan) return;
+  const p = PLANS[selectedPlan];
+  const mwst = p.netto * 0.19;
+  const total = p.netto + mwst;
+  document.getElementById('order-plan-name').textContent = p.name;
+  document.getElementById('order-plan-price').textContent = p.netto.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('order-mwst').textContent = mwst.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('order-total').textContent = total.toFixed(2).replace('.', ',') + ' €';
+}
+
+function validateForm() {
+  const fields = ['vorname', 'nachname', 'email'];
+  for (const f of fields) {
+    const val = document.getElementById(f).value.trim();
+    if (!val) {
+      alert('Bitte füllen Sie alle Pflichtfelder aus.');
+      document.getElementById(f).focus();
+      return false;
+    }
+  }
+  const email = document.getElementById('email').value.trim();
+  if (!email.includes('@') || !email.includes('.')) {
+    alert('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
+    document.getElementById('email').focus();
+    return false;
+  }
+  return true;
+}
+
+const LICENSE_SECRET = 'HW-K3y-2024-mN7pQ9xL';
+
+async function generateLicenseKey() {
+  const now = Date.now();
+  const ablauf = now + 365 * 24 * 60 * 60 * 1000;
+  const payload = 'UNBOUND|' + ablauf;
+  const hmac = await sha256hmac(payload, LICENSE_SECRET);
+  const encoded = btoa(payload).replace(/[=+/]/g, '');
+  return 'HW-' + encoded + '.' + hmac;
+}
+
+function sha256hmac(message, secret) {
+  const enc = new TextEncoder();
+  const keyPromise = crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return keyPromise.then(k => crypto.subtle.sign('HMAC', k, enc.encode(message)))
+    .then(sig => Array.from(new Uint8Array(sig)).slice(0, 16).map(b => b.toString(16).padStart(2, '0')).join(''));
+}
+
+function showSuccess(licenseKey) {
+  document.getElementById('checkout-flow').style.display = 'none';
+  document.getElementById('success-page').style.display = 'block';
+  document.getElementById('license-key').textContent = licenseKey;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function demoPayment() {}
+
+window.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const plan = params.get('plan');
+  if (plan && PLANS[plan]) selectPlan(plan);
+});
+
+function loadPayPal() {
+  const script = document.createElement('script');
+  script.src = 'https://www.paypal.com/sdk/js?client-id=' + PAYPAL_CLIENT_ID + '&currency=EUR&intent=capture';
+  script.onload = function() {
+    if (typeof paypal !== 'undefined') {
+      paypalReady = true;
+      renderPayPalButtons();
+    }
+  };
+  document.head.appendChild(script);
+}
+
+function renderPayPalButtons() {
+  document.getElementById('paypal-button-container').innerHTML = '';
+  paypal.Buttons({
+    style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 50 },
+    createOrder: function(data, actions) {
+      if (!validateForm()) return;
+      if (!selectedPlan) { alert('Bitte wählen Sie eine Lizenz aus.'); return; }
+      const p = PLANS[selectedPlan];
+      const total = (p.netto * 1.19).toFixed(2);
+      return actions.order.create({
+        purchase_units: [{
+          description: 'IMHWS ' + p.name + ' Lizenz',
+          amount: { value: total, currency_code: 'EUR' }
+        }]
+      });
+    },
+    onApprove: function(data, actions) {
+      return actions.order.capture().then(async function(details) {
+        const licenseKey = await generateLicenseKey();
+        console.log('PayPal-Zahlung erfolgreich:', details.id);
+        console.log('Lizenz:', licenseKey);
+        showSuccess(licenseKey);
+      });
+    },
+    onError: function(err) {
+      console.error('PayPal-Fehler:', err);
+      alert('Bei der Zahlung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
+    }
+  }).render('#paypal-button-container');
+}
+
+
+
+loadPayPal();
+</script>
+</body>
+</html>

@@ -422,19 +422,22 @@
             </div>
             <div class="form-group">
               <label>Server-URL</label>
-              <input type="text" id="set-server-url" placeholder="https://192.168.x.x:8443">
+              <input type="text" id="set-server-url" placeholder="Wird automatisch gesetzt wenn Server-Modus aktiv">
             </div>
           </div>
           <div class="form-group">
-            <label>API-Key</label>
-            <input type="password" id="set-server-key" placeholder="Vom Server kopieren...">
+            <label>API-Key (nur bei externem Server)</label>
+            <input type="password" id="set-server-key" placeholder="Beim integrierten Server nicht noetig">
           </div>
           <div class="form-group">
             <label>Client-ID (eindeutig pro Arbeitsplatz)</label>
             <input type="text" id="set-client-id" placeholder="z.B. Büro-PC-01">
           </div>
+          <p style="font-size:12px; color:#666; margin:8px 0 12px;">
+            <strong>Server-Modus:</strong> Startet einen lokalen Datenbankserver auf diesem PC. Andere Geraete (z.B. Monteur-App) koennen sich ueber das Netzwerk verbinden.
+          </p>
           <div style="display:flex; gap:12px;">
-            <button class="btn btn-primary" onclick="saveServerEinstellungen()">Speichern</button>
+            <button class="btn btn-primary" onclick="saveServerEinstellungen()">Speichern & Server starten</button>
             <button class="btn btn-secondary" onclick="testServerVerbindung()">🔍 Verbindung testen</button>
           </div>
           <div id="sync-status" style="margin-top:16px; padding:12px; border-radius:var(--radius-sm); font-size:13px; display:none;"></div>
@@ -984,7 +987,20 @@
       </div>
       <div class="modal-body">
         <p style="margin-bottom:16px;color:var(--text-secondary);">
-          Bitte geben Sie Ihren Lizenzschlüssel ein, um die Software zu aktivieren.
+          1. Kopieren Sie Ihre Hardware-ID unten<br>
+          2. Senden Sie sie an <strong>kontakt@intrasaar.de</strong><br>
+          3. Sie erhalten Ihren persönlichen Lizenzschlüssel
+        </p>
+        <div class="form-group">
+          <label>Ihre Hardware-ID (diese senden Sie uns)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <code id="fingerprint-display" style="flex:1;padding:10px;background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;word-break:break-all;font-family:monospace;"></code>
+            <button class="btn btn-secondary" id="btn-copy-fp" style="white-space:nowrap;" title="Hardware-ID in Zwischenablage kopieren">Kopieren</button>
+          </div>
+        </div>
+        <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+        <p style="margin-bottom:12px;color:var(--text-secondary);font-size:13px;">
+          Lizenzschlüssel erhalten? Geben Sie ihn hier ein:
         </p>
         <div class="form-group">
           <label>Lizenzschlüssel</label>
@@ -992,12 +1008,6 @@
         </div>
         <div id="license-error" style="color:var(--accent-red);margin-top:8px;font-size:13px;display:none;"></div>
         <div id="license-success" style="color:var(--accent-green);margin-top:8px;font-size:13px;display:none;"></div>
-        <div style="margin-top:12px;">
-          <details style="font-size:12px;color:var(--text-light);">
-            <summary style="cursor:pointer;">Hardware-ID anzeigen</summary>
-            <code id="fingerprint-display" style="display:block;margin-top:8px;padding:8px;background:var(--bg-hover);border-radius:4px;font-size:11px;word-break:break-all;"></code>
-          </details>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="document.getElementById('activation-modal').style.display='none'">Später</button>
