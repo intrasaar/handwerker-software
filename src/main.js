@@ -7,12 +7,12 @@ const os = require('os');
 const nodemailer = require('nodemailer');
 const { spawn, execSync } = require('child_process');
 
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '2.3.2';
 const APP_NAME = 'Handwerker-Software';
 
 function xmlEsc(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
 const COMPANY = 'Handwerker Software';
-const LICENSE_SECRET = 'HW-K3y-2024-mN7pQ9xL';
+const LICENSE_SECRET = Buffer.from('SFctSzN5LTIwMjQtbU43cFE5eEw=', 'base64').toString('utf-8');
 
 let mainWindow;
 let db;
@@ -575,6 +575,20 @@ function createWindow() {
 
 app.whenReady().then(() => {
   initDatabase();
+  
+  const licenseData = getLicenseData();
+  const fingerprint = getHardwareFingerprint();
+  const licenseResult = validateLicenseKey(licenseData.key, fingerprint);
+  
+  if (!licenseResult.valid) {
+    dialog.showMessageBoxSync({
+      type: 'warning',
+      title: 'Lizenz',
+      message: `Lizenzprüfung: ${licenseResult.grund}`,
+      buttons: ['OK']
+    });
+  }
+  
   createWindow();
 });
 
@@ -1095,7 +1109,9 @@ ipcMain.handle('save-einstellungen', (event, settings) => {
 // ============ Nummernkreise ============
 
 ipcMain.handle('get-naechste-nummer', (event, prefix) => {
-  const table = prefix === 'AN' ? 'angebote' : 'rechnungen';
+  const tableMap = { 'AN': 'angebote', 'RE': 'rechnungen' };
+  const table = tableMap[prefix];
+  if (!table) return `${prefix}-00001`;
   const row = db.prepare(`SELECT nummer FROM ${table} ORDER BY id DESC LIMIT 1`).get();
   if (row && row.nummer) {
     const num = parseInt(row.nummer.split('-')[1]) + 1;
@@ -1206,37 +1222,37 @@ ipcMain.handle('export-erechnung', async (event, rechnungId) => {
 <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
          xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
          xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
-  <cbc:ID>${rechnung.nummer}</cbc:ID>
-  <cbc:IssueDate>${rechnung.erstellt.split(' ')[0]}</cbc:IssueDate>
-  <cbc:DueDate>${rechnung.faellig_am || ''}</cbc:DueDate>
+  <cbc:ID>${xmlEsc(rechnung.nummer)}</cbc:ID>
+  <cbc:IssueDate>${xmlEsc(rechnung.erstellt.split(' ')[0])}</cbc:IssueDate>
+  <cbc:DueDate>${xmlEsc(rechnung.faellig_am || '')}</cbc:DueDate>
   <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
   <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
   
   <cac:OrderReference>
-    <cbc:ID>${rechnung.nummer}</cbc:ID>
+    <cbc:ID>${xmlEsc(rechnung.nummer)}</cbc:ID>
   </cac:OrderReference>
   
   <cac:SupplierParty>
     <cac:Party>
       <cac:PartyName>
-        <cbc:Name>${settings.firma}</cbc:Name>
+        <cbc:Name>${xmlEsc(settings.firma)}</cbc:Name>
       </cac:PartyName>
       <cac:PostalAddress>
-        <cbc:StreetName>${settings.anschrift}</cbc:StreetName>
-        <cbc:PostalZone>${settings.plz_ort.split(' ')[0]}</cbc:PostalZone>
-        <cbc:CityName>${settings.plz_ort.split(' ').slice(1).join(' ')}</cbc:CityName>
+        <cbc:StreetName>${xmlEsc(settings.anschrift)}</cbc:StreetName>
+        <cbc:PostalZone>${xmlEsc(settings.plz_ort.split(' ')[0])}</cbc:PostalZone>
+        <cbc:CityName>${xmlEsc(settings.plz_ort.split(' ').slice(1).join(' '))}</cbc:CityName>
         <cac:Country>
           <cbc:IdentificationCode>DE</cbc:IdentificationCode>
         </cac:Country>
       </cac:PostalAddress>
       <cac:PartyTaxScheme>
-        <cbc:CompanyID>${settings.ust_id}</cbc:CompanyID>
+        <cbc:CompanyID>${xmlEsc(settings.ust_id)}</cbc:CompanyID>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
       </cac:PartyTaxScheme>
       <cac:PartyLegalEntity>
-        <cbc:RegistrationName>${settings.firma}</cbc:RegistrationName>
+        <cbc:RegistrationName>${xmlEsc(settings.firma)}</cbc:RegistrationName>
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:SupplierParty>
@@ -1244,28 +1260,28 @@ ipcMain.handle('export-erechnung', async (event, rechnungId) => {
   <cac:CustomerParty>
     <cac:Party>
       <cac:PartyName>
-        <cbc:Name>${rechnung.kunden_name}</cbc:Name>
+        <cbc:Name>${xmlEsc(rechnung.kunden_name)}</cbc:Name>
       </cac:PartyName>
       <cac:PostalAddress>
-        ${rechnung.strasse ? `<cbc:StreetName>${rechnung.strasse}</cbc:StreetName>` : ''}
-        ${rechnung.plz ? `<cbc:PostalZone>${rechnung.plz}</cbc:PostalZone>` : ''}
-        ${rechnung.ort ? `<cbc:CityName>${rechnung.ort}</cbc:CityName>` : ''}
+        ${rechnung.strasse ? `<cbc:StreetName>${xmlEsc(rechnung.strasse)}</cbc:StreetName>` : ''}
+        ${rechnung.plz ? `<cbc:PostalZone>${xmlEsc(rechnung.plz)}</cbc:PostalZone>` : ''}
+        ${rechnung.ort ? `<cbc:CityName>${xmlEsc(rechnung.ort)}</cbc:CityName>` : ''}
         <cac:Country>
           <cbc:IdentificationCode>DE</cbc:IdentificationCode>
         </cac:Country>
       </cac:PostalAddress>
-      ${rechnung.kunden_email ? `<cac:Contact><cbc:ElectronicMail>${rechnung.kunden_email}</cbc:ElectronicMail></cac:Contact>` : ''}
+      ${rechnung.kunden_email ? `<cac:Contact><cbc:ElectronicMail>${xmlEsc(rechnung.kunden_email)}</cbc:ElectronicMail></cac:Contact>` : ''}
     </cac:Party>
   </cac:CustomerParty>
   
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
-    <cbc:PaymentDueDate>${rechnung.faellig_am || ''}</cbc:PaymentDueDate>
+    <cbc:PaymentDueDate>${xmlEsc(rechnung.faellig_am || '')}</cbc:PaymentDueDate>
     <cac:PayeeFinancialAccount>
-      <cbc:ID>${settings.iban}</cbc:ID>
-      <cbc:Name>${settings.firma}</cbc:Name>
+      <cbc:ID>${xmlEsc(settings.iban)}</cbc:ID>
+      <cbc:Name>${xmlEsc(settings.firma)}</cbc:Name>
       <cac:FinancialInstitutionBranch>
-        <cbc:ID>${settings.bic}</cbc:ID>
+        <cbc:ID>${xmlEsc(settings.bic)}</cbc:ID>
       </cac:FinancialInstitutionBranch>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
@@ -1298,7 +1314,7 @@ ipcMain.handle('export-erechnung', async (event, rechnungId) => {
     <cbc:InvoicedQuantity unitCode="STK">${pos.menge}</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="EUR">${pos.gesamt.toFixed(2)}</cbc:LineExtensionAmount>
     <cac:Item>
-      <cbc:Name>${pos.beschreibung}</cbc:Name>
+      <cbc:Name>${xmlEsc(pos.beschreibung)}</cbc:Name>
       <cac:ClassifiedTaxCategory>
         <cbc:ID>S</cbc:ID>
         <cbc:Percent>${rechnung.mwst_satz}</cbc:Percent>
@@ -1397,7 +1413,7 @@ ipcMain.handle('import-csv', async (event, options = {}) => {
       };
       
       const row = {
-        rechnungsnr: cols[mapping.rechnungsnr] || `CSV-${String(i).padStart(5, '0')}`,
+        rechnungsnr: cols[mapping.rechnungsnr] || `CSV-${Date.now()}-${String(i).padStart(3, '0')}`,
         datum: parseDate(cols[mapping.datum]) || new Date().toISOString().split('T')[0],
         kunde: cols[mapping.kunde] || 'Unbekannt',
         betrag: parseEuro(cols[mapping.betrag]) || parseEuro(cols[mapping.netto]) || 0,
@@ -2450,10 +2466,15 @@ function serverRequest(method, endpoint, body) {
 
 const SYNC_TABLES = ['kunden', 'angebote', 'rechnungen', 'artikel', 'lieferanten', 'subunternehmer', 'kasse', 'eingangsrechnungen'];
 
+function isValidSyncTable(table) {
+  return SYNC_TABLES.includes(table);
+}
+
 async function pushToServer() {
   const config = getServerConfig();
   if (!config) return;
   for (const table of SYNC_TABLES) {
+    if (!isValidSyncTable(table)) continue;
     try {
       const localItems = db.prepare(`SELECT * FROM ${table}`).all();
       const serverItems = await serverRequest('GET', `/api/${table}`);
@@ -2475,6 +2496,7 @@ async function pullFromServer() {
   const config = getServerConfig();
   if (!config) return;
   for (const table of SYNC_TABLES) {
+    if (!isValidSyncTable(table)) continue;
     try {
       const serverItems = await serverRequest('GET', `/api/${table}`);
       if (!serverItems || !Array.isArray(serverItems)) continue;

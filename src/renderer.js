@@ -631,7 +631,7 @@ async function viewRechnung(id) {
   const gsSection = document.getElementById('gutschriften-section');
   if (gutschriften.length > 0) {
     gsSection.innerHTML = '<div style="margin-top:20px;"><strong>Gutschriften:</strong><table style="width:100%; border-collapse:collapse; margin:8px 0;"><thead><tr style="background:#fef3c7;"><th style="padding:6px; text-align:left;">Datum</th><th style="padding:6px; text-align:right;">Betrag</th><th style="padding:6px; text-align:left;">Grund</th></tr></thead><tbody>' +
-      gutschriften.map(g => `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;">${g.datum}</td><td style="padding:6px; text-align:right; color:#f59e0b;">-${formatEuro(g.betrag)}</td><td style="padding:6px;">${escHtml(g.grund || '-')}</td></tr>`).join('') +
+      gutschriften.map(g => `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;">${escHtml(g.datum)}</td><td style="padding:6px; text-align:right; color:#f59e0b;">-${formatEuro(g.betrag)}</td><td style="padding:6px;">${escHtml(g.grund || '-')}</td></tr>`).join('') +
       '</tbody></table></div>';
   }
   document.getElementById('modal-footer').innerHTML = `
@@ -1122,7 +1122,8 @@ async function pruefeUpdates() {
 
       const downloadUrl = release.assets?.[0]?.browser_download_url;
       if (downloadUrl) {
-        msg.innerHTML += `<br><a href="${downloadUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); require('electron').shell.openExternal('${downloadUrl}')">Herunterladen</a>`;
+        const safeUrl = downloadUrl.replace(/['"\\]/g, '');
+        msg.innerHTML += `<br><a href="${safeUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); require('electron').shell.openExternal('${safeUrl}')">Herunterladen</a>`;
       }
     } else {
       msg.style.color = 'var(--accent-green)';

@@ -379,7 +379,19 @@ app.get('/api/dashboard', (req, res) => {
 
 // ============ Generic CRUD ============
 
+const ALLOWED_TABLES = {
+  kunden: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
+  lieferanten: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
+  subunternehmer: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
+  artikel: ['bezeichnung', 'einheit', 'einzelpreis', 'mwst_satz', 'kategorie', 'lagerbestand'],
+  kasse: ['typ', 'betrag', 'datum', 'beschreibung', 'beleg_nummer'],
+  regeln: ['name', 'typ', 'bedingung', 'aktion']
+};
+
 function createCrudRoutes(tableName, singular, plural) {
+  const allowedCols = ALLOWED_TABLES[tableName];
+  if (!allowedCols) return;
+
   app.get(`/api/${plural}`, (req, res) => {
     res.json(query(`SELECT * FROM ${tableName} ORDER BY id DESC`));
   });
@@ -391,7 +403,8 @@ function createCrudRoutes(tableName, singular, plural) {
   });
 
   app.post(`/api/${plural}`, (req, res) => {
-    const cols = Object.keys(req.body).filter(k => k !== 'id');
+    const cols = Object.keys(req.body).filter(k => k !== 'id' && allowedCols.includes(k));
+    if (cols.length === 0) return res.status(400).json({ error: 'Ungültige Spalten' });
     const vals = cols.map(k => req.body[k]);
     const placeholders = cols.map(() => '?').join(', ');
     const result = run(`INSERT INTO ${tableName} (${cols.join(', ')}) VALUES (${placeholders})`, vals);
@@ -400,7 +413,8 @@ function createCrudRoutes(tableName, singular, plural) {
   });
 
   app.put(`/api/${plural}/:id`, (req, res) => {
-    const cols = Object.keys(req.body).filter(k => k !== 'id');
+    const cols = Object.keys(req.body).filter(k => k !== 'id' && allowedCols.includes(k));
+    if (cols.length === 0) return res.status(400).json({ error: 'Ungültige Spalten' });
     const vals = cols.map(k => req.body[k]);
     const setClause = cols.map(k => `${k} = ?`).join(', ');
     run(`UPDATE ${tableName} SET ${setClause} WHERE id = ?`, [...vals, req.params.id]);
@@ -802,7 +816,7 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 }
 
 const connectedClients = new Set();
-const HTTP_PORT = process.env.HTTP_PORT || 8080;
+const HTTP_PORT = process.env.HTTP_PORT || 0;
 
 function getLocalIP() {
   const os = require('os');
@@ -824,14 +838,14 @@ let httpsReady = false;
 let httpReady = false;
 
 function printBanner() {
-  if (!httpsReady || !httpReady) return;
+  if (!httpsReady) return;
   console.log('');
   console.log('═══════════════════════════════════════════════');
   console.log('  Handwerker-Software Server v1.0.0');
   console.log('═══════════════════════════════════════════════');
   console.log(`  HTTPS:      https://localhost:${PORT}/api/health`);
-  console.log(`  HTTP:       http://${localIP}:${HTTP_PORT}/api/health`);
-  console.log(`  API-Key:    ${API_KEY}`);
+  if (httpReady && HTTP_PORT) console.log(`  HTTP:       http://${localIP}:${HTTP_PORT}/api/health (unsicher)`);
+  console.log(`  API-Key:    (via Umgebungsvariable oder generiert)`);
   console.log(`  Datenbank:  ${dbPath}`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
@@ -845,11 +859,13 @@ server.on('error', (err) => {
   console.error(`HTTPS-Server Fehler auf Port ${PORT}:`, err.message);
 });
 
-httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
-  httpReady = true;
-  console.log(`HTTP-Server aktiv auf Port ${HTTP_PORT}`);
-  printBanner();
-});
+if (HTTP_PORT) {
+  httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+    httpReady = true;
+    console.log(`HTTP-Server aktiv auf Port ${HTTP_PORT}`);
+    printBanner();
+  });
+}
 
 server.listen(PORT, '0.0.0.0', () => {
   httpsReady = true;
@@ -859,7 +875,7 @@ server.listen(PORT, '0.0.0.0', () => {
 
 app.use((err, req, res, next) => {
   console.error('Unbehandelter Fehler:', err.message);
-  res.status(500).json({ error: 'Interner Serverfehler', detail: err.message });
+  res.status(500).json({ error: 'Interner Serverfehler' });
 });
 
 process.on('SIGINT', () => { db.close(); process.exit(0); });
