@@ -4,77 +4,46 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Rebuild native modules
-        run: npx @electron/rebuild -f -w better-sqlite3
-
-      - name: Build macOS DMG
-        run: npx electron-builder --mac --publish never
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: Handwerker-Software-macOS
-          path: dist/*.dmg
-
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Rebuild native modules
-        run: npx @electron/rebuild -f -w better-sqlite3
-
-      - name: Build Windows EXE
-        run: npx electron-builder --win --publish never
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v5
+          node-version: 20
+      - run: npm install --ignore-scripts
+      - run: npx electron-builder --win
+      - uses: softprops/action-gh-release@v2
         with:
-          name: Handwerker-Software-Windows
-          path: dist/*.exe
+          files: dist/Handwerker-Software*.exe
 
-  release:
-    needs: [build-mac, build-windows]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: write
+  build-mac-arm:
+    runs-on: macos-latest
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v5
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          files: |
-            Handwerker-Software-macOS/*.dmg
-            Handwerker-Software-Windows/*.exe
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          node-version: 20
+      - run: npm install
+      - run: npx electron-builder --mac --arm64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Handwerker-Software*.dmg
+
+  build-mac-intel:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx electron-builder --mac --x64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Handwerker-Software*.dmg
