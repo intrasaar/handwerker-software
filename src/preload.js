@@ -144,6 +144,7 @@ contextBridge.exposeInMainWorld('api', {
   getFingerprint: () => ipcRenderer.invoke('get-fingerprint'),
   checkLicense: () => ipcRenderer.invoke('check-license'),
   activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
+  deactivateLicense: () => ipcRenderer.invoke('deactivate-license'),
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
 
   // Aufgabenverwaltung
@@ -186,5 +187,8 @@ contextBridge.exposeInMainWorld('api', {
   // Navigation (Menu)
   onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
   onShowLicense: (callback) => ipcRenderer.on('show-license', () => callback()),
-  onToggleSidebar: (callback) => ipcRenderer.on('toggle-sidebar', () => callback())
+  onToggleSidebar: (callback) => ipcRenderer.on('toggle-sidebar', () => callback()),
+
+  // Shell
+  openExternal: (url) => ipcRenderer.invoke('open-external', url)
 });

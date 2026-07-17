@@ -2168,8 +2168,24 @@ ipcMain.handle('activate-license', (event, key) => {
   return result;
 });
 
+ipcMain.handle('deactivate-license', () => {
+  try {
+    const licensePath = path.join(dataDir, 'license.dat');
+    if (fs.existsSync(licensePath)) {
+      fs.unlinkSync(licensePath);
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('get-app-info', () => {
   return { version: APP_VERSION, name: APP_NAME, company: COMPANY };
+});
+
+ipcMain.handle('open-external', (event, url) => {
+  shell.openExternal(url);
 });
 
 // ============ Aufgabenverwaltung ============

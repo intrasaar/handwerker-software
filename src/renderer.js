@@ -1061,17 +1061,15 @@ async function aktiviereLizenz() {
 async function deaktiviereLizenz() {
   if (!confirm('Lizenz wirklich deaktivieren? Die Software wird danach im Trial-Modus weitergearbeitet.')) return;
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const dataPath = path.join(require('electron').remote?.app?.getPath('userData') || '.', 'data');
-    const licFile = path.join(dataPath, 'license.json');
-    if (fs.existsSync(licFile)) {
-      fs.unlinkSync(licFile);
+    const result = await api.deactivateLicense();
+    if (result.success) {
+      document.getElementById('set-license-msg').style.display = 'block';
+      document.getElementById('set-license-msg').style.color = 'var(--accent-orange)';
+      document.getElementById('set-license-msg').textContent = 'Lizenz deaktiviert. Bitte App neu starten.';
+      ladeLizenzStatus();
+    } else {
+      throw new Error(result.error || 'Unbekannter Fehler');
     }
-    document.getElementById('set-license-msg').style.display = 'block';
-    document.getElementById('set-license-msg').style.color = 'var(--accent-orange)';
-    document.getElementById('set-license-msg').textContent = 'Lizenz deaktiviert. Bitte App neu starten.';
-    ladeLizenzStatus();
   } catch (err) {
     document.getElementById('set-license-msg').style.display = 'block';
     document.getElementById('set-license-msg').style.color = 'var(--accent-red)';
@@ -1123,7 +1121,7 @@ async function pruefeUpdates() {
       const downloadUrl = release.assets?.[0]?.browser_download_url;
       if (downloadUrl) {
         const safeUrl = downloadUrl.replace(/['"\\]/g, '');
-        msg.innerHTML += `<br><a href="${safeUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); require('electron').shell.openExternal('${safeUrl}')">Herunterladen</a>`;
+        msg.innerHTML += `<br><a href="${safeUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); window.api.openExternal('${safeUrl}')">Herunterladen</a>`;
       }
     } else {
       msg.style.color = 'var(--accent-green)';
