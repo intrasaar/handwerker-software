@@ -2187,11 +2187,11 @@ async function saveServerEinstellungen() {
 
   if (modus === 'server' && !serverUrl) {
     document.getElementById('set-server-url').value = 'http://localhost:8080';
-    document.getElementById('set-server-key').value = 'imhws-integriert-lokal';
+    document.getElementById('set-server-key').value = 'imhws-local-2026';
     current.server_url = 'http://localhost:8080';
-    current.server_key = 'imhws-integriert-lokal';
+    current.server_key = 'imhws-local-2026';
     localStorage.setItem('hw-server-url', 'http://localhost:8080');
-    localStorage.setItem('hw-server-key', 'imhws-integriert-lokal');
+    localStorage.setItem('hw-server-key', 'imhws-local-2026');
     await api.saveEinstellungen(current);
   }
 

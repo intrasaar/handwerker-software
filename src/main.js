@@ -2601,6 +2601,15 @@ function startServer() {
     return false;
   }
 
+  let serverKey = 'imhws-local-2026';
+  try {
+    const settingsPath = path.join(dataDir, 'einstellungen.json');
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      if (settings.server_key) serverKey = settings.server_key;
+    }
+  } catch (e) { /* fallback auf default */ }
+
   const nodePath = process.execPath;
   serverProcess = spawn(nodePath, [path.join(serverDir, 'server.js')], {
     cwd: serverDir,
@@ -2609,7 +2618,7 @@ function startServer() {
       ...process.env,
       PORT: SERVER_HTTPS_PORT,
       HTTP_PORT: SERVER_HTTP_PORT,
-      API_KEY: 'imhws-integriert-lokal',
+      API_KEY: serverKey,
       DATA_DIR: path.join(dataDir, 'server-data')
     }
   });

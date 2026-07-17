@@ -9,7 +9,7 @@ const http = require('http');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 8443;
-const API_KEY = process.env.API_KEY || crypto.randomBytes(32).toString('hex');
+const API_KEY = process.env.API_KEY || 'imhws-local-2026';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const TLS_DIR = path.join(DATA_DIR, 'tls');
 
@@ -30,6 +30,12 @@ function authMiddleware(req, res, next) {
   }
   next();
 }
+
+// ============ Health / Status (öffentlich, kein Auth nötig) ============
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', version: '1.0.0' });
+});
 
 app.use('/api', authMiddleware);
 
@@ -342,21 +348,6 @@ function get(sql, params = []) { return db.prepare(sql).get(...params); }
 function run(sql, params = []) { return db.prepare(sql).run(...params); }
 
 // ============ Health / Status ============
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: '1.0.0', clients: connectedClients.size, uptime: process.uptime() });
-});
-
-app.get('/api/info', (req, res) => {
-  const stats = {
-    kunden: get('SELECT COUNT(*) as c FROM kunden').c,
-    angebote: get('SELECT COUNT(*) as c FROM angebote').c,
-    rechnungen: get('SELECT COUNT(*) as c FROM rechnungen').c,
-    auftraege: get('SELECT COUNT(*) as c FROM auftraege').c,
-    artikel: get('SELECT COUNT(*) as c FROM artikel').c,
-  };
-  res.json(stats);
-});
 
 // ============ Dashboard ============
 
@@ -845,7 +836,7 @@ function printBanner() {
   console.log('═══════════════════════════════════════════════');
   console.log(`  HTTPS:      https://localhost:${PORT}/api/health`);
   if (httpReady && HTTP_PORT) console.log(`  HTTP:       http://${localIP}:${HTTP_PORT}/api/health (unsicher)`);
-  console.log(`  API-Key:    (via Umgebungsvariable oder generiert)`);
+  console.log(`  API-Key:    ${API_KEY}`);
   console.log(`  Datenbank:  ${dbPath}`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
