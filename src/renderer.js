@@ -192,11 +192,11 @@ async function showKundenRapporte(kundenName) {
         <td>${r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-'}</td>
         <td>${escHtml((r.zusammenfassung || '').substring(0, 40))}</td>
         <td>${escHtml(posText.substring(0, 50))}${posText.length > 50 ? '...' : ''}</td>
-        <td><strong>CHF ${rapportTotal.toFixed(2)}</strong></td>
+        <td><strong>${rapportTotal.toFixed(2)} €</strong></td>
       </tr>`;
     }
     html += '</tbody></table>';
-    html += `<p style="margin-top:12px;font-weight:700;font-size:1.1em;">Total aller Rapporte: CHF ${totalPositionsPreis.toFixed(2)}</p>`;
+    html += `<p style="margin-top:12px;font-weight:700;font-size:1.1em;">Total aller Rapporte: ${totalPositionsPreis.toFixed(2)} €</p>`;
     document.getElementById('kunden-rapport-title').textContent = `Rapporte für "${kundenName}" (${filtered.length})`;
     document.getElementById('kunden-rapport-content').innerHTML = html;
     document.getElementById('kunden-rapport-detail').style.display = 'block';
@@ -542,6 +542,7 @@ async function showRechnungForm(rechnung = null) {
         <tbody></tbody>
       </table>
       <button class="btn btn-secondary btn-small" style="margin-top:8px" onclick="addPosition('r-positionen')">+ Position</button>
+      <button class="btn btn-secondary btn-small" style="margin-top:8px" onclick="importRapportPositionen()">📋 Aus Rapport importieren</button>
     </div>
     <div class="positionen-summen">
       <div>Netto: <strong id="r-netto">0,00 €</strong></div>
@@ -977,7 +978,7 @@ async function showRapportDetail(id) {
       html += '<h4 style="margin:12px 0 6px;">Positionen</h4>';
       html += '<table class="data-table" style="font-size:0.85em"><thead><tr><th>Artikel</th><th>Bezeichnung</th><th>Menge</th><th>Preis</th></tr></thead><tbody>';
       for (const p of positionen) {
-        html += `<tr><td>${escHtml(p.artikel_nr || '')}</td><td>${escHtml(p.bezeichnung || '')}</td><td>${p.menge} ${escHtml(p.einheit || '')}</td><td>CHF ${(p.preis || 0).toFixed(2)}</td></tr>`;
+        html += `<tr><td>${escHtml(p.artikel_nr || '')}</td><td>${escHtml(p.bezeichnung || '')}</td><td>${p.menge} ${escHtml(p.einheit || '')}</td><td>${(p.preis || 0).toFixed(2)} €</td></tr>`;
       }
       html += '</tbody></table>';
     }
@@ -986,7 +987,7 @@ async function showRapportDetail(id) {
       html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
       for (const f of fotos) {
         if (f.bild_base64) {
-          html += `<img src="data:image/jpeg;base64,${f.bild_base64}" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" />`;
+          html += `<img src="data:image/jpeg;base64,${f.bild_base64}" onclick="event.stopPropagation(); document.getElementById('foto-lightbox-img').src=this.src; document.getElementById('foto-lightbox').style.display='flex'" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;" />`;
         } else {
           html += `<div style="width:120px;height:120px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.8em;">Foto</div>`;
         }
@@ -1440,6 +1441,64 @@ function showFormModal(titel, bodyHtml, onSave) {
     await onSave();
     closeModal();
   };
+}
+
+// ============ Rapport-Import in Rechnung ============
+
+async function importRapportPositionen() {
+  const kundenId = parseInt(document.getElementById('r-kunde')?.value);
+  if (!kundenId) { alert('Bitte zuerst einen Kunden auswählen.'); return; }
+
+  const kunde = kundenListe.find(k => k.id === kundenId);
+  if (!kunde) return;
+
+  const rapporte = await api.getRapporte();
+  const filtered = rapporte.filter(r => (r.kunden_name || '').trim().toLowerCase() === kunde.name.trim().toLowerCase());
+
+  if (filtered.length === 0) {
+    alert('Keine Rapporte für diesen Kunden vorhanden.');
+    return;
+  }
+
+  let html = '<p style="margin-bottom:12px;color:var(--text-secondary);">Wählen Sie einen Rapport, dessen Positionen importiert werden sollen:</p>';
+  for (const r of filtered) {
+    const pos = await api.getRapportPositionen(r.id);
+    const total = (pos || []).reduce((s, p) => s + (p.menge || 0) * (p.preis || 0), 0);
+    const posCount = (pos || []).length;
+    const datum = r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-';
+    html += `<div style="padding:12px; margin-bottom:8px; background:var(--bg-hover); border-radius:8px; cursor:pointer; border:2px solid transparent;" 
+              onmouseover="this.style.borderColor='var(--accent-blue)'" 
+              onmouseout="this.style.borderColor='transparent'" 
+              onclick="doImportRapport(${r.id})">
+      <strong>Rapport #${r.id}</strong> — ${datum} — ${posCount} Position(en) — ${total.toFixed(2)} €
+      <br><span style="font-size:0.85em;color:var(--text-secondary);">${escHtml((r.zusammenfassung || '').substring(0, 80))}</span>
+    </div>`;
+  }
+  html += `<button class="btn btn-secondary" onclick="closeModal()" style="margin-top:12px;">Abbrechen</button>`;
+
+  document.getElementById('modal-title').textContent = 'Rapport-Positionen importieren';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-footer').innerHTML = '';
+  openModal();
+}
+
+async function doImportRapport(rapportId) {
+  const pos = await api.getRapportPositionen(rapportId);
+  if (!pos || pos.length === 0) {
+    alert('Dieser Rapport hat keine Positionen.');
+    closeModal();
+    return;
+  }
+  for (const p of pos) {
+    addPosition('r-positionen', {
+      beschreibung: p.bezeichnung || '',
+      menge: p.menge || 1,
+      einheit: p.einheit || 'Stk',
+      einzelpreis: p.preis || 0,
+    });
+  }
+  recalcSummen('r');
+  closeModal();
 }
 
 // ============ Init ============
