@@ -1460,45 +1460,54 @@ async function importRapportPositionen() {
     return;
   }
 
-  let html = '<p style="margin-bottom:12px;color:var(--text-secondary);">Wählen Sie einen Rapport, dessen Positionen importiert werden sollen:</p>';
+  let html = '<p style="margin-bottom:12px;color:var(--text-secondary);">Wählen Sie einen Rapport:</p>';
   for (const r of filtered) {
     const pos = await api.getRapportPositionen(r.id);
     const total = (pos || []).reduce((s, p) => s + (p.menge || 0) * (p.preis || 0), 0);
     const posCount = (pos || []).length;
     const datum = r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-';
-    html += `<div style="padding:12px; margin-bottom:8px; background:var(--bg-hover); border-radius:8px; cursor:pointer; border:2px solid transparent;" 
-              onmouseover="this.style.borderColor='var(--accent-blue)'" 
-              onmouseout="this.style.borderColor='transparent'" 
-              onclick="doImportRapport(${r.id})">
-      <strong>Rapport #${r.id}</strong> — ${datum} — ${posCount} Position(en) — ${total.toFixed(2)} €
-      <br><span style="font-size:0.85em;color:var(--text-secondary);">${escHtml((r.zusammenfassung || '').substring(0, 80))}</span>
-    </div>`;
+    const summary = escHtml((r.zusammenfassung || '').substring(0, 80));
+    html += `<div class="rapport-import-card" data-rapport-id="${r.id}" style="padding:12px; margin-bottom:8px; background:var(--bg-hover); border-radius:8px; cursor:pointer; border:2px solid var(--border);">`;
+    html += `<strong>Rapport #${r.id}</strong> — ${datum} — ${posCount} Position(en) — ${total.toFixed(2)} €`;
+    html += `<br><span style="font-size:0.85em;color:var(--text-secondary);">${summary}</span>`;
+    html += `</div>`;
   }
-  html += `<button class="btn btn-secondary" onclick="closeModal()" style="margin-top:12px;">Abbrechen</button>`;
 
   document.getElementById('modal-title').textContent = 'Rapport-Positionen importieren';
   document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal-footer').innerHTML = '';
+  document.getElementById('modal-footer').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>';
   openModal();
+
+  document.querySelectorAll('.rapport-import-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = parseInt(this.getAttribute('data-rapport-id'));
+      doImportRapport(id);
+    });
+  });
 }
 
 async function doImportRapport(rapportId) {
-  const pos = await api.getRapportPositionen(rapportId);
-  if (!pos || pos.length === 0) {
-    alert('Dieser Rapport hat keine Positionen.');
+  try {
+    const pos = await api.getRapportPositionen(rapportId);
+    if (!pos || pos.length === 0) {
+      alert('Dieser Rapport hat keine Positionen.');
+      return;
+    }
+    for (const p of pos) {
+      addPosition('r-positionen', {
+        beschreibung: p.bezeichnung || '',
+        menge: p.menge || 1,
+        einheit: p.einheit || 'Stk',
+        einzelpreis: p.preis || 0,
+      });
+    }
+    recalcSummen('r');
     closeModal();
-    return;
+  } catch(e) {
+    console.error('doImportRapport:', e);
+    alert('Fehler beim Import: ' + e.message);
   }
-  for (const p of pos) {
-    addPosition('r-positionen', {
-      beschreibung: p.bezeichnung || '',
-      menge: p.menge || 1,
-      einheit: p.einheit || 'Stk',
-      einzelpreis: p.preis || 0,
-    });
-  }
-  recalcSummen('r');
-  closeModal();
 }
 
 // ============ Init ============
