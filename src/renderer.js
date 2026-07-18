@@ -1209,6 +1209,7 @@ async function pruefeUpdates() {
     const release = await response.json();
     const remoteVersion = release.tag_name?.replace('v', '') || '';
     const localVersion = (await api.getAppInfo()).version;
+    text.textContent = `Aktuelle Version: v${localVersion}`;
 
     detail.textContent = `Letzte Prüfung: ${new Date().toLocaleString('de-DE')}`;
 
