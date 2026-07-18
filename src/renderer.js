@@ -1199,6 +1199,9 @@ async function pruefeUpdates() {
   msg.style.color = 'var(--text-secondary)';
   msg.textContent = '🔍 Suche läuft...';
 
+  const localVersion = (await api.getAppInfo()).version;
+  text.textContent = `Aktuelle Version: v${localVersion}`;
+
   try {
     const response = await fetch('https://api.github.com/repos/intrasaar/handwerker-software/releases/latest', {
       headers: { 'Accept': 'application/vnd.github.v3+json' },
@@ -1208,8 +1211,6 @@ async function pruefeUpdates() {
 
     const release = await response.json();
     const remoteVersion = release.tag_name?.replace('v', '') || '';
-    const localVersion = (await api.getAppInfo()).version;
-    text.textContent = `Aktuelle Version: v${localVersion}`;
 
     detail.textContent = `Letzte Prüfung: ${new Date().toLocaleString('de-DE')}`;
 
