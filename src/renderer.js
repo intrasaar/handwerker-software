@@ -1333,6 +1333,7 @@ async function previewBriefkopf() {
 // ============ Positionen Helpers ============
 function addPosition(tableId, data = null) {
   const table = document.getElementById(tableId);
+  if (!table) return;
   const tbody = table.querySelector('tbody');
   const nr = tbody.rows.length + 1;
   const row = tbody.insertRow();
@@ -1390,7 +1391,9 @@ function getPositionen(tableId) {
 
 function recalcSummen(prefix) {
   const tableId = prefix === 'a' ? 'a-positionen' : 'r-positionen';
-  const tbody = document.getElementById(tableId).querySelector('tbody');
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
   let netto = 0;
 
   Array.from(tbody.rows).forEach(row => {
@@ -1460,29 +1463,44 @@ async function importRapportPositionen() {
     return;
   }
 
-  let html = '<p style="margin-bottom:12px;color:var(--text-secondary);">Wählen Sie einen Rapport:</p>';
+  let listHtml = '';
   for (const r of filtered) {
     const pos = await api.getRapportPositionen(r.id);
     const total = (pos || []).reduce((s, p) => s + (p.menge || 0) * (p.preis || 0), 0);
     const posCount = (pos || []).length;
     const datum = r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-';
     const summary = escHtml((r.zusammenfassung || '').substring(0, 80));
-    html += `<div class="rapport-import-card" data-rapport-id="${r.id}" style="padding:12px; margin-bottom:8px; background:var(--bg-hover); border-radius:8px; cursor:pointer; border:2px solid var(--border);">`;
-    html += `<strong>Rapport #${r.id}</strong> — ${datum} — ${posCount} Position(en) — ${total.toFixed(2)} €`;
-    html += `<br><span style="font-size:0.85em;color:var(--text-secondary);">${summary}</span>`;
-    html += `</div>`;
+    listHtml += `<div class="rapport-import-card" data-rapport-id="${r.id}" style="padding:12px; margin-bottom:8px; background:var(--bg-hover); border-radius:8px; cursor:pointer; border:2px solid var(--border);">`;
+    listHtml += `<strong>Rapport #${r.id}</strong> — ${datum} — ${posCount} Position(en) — ${total.toFixed(2)} €`;
+    listHtml += `<br><span style="font-size:0.85em;color:var(--text-secondary);">${summary}</span>`;
+    listHtml += `</div>`;
   }
 
-  document.getElementById('modal-title').textContent = 'Rapport-Positionen importieren';
-  document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal-footer').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>';
-  openModal();
+  let overlay = document.getElementById('rapport-picker-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'rapport-picker-overlay';
+    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:2000; display:flex; align-items:center; justify-content:center;';
+    document.body.appendChild(overlay);
+  }
 
-  document.querySelectorAll('.rapport-import-card').forEach(card => {
-    card.addEventListener('click', function(e) {
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card); border-radius:12px; padding:24px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+      <h3 style="margin:0 0 16px 0;">📋 Rapport-Positionen importieren</h3>
+      <p style="margin-bottom:12px; color:var(--text-secondary); font-size:0.9em;">Wählen Sie einen Rapport:</p>
+      ${listHtml}
+      <button class="btn btn-secondary" onclick="document.getElementById('rapport-picker-overlay').remove()" style="margin-top:12px;">Abbrechen</button>
+    </div>
+  `;
+  overlay.style.display = 'flex';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  overlay.querySelectorAll('.rapport-import-card').forEach(card => {
+    card.addEventListener('click', async function(e) {
       e.stopPropagation();
       const id = parseInt(this.getAttribute('data-rapport-id'));
-      doImportRapport(id);
+      overlay.remove();
+      await doImportRapport(id);
     });
   });
 }
@@ -1503,7 +1521,6 @@ async function doImportRapport(rapportId) {
       });
     }
     recalcSummen('r');
-    closeModal();
   } catch(e) {
     console.error('doImportRapport:', e);
     alert('Fehler beim Import: ' + e.message);
