@@ -1,6 +1,6 @@
 {
   "name": "handwerker-software",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "Handwerker-Software — Angebote, Rechnungen, Terminplanung, Kundenverwaltung, Buchhaltung",
   "main": "src/main.js",
   "scripts": {
@@ -20,7 +20,8 @@
     "files": [
       "src/**/*",
       "server/**/*.js",
-      "server/package.json"
+      "server/package.json",
+      "server/node_modules/**/*"
     ],
     "asarUnpack": [
       "server/**/*"
