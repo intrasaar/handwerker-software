@@ -4,23 +4,27 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-windows:
+  build-win:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --ignore-scripts
-      - run: npx electron-builder --win
-      - uses: softprops/action-gh-release@v2
+          cache: npm
+      - run: npm ci
+      - run: npx electron-builder --win --x64
+      - uses: actions/upload-artifact@v4
         with:
-          files: dist/Handwerker-Software*.exe
+          name: Handwerker-Software-Windows
+          path: dist/*.exe
+          if-no-files-found: error
 
   build-mac-arm:
     runs-on: macos-latest
@@ -29,11 +33,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+          cache: npm
+      - run: npm ci
       - run: npx electron-builder --mac --arm64
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: dist/Handwerker-Software*.dmg
+          name: Handwerker-Software-macOS-ARM
+          path: dist/*.dmg
+          if-no-files-found: error
 
   build-mac-intel:
     runs-on: macos-13
@@ -42,8 +49,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+          cache: npm
+      - run: npm ci
       - run: npx electron-builder --mac --x64
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: dist/Handwerker-Software*.dmg
+          name: Handwerker-Software-macOS-Intel
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: [build-win, build-mac-arm, build-mac-intel]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/Handwerker-Software-Windows/*
+            artifacts/Handwerker-Software-macOS-ARM/*
+            artifacts/Handwerker-Software-macOS-Intel/*
+          draft: true

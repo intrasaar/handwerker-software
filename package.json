@@ -1,6 +1,6 @@
 {
   "name": "handwerker-software",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "Handwerker-Software — Angebote, Rechnungen, Terminplanung, Kundenverwaltung, Buchhaltung",
   "main": "src/main.js",
   "scripts": {
