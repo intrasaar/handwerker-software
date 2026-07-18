@@ -1228,7 +1228,17 @@ async function pruefeUpdates() {
       msg.textContent = `📥 Update verfügbar: v${remoteVersion}`;
       icon.textContent = '📥';
 
-      const downloadUrl = release.assets?.[0]?.browser_download_url;
+      const platform = navigator.platform.toLowerCase();
+      let assetName;
+      if (platform.includes('win')) {
+        assetName = release.assets?.find(a => a.name.endsWith('.exe'));
+      } else if (platform.includes('mac') || platform.includes('iphone') || platform.includes('ipad')) {
+        const isArm = navigator.userAgent.toLowerCase().includes('arm');
+        assetName = release.assets?.find(a => isArm ? a.name.includes('arm64') : (a.name.endsWith('.dmg') && !a.name.includes('arm64')));
+      } else {
+        assetName = release.assets?.find(a => a.name.endsWith('.exe'));
+      }
+      const downloadUrl = assetName?.browser_download_url || release.assets?.[0]?.browser_download_url;
       if (downloadUrl) {
         const safeUrl = downloadUrl.replace(/['"\\]/g, '');
         msg.innerHTML += `<br><a href="${safeUrl}" style="color:var(--accent-blue); font-weight:bold;" onclick="event.preventDefault(); window.api.openExternal('${safeUrl}')">Herunterladen</a>`;
