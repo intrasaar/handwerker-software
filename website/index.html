@@ -391,7 +391,7 @@
     <div class="container">
       <div class="hero-badge">
         <span class="hero-badge-dot"></span>
-        Version 2.3.0 — Jetzt mit PDF-Vorschau & Briefkopf-Gestaltung
+        Version 2.3.5 — Jetzt mit Monteur-Rapport-Sync & Rapport-Import
       </div>
       <h1>Die <span>Handwerker-Software</span><br>für Ihr ganzes Geschäft</h1>
       <p>Angebote erstellen, Rechnungen versenden, Buchhaltung führen, Termine planen und Lager verwalten — alles in einer einzigen Desktop-App.</p>
@@ -540,17 +540,29 @@
           <h3>Aufmaß & Unternehmer</h3>
           <p>Aufmaße erfassen, Subunternehmer-Einsätze verwalten und Leistungen nachzeichnen.</p>
         </div>
-        <div class="feature-card fade-up">
+          <div class="feature-card fade-up">
           <div class="feature-icon" style="background: #fce7f3;">🔄</div>
           <h3>Automatisierung & Regeln</h3>
           <p>Eigene Regeln erstellen, CSV-Import, DATANORM/BMEcat-Schnittstellen und GAEB-Import/Export.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #dcfce7;">🔒</div>
+          <h3>Security-Hardening</h3>
+          <p>SQL-Injection-Schutz, XSS-Sanitization, XML-Injection-Prävention, Lizenz-Obfuskation und Server-Hardening mit CORS und Rate-Limiting.</p>
+          <div class="feature-tag">Sicherheit</div>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon" style="background: #fef3c7;">📸</div>
+          <h3>Fotos-Lightbox & Rapport-Import</h3>
+          <p>Fotos in Rapporten vergrößern, Rapporte direkt in Rechnungen importieren — inkl. automatischer Summenberechnung.</p>
+          <div class="feature-tag">Neu</div>
         </div>
         <div class="feature-card fade-up" style="grid-column: 1 / -1; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6;">
           <div style="display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 280px;">
               <div class="feature-icon" style="background: #3b82f6; color: white; width: 48px; height: 48px; font-size: 22px;">📱</div>
               <h3 style="margin-top: 12px;">Monteur-App für Android</h3>
-              <p>Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften — direkt auf dem Bau. Daten synchronisieren sich mit der Desktop-Software.</p>
+              <p>Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften — direkt auf dem Bau. Daten synchronisieren sich automatisch mit der Desktop-Software und Rapporte werden direkt in Rechnungen importiert.</p>
               <div class="feature-tag" style="background: #3b82f6; color: white;">Neu — Inklusive</div>
             </div>
             <div style="flex: 1; min-width: 280px;">
@@ -586,6 +598,9 @@
             <li>Export nach PDF, DATEV, CSV, ICS, SEPA, XRechnung</li>
             <li>Import aus DATANORM, BMEcat, GAEB, CSV</li>
             <li>Automatische Updates — immer aktuell</li>
+            <li>Monteur-Rapporte syncen & direkt in Rechnungen importieren</li>
+            <li>Sicherheit: SQL-Injection-Schutz, XSS-Sanitization, Server-Hardening</li>
+            <li>GitHub Actions CI/CD — automatische Builds für alle Plattformen</li>
           </ul>
         </div>
         <div class="details-visual fade-up">
@@ -629,6 +644,20 @@
             <div class="details-visual-text">
               <strong>Windows & macOS</strong>
               <span>Intel und Apple Silicon unterstützt</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🔄</div>
+            <div class="details-visual-text">
+              <strong>Optionale Server-Synchronisation</strong>
+              <span>Mehrere Geräte, VPN, DynDNS — Ihre Daten, Ihr Server</span>
+            </div>
+          </div>
+          <div class="details-visual-row">
+            <div class="details-visual-icon">🛡️</div>
+            <div class="details-visual-text">
+              <strong>Security-Hardening</strong>
+              <span>SQL-Injection-Schutz, XSS, Rate-Limiting, CORS</span>
             </div>
           </div>
         </div>
@@ -762,7 +791,7 @@
           </tr>
         </tbody>
       </table>
-      <p class="comparison-note">* Alle Cloud-Preise basieren auf den günstigsten Tarifen mit 1 Nutzer (Stand Juli 2026). Bei steigender Nutzerzahl verdoppeln sich die Kosten bei Cloud-Anbietern — bei IMHWS bleibt der Preis gleich.</p>
+      <p class="comparison-note">* Alle Cloud-Preise basieren auf den günstigsten Tarifen mit 1 Nutzer (Stand Juli 2026). Bei steigender Nutzerzahl verdoppeln sich die Kosten bei Cloud-Anbietern — bei IMHWS bleibt der Preis gleich. Monteur-App ist bei IMHWS in allen Paketen inklusive.</p>
     </div>
   </section>
 
@@ -872,7 +901,7 @@
         </div>
         <div class="faq-item">
           <button class="faq-question">Unterstützt die Software E-Rechnungen?</button>
-          <div class="faq-answer">Ja, IMHWS unterstützt E-Rechnungen im XRechnung-Format sowie ZUGFeRD-konforme PDFs. Das ist ab 2025 für viele Unternehmen verpflichtend.</div>
+          <div class="faq-answer">Ja, IMHWS unterstützt E-Rechnungen im XRechnung-Format sowie ZUGFeRD-konforme PDFs. Das ist ab 2025 für viele Unternehmen verpflichtend — IMHWS ist bereits jetzt bereit dafür.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question">Gibt es auch eine mobile App?</button>
@@ -890,9 +919,9 @@
       <div class="hero-buttons" style="justify-content: center; flex-wrap: wrap; gap: 12px;">
         <a href="demo.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">🖥️ Online-Demo testen</a>
         <a href="docs/bedienerhandbuch.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">📖 Bedienungsanleitung</a>
-        <a href="v2.3.0/Handwerker-Software-2.3.0.dmg" class="btn btn-cta" target="_blank">⬇ macOS Intel herunterladen</a>
-        <a href="v2.3.0/Handwerker-Software-2.3.0-arm64.dmg" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);" target="_blank">⬇ macOS Apple Silicon herunterladen</a>
-        <a href="v2.3.0/Handwerker-Software.Setup.2.3.0.exe" class="btn btn-secondary" style="background: transparent; color: white; border-color: rgba(255,255,255,0.3);" target="_blank">⬇ Windows herunterladen</a>
+        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software-2.3.5.dmg" class="btn btn-cta" target="_blank">⬇ macOS Intel herunterladen</a>
+        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software-2.3.5-arm64.dmg" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);" target="_blank">⬇ macOS Apple Silicon herunterladen</a>
+        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software.Setup.2.3.5.exe" class="btn btn-secondary" style="background: transparent; color: white; border-color: rgba(255,255,255,0.3);" target="_blank">⬇ Windows herunterladen</a>
       </div>
     </div>
   </section>
@@ -929,8 +958,8 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; 2025 intrasaar media. Alle Rechte vorbehalten.</span>
-        <span>Handwerker-Software v2.3.0</span>
+        <span>&copy; 2026 intrasaar media. Alle Rechte vorbehalten.</span>
+        <span>Handwerker-Software v2.3.5</span>
       </div>
     </div>
   </footer>
