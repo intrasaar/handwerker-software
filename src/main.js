@@ -434,6 +434,54 @@ function initDatabase() {
       ebene INTEGER DEFAULT 1,
       eltern_konto TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS monteur_rapporte (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id TEXT,
+      auftrags_id TEXT,
+      kunden_name TEXT DEFAULT '',
+      adresse TEXT DEFAULT '',
+      datum DATE NOT NULL,
+      status TEXT DEFAULT 'offen',
+      zusammenfassung TEXT DEFAULT '',
+      sync_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS monteur_rapport_positionen (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rapport_server_id INTEGER,
+      client_id TEXT,
+      artikel_nr TEXT DEFAULT '',
+      bezeichnung TEXT DEFAULT '',
+      menge REAL DEFAULT 0,
+      einheit TEXT DEFAULT 'Stk',
+      preis REAL DEFAULT 0,
+      sync_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS monteur_rapport_fotos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rapport_server_id INTEGER,
+      client_id TEXT,
+      pfad TEXT NOT NULL,
+      beschreibung TEXT DEFAULT '',
+      bild_base64 TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      sync_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS monteur_zeiterfassung (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id TEXT,
+      auftrags_id TEXT,
+      mitarbeiter TEXT DEFAULT '',
+      start DATETIME,
+      ende DATETIME,
+      pause_minuten INTEGER DEFAULT 0,
+      tätigkeit TEXT DEFAULT '',
+      notizen TEXT DEFAULT '',
+      sync_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }
 
@@ -821,6 +869,25 @@ ipcMain.handle('save-auftrag', (event, auftrag) => {
 ipcMain.handle('delete-auftrag', (event, id) => {
   db.prepare('DELETE FROM auftraege WHERE id = ?').run(id);
   return true;
+});
+
+// ============ Monteur-Rapporte ============
+
+ipcMain.handle('get-rapporte', () => {
+  const rows = db.prepare('SELECT * FROM monteur_rapporte ORDER BY datum DESC, id DESC').all();
+  for (const r of rows) {
+    r.positionen_count = db.prepare('SELECT COUNT(*) as c FROM monteur_rapport_positionen WHERE rapport_server_id = ?').get(r.id)?.c || 0;
+    r.fotos_count = db.prepare('SELECT COUNT(*) as c FROM monteur_rapport_fotos WHERE rapport_server_id = ?').get(r.id)?.c || 0;
+  }
+  return rows;
+});
+
+ipcMain.handle('get-rapport-positionen', (event, rapportId) => {
+  return db.prepare('SELECT * FROM monteur_rapport_positionen WHERE rapport_server_id = ?').all(rapportId);
+});
+
+ipcMain.handle('get-rapport-fotos', (event, rapportId) => {
+  return db.prepare('SELECT * FROM monteur_rapport_fotos WHERE rapport_server_id = ?').all(rapportId);
 });
 
 // ============ PDF Export mit Briefkopf ============
@@ -2480,7 +2547,7 @@ function serverRequest(method, endpoint, body) {
   });
 }
 
-const SYNC_TABLES = ['kunden', 'angebote', 'rechnungen', 'artikel', 'lieferanten', 'subunternehmer', 'kasse', 'eingangsrechnungen'];
+const SYNC_TABLES = ['kunden', 'angebote', 'rechnungen', 'artikel', 'lieferanten', 'subunternehmer', 'kasse', 'eingangsrechnungen', 'auftraege', 'termine', 'buchungen', 'monteur_rapporte', 'monteur_rapport_positionen', 'monteur_rapport_fotos', 'monteur_zeiterfassung'];
 
 function isValidSyncTable(table) {
   return SYNC_TABLES.includes(table);
@@ -2516,19 +2583,24 @@ async function pullFromServer() {
     try {
       const serverItems = await serverRequest('GET', `/api/${table}`);
       if (!serverItems || !Array.isArray(serverItems)) continue;
+
+      const localColInfo = db.prepare(`PRAGMA table_info(${table})`).all();
+      const localCols = new Set(localColInfo.map(c => c.name));
+
       const localIds = new Set(
         db.prepare(`SELECT id FROM ${table}`).all().map(r => r.id)
       );
       for (const item of serverItems) {
+        const safeKeys = Object.keys(item).filter(k => localCols.has(k));
         if (localIds.has(item.id)) {
-          const cols = Object.keys(item).filter(k => k !== 'id');
+          const cols = safeKeys.filter(k => k !== 'id');
           if (cols.length > 0) {
             const setClause = cols.map(k => `${k} = ?`).join(', ');
             const vals = cols.map(k => item[k]);
             db.prepare(`UPDATE ${table} SET ${setClause} WHERE id = ?`).run(...vals, item.id);
           }
         } else {
-          const cols = Object.keys(item).filter(k => k !== 'id');
+          const cols = safeKeys.filter(k => k !== 'id');
           const vals = cols.map(k => item[k]);
           const placeholders = cols.map(() => '?').join(', ');
           db.prepare(`INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`).run(...vals);
@@ -2626,7 +2698,22 @@ function startServer() {
     }
   } catch (e) { /* fallback auf default */ }
 
-  const nodePath = process.execPath;
+  let nodePath;
+  if (app.isPackaged) {
+    const candidates = [
+      path.join(process.env.ProgramFiles || 'C:\\Program Files', 'nodejs', 'node.exe'),
+      path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'nodejs', 'node.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs', 'node.exe'),
+    ];
+    nodePath = candidates.find(p => fs.existsSync(p));
+    if (!nodePath) {
+      console.error('Node.js nicht gefunden. Bitte installiere Node.js von https://nodejs.org');
+      return false;
+    }
+    console.log('Node.js Pfad:', nodePath);
+  } else {
+    nodePath = process.execPath;
+  }
   serverProcess = spawn(nodePath, [path.join(serverDir, 'server.js')], {
     cwd: serverDir,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -2635,7 +2722,8 @@ function startServer() {
       PORT: SERVER_HTTPS_PORT,
       HTTP_PORT: SERVER_HTTP_PORT,
       API_KEY: serverKey,
-      DATA_DIR: path.join(dataDir, 'server-data')
+      DATA_DIR: path.join(dataDir, 'server-data'),
+      MAIN_DB: path.join(dataDir, 'handwerker.db')
     }
   });
 

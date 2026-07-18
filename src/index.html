@@ -183,12 +183,19 @@
                 <th>Adresse</th>
                 <th>Telefon</th>
                 <th>E-Mail</th>
+                <th>Rapporte</th>
                 <th>Aktionen</th>
               </tr>
             </thead>
             <tbody id="kunden-tbody">
             </tbody>
           </table>
+        </div>
+
+        <div id="kunden-rapport-detail" style="display:none; margin-top:16px; padding:16px; background:#f8f9fa; border-radius:8px; border:1px solid #e5e7eb;">
+          <h3 id="kunden-rapport-title" style="margin:0 0 12px 0;"></h3>
+          <div id="kunden-rapport-content"></div>
+          <button class="btn btn-secondary" onclick="document.getElementById('kunden-rapport-detail').style.display='none'" style="margin-top:12px;">Schliessen</button>
         </div>
       </div>
 
@@ -281,6 +288,33 @@
             <tbody id="auftraege-tbody">
             </tbody>
           </table>
+        </div>
+
+        <div class="page-header" style="margin-top: 24px;">
+          <h1 style="font-size: 1.2em;">Monteur-Rapporte</h1>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Kunde</th>
+                <th>Auftrag</th>
+                <th>Status</th>
+                <th>Zusammenfassung</th>
+                <th>Positionen</th>
+                <th>Fotos</th>
+              </tr>
+            </thead>
+            <tbody id="rapporte-tbody">
+            </tbody>
+          </table>
+        </div>
+
+        <div id="rapport-detail" style="display:none; margin-top:16px; padding:16px; background:#f8f9fa; border-radius:8px; border:1px solid #e5e7eb;">
+          <h3 id="rapport-detail-title" style="margin:0 0 12px 0;"></h3>
+          <div id="rapport-detail-content"></div>
+          <button class="btn btn-secondary" onclick="document.getElementById('rapport-detail').style.display='none'" style="margin-top:12px;">Schliessen</button>
         </div>
       </div>
 

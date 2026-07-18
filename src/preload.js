@@ -35,6 +35,11 @@ contextBridge.exposeInMainWorld('api', {
   saveAuftrag: (auftrag) => ipcRenderer.invoke('save-auftrag', auftrag),
   deleteAuftrag: (id) => ipcRenderer.invoke('delete-auftrag', id),
 
+  // Monteur-Rapporte
+  getRapporte: () => ipcRenderer.invoke('get-rapporte'),
+  getRapportPositionen: (rapportId) => ipcRenderer.invoke('get-rapport-positionen', rapportId),
+  getRapportFotos: (rapportId) => ipcRenderer.invoke('get-rapport-fotos', rapportId),
+
   // PDF
   exportPdf: (data) => ipcRenderer.invoke('export-pdf', data),
   previewPdf: (data) => ipcRenderer.invoke('preview-pdf', data),

@@ -353,18 +353,20 @@ function run(sql, params = []) { return db.prepare(sql).run(...params); }
 
 app.get('/api/dashboard', (req, res) => {
   const kunden = get('SELECT COUNT(*) as anzahl FROM kunden');
-  const offeneAngebote = get("SELECT COUNT(*) as anzahl, COALESCE(SUM(betrag_brutto),0) as betrag FROM angebote WHERE status='offen'");
-  const offeneRechnungen = get("SELECT COUNT(*) as anzahl, COALESCE(SUM(betrag_brutto),0) as betrag FROM rechnungen WHERE status='offen'");
+  const offeneAngebote = get("SELECT COUNT(*) as anzahl FROM angebote WHERE status='offen'");
+  const offeneRechnungen = get("SELECT COUNT(*) as anzahl FROM rechnungen WHERE status='offen'");
   const termineHeute = get("SELECT COUNT(*) as anzahl FROM termine WHERE datum = date('now')");
   const umsatzMonat = get("SELECT COALESCE(SUM(betrag_brutto),0) as betrag FROM rechnungen WHERE bezahlt_am IS NULL AND strftime('%Y-%m', erstellt) = strftime('%Y-%m', 'now')");
   const offeneAuftraege = get("SELECT COUNT(*) as anzahl FROM auftraege WHERE status != 'fertig'");
+  const artikel = get('SELECT COUNT(*) as anzahl FROM artikel');
   res.json({
     kunden: kunden.anzahl,
-    angebote: offeneAngebote,
-    rechnungen: offeneRechnungen,
+    angebote: offeneAngebote.anzahl,
+    rechnungen: offeneRechnungen.anzahl,
     termineHeute: termineHeute.anzahl,
     umsatzMonat: umsatzMonat.betrag,
-    auftraege: offeneAuftraege.anzahl
+    auftraege: offeneAuftraege.anzahl,
+    artikel: artikel.anzahl
   });
 });
 
@@ -426,6 +428,82 @@ createCrudRoutes('subunternehmer', 'sub', 'subunternehmer');
 createCrudRoutes('artikel', 'art', 'artikel');
 createCrudRoutes('kasse', 'kasse', 'kasse');
 createCrudRoutes('regeln', 'regel', 'regeln');
+
+// ============ Termine (mit JOIN zu kunden) ============
+
+app.get('/api/termine', (req, res) => {
+  res.json(query('SELECT t.*, k.name as kunden_name FROM termine t LEFT JOIN kunden k ON t.kunden_id = k.id ORDER BY t.datum DESC'));
+});
+
+app.get('/api/termine/:id', (req, res) => {
+  const item = get('SELECT t.*, k.name as kunden_name FROM termine t LEFT JOIN kunden k ON t.kunden_id = k.id WHERE t.id = ?', [req.params.id]);
+  if (!item) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json(item);
+});
+
+app.post('/api/termine', (req, res) => {
+  const { kunden_id, titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, status, farbe } = req.body;
+  if (!titel || !datum) return res.status(400).json({ error: 'titel und datum erforderlich' });
+  const result = run('INSERT INTO termine (kunden_id, titel, beschreibung, datum, uhrzeit_von, uhrzeit_bis, status, farbe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [kunden_id || null, titel, beschreibung || null, datum, uhrzeit_von || null, uhrzeit_bis || null, status || 'geplant', farbe || '#3b82f6']);
+  logSync(req.headers['x-client-id'] || 'unknown', 'termine', 'INSERT', result.lastInsertRowid);
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.put('/api/termine/:id', (req, res) => {
+  const cols = ['kunden_id', 'titel', 'beschreibung', 'datum', 'uhrzeit_von', 'uhrzeit_bis', 'status', 'farbe'];
+  const updates = cols.filter(k => req.body[k] !== undefined);
+  if (updates.length === 0) return res.status(400).json({ error: 'Keine Daten' });
+  const setClause = updates.map(k => `${k} = ?`).join(', ');
+  const vals = updates.map(k => req.body[k]);
+  run(`UPDATE termine SET ${setClause} WHERE id = ?`, [...vals, req.params.id]);
+  logSync(req.headers['x-client-id'] || 'unknown', 'termine', 'UPDATE', parseInt(req.params.id));
+  res.json({ success: true });
+});
+
+app.delete('/api/termine/:id', (req, res) => {
+  run('DELETE FROM termine WHERE id = ?', [req.params.id]);
+  logSync(req.headers['x-client-id'] || 'unknown', 'termine', 'DELETE', parseInt(req.params.id));
+  res.json({ success: true });
+});
+
+// ============ Aufträge (mit JOIN zu kunden) ============
+
+app.get('/api/auftraege', (req, res) => {
+  res.json(query(`SELECT a.*, k.name as kunden_name FROM auftraege a LEFT JOIN kunden k ON a.kunden_id = k.id ORDER BY a.erstellt DESC`));
+});
+
+app.get('/api/auftraege/:id', (req, res) => {
+  const item = get(`SELECT a.*, k.name as kunden_name FROM auftraege a LEFT JOIN kunden k ON a.kunden_id = k.id WHERE a.id = ?`, [req.params.id]);
+  if (!item) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json(item);
+});
+
+app.post('/api/auftraege', (req, res) => {
+  const { nummer, kunden_id, titel, beschreibung, status, prioritaet, start_datum, end_datum } = req.body;
+  if (!nummer || !kunden_id || !titel) {
+    return res.status(400).json({ error: 'Pflichtfelder: nummer, kunden_id, titel' });
+  }
+  const result = run(
+    'INSERT INTO auftraege (nummer, kunden_id, titel, beschreibung, status, prioritaet, start_datum, end_datum) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [nummer, kunden_id, titel, beschreibung || '', status || 'offen', prioritaet || 'normal', start_datum || null, end_datum || null]
+  );
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.put('/api/auftraege/:id', (req, res) => {
+  const { kunden_id, titel, beschreibung, status, prioritaet, start_datum, end_datum } = req.body;
+  run(
+    'UPDATE auftraege SET kunden_id=COALESCE(?,kunden_id), titel=COALESCE(?,titel), beschreibung=COALESCE(?,beschreibung), status=COALESCE(?,status), prioritaet=COALESCE(?,prioritaet), start_datum=COALESCE(?,start_datum), end_datum=COALESCE(?,end_datum) WHERE id=?',
+    [kunden_id, titel, beschreibung, status, prioritaet, start_datum, end_datum, req.params.id]
+  );
+  res.json({ success: true });
+});
+
+app.delete('/api/auftraege/:id', (req, res) => {
+  run('DELETE FROM auftraege WHERE id = ?', [req.params.id]);
+  res.json({ success: true });
+});
 
 // ============ Rechnungen (mit Positionen) ============
 
@@ -760,6 +838,93 @@ app.get('/api/monteur/synclog', (req, res) => {
   res.json(rows);
 });
 
+// ============ Monteur-Tabellen: Generic GET für Desktop-Sync ============
+
+app.get('/api/monteur_rapporte', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM monteur_rapporte ORDER BY id').all();
+    res.json(rows);
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+app.get('/api/monteur_rapport_positionen', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM monteur_rapport_positionen ORDER BY id').all();
+    res.json(rows);
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+app.get('/api/monteur_rapport_fotos', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM monteur_rapport_fotos ORDER BY id').all();
+    res.json(rows);
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+// ============ Fotos (Mobile App Upload) ============
+
+const FOTOS_DIR = path.join(DATA_DIR, 'fotos');
+if (!fs.existsSync(FOTOS_DIR)) fs.mkdirSync(FOTOS_DIR, { recursive: true });
+
+app.get('/api/fotos', (req, res) => {
+  const auftrags_id = req.query.auftrags_id;
+  let rows;
+  if (auftrags_id) {
+    rows = query('SELECT * FROM monteur_rapport_fotos WHERE rapport_server_id IN (SELECT id FROM monteur_rapporte WHERE auftrags_id = ?) ORDER BY timestamp DESC', [auftrags_id]);
+  } else {
+    rows = query('SELECT * FROM monteur_rapport_fotos ORDER BY timestamp DESC LIMIT 200');
+  }
+  res.json(rows);
+});
+
+app.post('/api/fotos', (req, res) => {
+  const { client_id, auftrags_id, beschreibung, bild_base64 } = req.body;
+  if (!bild_base64) {
+    return res.status(400).json({ error: 'bild_base64 ist Pflicht' });
+  }
+  const clientId = client_id || 'mobile-app';
+  const ts = Date.now();
+  const fileName = `${clientId}_${ts}.jpg`;
+  const filePath = path.join(FOTOS_DIR, fileName);
+
+  try {
+    const buffer = Buffer.from(bild_base64, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
+    const result = db.prepare(
+      'INSERT INTO monteur_rapport_fotos (client_id, rapport_server_id, pfad, beschreibung, bild_base64) VALUES (?, ?, ?, ?, ?)'
+    ).run(clientId, auftrags_id || 0, fileName, beschreibung || '', bild_base64);
+
+    res.json({ ok: true, id: result.lastInsertRowid, pfad: fileName });
+  } catch (err) {
+    console.error('Foto-Upload-Fehler:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/fotos/:id/bild', (req, res) => {
+  const foto = get('SELECT * FROM monteur_rapport_fotos WHERE id = ?', [req.params.id]);
+  if (!foto) return res.status(404).json({ error: 'Nicht gefunden' });
+
+  const filePath = path.join(FOTOS_DIR, foto.pfad);
+  if (fs.existsSync(filePath)) {
+    res.set('Content-Type', 'image/jpeg');
+    res.sendFile(filePath);
+  } else if (foto.bild_base64) {
+    const buffer = Buffer.from(foto.bild_base64, 'base64');
+    res.set('Content-Type', 'image/jpeg');
+    res.send(buffer);
+  } else {
+    res.status(404).json({ error: 'Bilddatei nicht gefunden' });
+  }
+});
+
 // ============ Config ============
 
 app.get('/api/config', (req, res) => {
@@ -786,6 +951,54 @@ function generateTLSCert() {
 // ============ Server starten ============
 
 initDatabase();
+
+// ============ Sync: Desktop-DB → Server-DB ============
+
+function syncFromMainDB() {
+  const mainDbPath = process.env.MAIN_DB;
+  if (!mainDbPath || !fs.existsSync(mainDbPath)) {
+    console.log('Keine Desktop-DB gefunden, Sync übersprungen.');
+    return;
+  }
+
+  try {
+    const mainDb = new Database(mainDbPath, { readonly: true });
+    const tables = ['kunden', 'angebote', 'angebote_positionen', 'rechnungen', 'rechnungen_positionen', 'termine', 'auftraege', 'buchungen', 'lieferanten', 'eingangsrechnungen', 'artikel', 'kasse', 'subunternehmer', 'aufmasse', 'regeln'];
+
+    let totalRows = 0;
+    for (const table of tables) {
+      try {
+        const count = mainDb.prepare(`SELECT COUNT(*) as c FROM ${table}`).get();
+        if (count.c === 0) continue;
+
+        const rows = mainDb.prepare(`SELECT * FROM ${table}`).all();
+        if (rows.length === 0) continue;
+
+        const cols = Object.keys(rows[0]);
+        const placeholders = cols.map(() => '?').join(', ');
+        const insertStmt = db.prepare(`INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`);
+
+        const tx = db.transaction((items) => {
+          for (const row of items) {
+            insertStmt.run(...cols.map(c => row[c]));
+          }
+        });
+        tx(rows);
+        totalRows += rows.length;
+        console.log(`  ${table}: ${rows.length} Zeilen synchronisiert`);
+      } catch (e) {
+        console.log(`  ${table}: übersprungen (${e.message})`);
+      }
+    }
+
+    mainDb.close();
+    console.log(`Desktop-DB Sync fertig: ${totalRows} Zeilen importiert.`);
+  } catch (err) {
+    console.error('Desktop-DB Sync Fehler:', err.message);
+  }
+}
+
+syncFromMainDB();
 
 let server;
 const certPath = path.join(TLS_DIR, 'server.crt');

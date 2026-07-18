@@ -64,14 +64,25 @@ async function loadDashboard() {
 // ============ Kunden ============
 async function loadKunden() {
   kundenListe = await api.getKunden();
+  const rapporte = await api.getRapporte();
+  const kundenRapportCount = {};
+  for (const r of rapporte) {
+    const name = (r.kunden_name || '').trim().toLowerCase();
+    if (name) {
+      kundenRapportCount[name] = (kundenRapportCount[name] || 0) + 1;
+    }
+  }
   const tbody = document.getElementById('kunden-tbody');
-  tbody.innerHTML = kundenListe.map(k => `
+  tbody.innerHTML = kundenListe.map(k => {
+    const count = kundenRapportCount[k.name.trim().toLowerCase()] || 0;
+    return `
     <tr>
       <td><strong>${escHtml(k.name)}</strong></td>
       <td>${escHtml(k.ansprechpartner || '-')}</td>
       <td>${escHtml(k.strasse || '')} ${escHtml(k.plz || '')} ${escHtml(k.ort || '')}</td>
       <td>${escHtml(k.telefon || '-')}</td>
       <td>${escHtml(k.email || '-')}</td>
+      <td>${count > 0 ? `<a href="#" onclick="showKundenRapporte('${escHtml(k.name).replace(/'/g, "\\'")}')">${count} Rapport(e)</a>` : '-'}</td>
       <td>
         <div class="btn-group">
           <button class="btn btn-secondary btn-small" onclick="editKunde(${k.id})">✏️</button>
@@ -79,7 +90,7 @@ async function loadKunden() {
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 function showKundenForm(kunde = null) {
@@ -158,6 +169,38 @@ async function deleteKunde(id) {
     await api.deleteKunde(id);
     loadKunden();
   }
+}
+
+async function showKundenRapporte(kundenName) {
+  try {
+    const rapporte = await api.getRapporte();
+    const filtered = rapporte.filter(r => (r.kunden_name || '').trim().toLowerCase() === kundenName.trim().toLowerCase());
+    if (filtered.length === 0) {
+      document.getElementById('kunden-rapport-title').textContent = `Keine Rapporte für "${kundenName}"`;
+      document.getElementById('kunden-rapport-content').innerHTML = '';
+      document.getElementById('kunden-rapport-detail').style.display = 'block';
+      return;
+    }
+    let totalPositionsPreis = 0;
+    let html = '<table class="data-table" style="font-size:0.9em"><thead><tr><th>Datum</th><th>Zusammenfassung</th><th>Positionen</th><th>Total</th></tr></thead><tbody>';
+    for (const r of filtered) {
+      const pos = await api.getRapportPositionen(r.id);
+      const rapportTotal = (pos || []).reduce((sum, p) => sum + (p.menge || 0) * (p.preis || 0), 0);
+      totalPositionsPreis += rapportTotal;
+      const posText = (pos || []).map(p => `${p.bezeichnung} (${p.menge} ${p.einheit})`).join(', ') || '-';
+      html += `<tr>
+        <td>${r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-'}</td>
+        <td>${escHtml((r.zusammenfassung || '').substring(0, 40))}</td>
+        <td>${escHtml(posText.substring(0, 50))}${posText.length > 50 ? '...' : ''}</td>
+        <td><strong>CHF ${rapportTotal.toFixed(2)}</strong></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    html += `<p style="margin-top:12px;font-weight:700;font-size:1.1em;">Total aller Rapporte: CHF ${totalPositionsPreis.toFixed(2)}</p>`;
+    document.getElementById('kunden-rapport-title').textContent = `Rapporte für "${kundenName}" (${filtered.length})`;
+    document.getElementById('kunden-rapport-content').innerHTML = html;
+    document.getElementById('kunden-rapport-detail').style.display = 'block';
+  } catch(e) { console.error('showKundenRapporte:', e.message); }
 }
 
 // ============ Angebote ============
@@ -887,6 +930,72 @@ async function loadAuftraege() {
       </td>
     </tr>
   `).join('');
+  loadRapporte();
+}
+
+async function loadRapporte() {
+  try {
+    const rapporte = await api.getRapporte();
+    const auftraege = await api.getAuftraege();
+    const tbody = document.getElementById('rapporte-tbody');
+    if (!tbody) return;
+    if (!rapporte || rapporte.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Keine Rapporte vorhanden</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rapporte.map(r => {
+      const auftrag = auftraege.find(a => String(a.id) === String(r.auftrags_id));
+      return `
+        <tr style="cursor:pointer" onclick="showRapportDetail(${r.id})">
+          <td>${r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-'}</td>
+          <td>${escHtml(r.kunden_name || '-')}</td>
+          <td>${auftrag ? escHtml(auftrag.nummer + ' - ' + auftrag.titel) : r.auftrags_id || '-'}</td>
+          <td><span class="badge badge-${r.status === 'fertig' ? 'fertig' : 'offen-orange'}">${r.status || 'offen'}</span></td>
+          <td>${escHtml((r.zusammenfassung || '').substring(0, 60))}${(r.zusammenfassung || '').length > 60 ? '...' : ''}</td>
+          <td style="text-align:center">${r.positionen_count || 0}</td>
+          <td style="text-align:center">${r.fotos_count || 0}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch(e) { console.error('loadRapporte:', e.message); }
+}
+
+async function showRapportDetail(id) {
+  try {
+    const rapporte = await api.getRapporte();
+    const r = rapporte.find(x => x.id === id);
+    if (!r) return;
+    const positionen = await api.getRapportPositionen(id);
+    const fotos = await api.getRapportFotos(id);
+    document.getElementById('rapport-detail-title').textContent = `Rapport #${r.id} — ${r.kunden_name || ''}`;
+    let html = `
+      <p><strong>Datum:</strong> ${r.datum ? new Date(r.datum).toLocaleDateString('de-CH') : '-'}</p>
+      <p><strong>Status:</strong> ${r.status || 'offen'}</p>
+      <p><strong>Zusammenfassung:</strong> ${escHtml(r.zusammenfassung || '-')}</p>
+    `;
+    if (positionen && positionen.length > 0) {
+      html += '<h4 style="margin:12px 0 6px;">Positionen</h4>';
+      html += '<table class="data-table" style="font-size:0.85em"><thead><tr><th>Artikel</th><th>Bezeichnung</th><th>Menge</th><th>Preis</th></tr></thead><tbody>';
+      for (const p of positionen) {
+        html += `<tr><td>${escHtml(p.artikel_nr || '')}</td><td>${escHtml(p.bezeichnung || '')}</td><td>${p.menge} ${escHtml(p.einheit || '')}</td><td>CHF ${(p.preis || 0).toFixed(2)}</td></tr>`;
+      }
+      html += '</tbody></table>';
+    }
+    if (fotos && fotos.length > 0) {
+      html += `<h4 style="margin:12px 0 6px;">Fotos (${fotos.length})</h4>`;
+      html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+      for (const f of fotos) {
+        if (f.bild_base64) {
+          html += `<img src="data:image/jpeg;base64,${f.bild_base64}" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" />`;
+        } else {
+          html += `<div style="width:120px;height:120px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.8em;">Foto</div>`;
+        }
+      }
+      html += '</div>';
+    }
+    document.getElementById('rapport-detail-content').innerHTML = html;
+    document.getElementById('rapport-detail').style.display = 'block';
+  } catch(e) { console.error('showRapportDetail:', e.message); }
 }
 
 async function showAuftragForm(auftrag = null) {
