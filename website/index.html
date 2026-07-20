@@ -1,1008 +1,328 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IMHWS — Handwerker-Software | Rechnungen, Angebote, Buchhaltung</title>
-  <meta name="description" content="Die komplette Desktop-Software für Handwerker: Angebote, Rechnungen, Buchhaltung, Terminplanung, Warenwirtschaft und mehr. Made in Germany.">
-  <meta name="keywords" content="Handwerker Software, Rechnungsstellung, Angebot, Buchhaltung, Faktura, Kleinunternehmer, Handwerk">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software — intrasaar media</title>
+<meta name="description" content="Software-Lösungen von intrasaar media: Desktop-Apps, Web-Anwendungen und B2B-Tools. Entwickelt im Saarland.">
+<meta name="keywords" content="intrasaar media, Software, Handwerker, B2B, Lead Generierung, Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="icon" href="https://intrasaar.de/wp-content/uploads/2025/04/cropped-cropped-cropped-cropped-cropped-c6fc4a044c5d4473b5b35ebdce258673-free-2-1-32x32.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--primary:#1a1d27;--accent:#3b82f6;--accent-hover:#2563eb;--accent-light:#dbeafe;--success:#10b981;--text:#1f2937;--text-light:#6b7280;--text-muted:#9ca3af;--bg:#ffffff;--bg-alt:#f9fafb;--bg-dark:#111827;--border:#e5e7eb;--radius:16px;--shadow:0 1px 3px rgba(0,0,0,.1);--shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);--shadow-xl:0 20px 25px -5px rgba(0,0,0,.1)}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text);line-height:1.6;background:var(--bg);overflow-x:hidden}
+a{color:var(--accent);text-decoration:none;transition:color .2s}
+a:hover{color:var(--accent-hover)}
+::selection{background:var(--accent-light);color:var(--accent-hover)}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
 
-    :root {
-      --primary: #1a1d27;
-      --primary-light: #2a2e3a;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --accent-light: #dbeafe;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --text: #1f2937;
-      --text-light: #6b7280;
-      --text-muted: #9ca3af;
-      --bg: #ffffff;
-      --bg-alt: #f9fafb;
-      --bg-dark: #111827;
-      --border: #e5e7eb;
-      --radius: 12px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-    }
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border);transition:box-shadow .3s}
+nav.scrolled{box-shadow:var(--shadow)}
+.nav-inner{max-width:100%;margin:0 auto;padding:0;display:flex;flex-direction:column;align-items:center}
+.nav-top{display:flex;align-items:center;justify-content:center;width:100%;height:80px;padding:0 24px}
+.nav-brand{display:flex;align-items:center;justify-content:center;text-decoration:none;flex:1;height:100%}
+.nav-brand img{height:72px;object-fit:contain}
+.nav-links{display:flex;gap:28px;align-items:center;justify-content:center;padding:0 0 10px 0;width:100%}
+.nav-links a{text-decoration:none;color:var(--text-light);font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{background:var(--accent);color:#fff!important;padding:8px 20px;border-radius:10px;font-weight:600}
+.nav-cta:hover{background:var(--accent-hover);transform:translateY(-1px)}
 
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+/* HERO */
+.hero{padding:140px 0 100px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(160deg,#0f172a 0%,#1e293b 40%,#1e3a5f 70%,#2563eb 100%)}
+.hero::before{content:'';position:absolute;top:-40%;right:-15%;width:700px;height:700px;background:radial-gradient(circle,rgba(59,130,246,.15) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-30%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:6px 18px 6px 10px;font-size:13px;font-weight:500;color:rgba(255,255,255,.7);margin-bottom:28px}
+.hero-badge-dot{width:8px;height:8px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(38px,5.5vw,72px);font-weight:900;line-height:1.05;color:#fff;margin-bottom:24px;letter-spacing:-.03em}
+.hero h1 .highlight{background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:clamp(16px,2vw,20px);color:rgba(255,255,255,.6);max-width:580px;margin:0 auto 40px;line-height:1.7}
+.hero-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;transition:all .25s;cursor:pointer;border:none}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(59,130,246,.35)}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.45);color:#fff}
+.btn-outline{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18)}
+.btn-outline:hover{background:rgba(255,255,255,.12);transform:translateY(-2px);color:#fff}
+.hero-stats{display:flex;gap:56px;justify-content:center;margin-top:72px;padding-top:40px;border-top:1px solid rgba(255,255,255,.08)}
+.hero-stat{text-align:center}
+.hero-stat-value{font-size:32px;font-weight:900;color:#fff}
+.hero-stat-label{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:500}
 
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+/* FLOATING SHAPES */
+.hero-shapes{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.shape{position:absolute;border-radius:50%;opacity:.06;background:#fff}
+.shape-1{width:400px;height:400px;top:-100px;right:-100px;animation:float1 20s ease-in-out infinite}
+.shape-2{width:200px;height:200px;bottom:50px;left:10%;animation:float2 15s ease-in-out infinite}
+.shape-3{width:120px;height:120px;top:30%;right:20%;animation:float3 18s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,20px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}}
+@keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-15px,15px) scale(1.1)}}
 
-    /* ===== NAVIGATION ===== */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border); transition: box-shadow 0.3s;
-    }
-    nav.scrolled { box-shadow: var(--shadow); }
-    .nav-inner {
-      max-width: 100%; margin: 0 auto; padding: 0;
-      display: flex; align-items: center; justify-content: space-between; height: 90px;
-    }
-    .nav-brand { display: flex; align-items: center; text-decoration: none; flex: 1; height: 100%; }
-    .nav-logo {
-      width: 100%; height: 100%; object-fit: contain; border-radius: 0;
-    }
-    .nav-brand-text { display: none; }
-    .nav-brand-text span { color: var(--accent); }
-    .nav-links { display: none; }
-    .nav-links a {
-      text-decoration: none; color: var(--text-light); font-size: 14px;
-      font-weight: 500; transition: color 0.2s;
-    }
-    .nav-links a:hover { color: var(--accent); }
-    .nav-cta {
-      background: var(--accent); color: white !important; padding: 10px 20px;
-      border-radius: 8px; font-weight: 600 !important; transition: background 0.2s, transform 0.1s !important;
-    }
-    .nav-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .nav-mobile { display: none; }
-    .nav-mobile span { display: block; width: 24px; height: 2px; background: var(--text); margin: 5px 0; transition: 0.3s; }
+/* PRODUCTS */
+.products{padding:100px 0 120px}
+.section-label{display:inline-block;font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px}
+.section-title{font-size:clamp(28px,4vw,48px);font-weight:900;color:var(--primary);margin-bottom:16px;letter-spacing:-.02em}
+.section-desc{font-size:18px;color:var(--text-light);max-width:560px;line-height:1.7}
+.section-header{text-align:center;margin-bottom:64px}
+.section-header .section-desc{margin:0 auto}
+.products-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;max-width:1000px;margin:0 auto}
+.product-card{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:44px 40px;position:relative;overflow:hidden;transition:all .4s cubic-bezier(.25,.46,.45,.94);display:flex;flex-direction:column}
+.product-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:20px 20px 0 0;opacity:0;transition:opacity .3s}
+.product-card:hover{transform:translateY(-8px);box-shadow:var(--shadow-xl);border-color:transparent}
+.product-card:hover::before{opacity:1}
+.product-card.imhws::before{background:linear-gradient(90deg,#3b82f6,#8b5cf6)}
+.product-card.ismbs::before{background:linear-gradient(90deg,#10b981,#06b6d4)}
+.product-card:hover .product-icon{transform:scale(1.1)}
+.product-icon{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:24px;transition:transform .3s}
+.product-card h3{font-size:24px;font-weight:800;color:var(--primary);margin-bottom:4px}
+.product-subtitle{font-size:13px;color:var(--text-muted);font-weight:500;margin-bottom:20px;text-transform:uppercase;letter-spacing:.5px}
+.product-card ul{list-style:none;margin-bottom:28px;flex:1}
+.product-card li{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px;color:var(--text);border-bottom:1px solid rgba(0,0,0,.04)}
+.product-card li:last-child{border:none}
+.product-card li::before{content:'✓';color:var(--success);font-weight:700;flex-shrink:0;font-size:13px}
+.product-price{font-size:40px;font-weight:900;color:var(--primary);margin-bottom:2px;line-height:1}
+.product-price-note{font-size:14px;color:var(--text-muted);margin-bottom:28px}
+.product-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.btn-sm{padding:10px 22px;font-size:14px;border-radius:10px}
 
-    /* ===== HERO ===== */
-    .hero {
-      padding: 160px 0 80px; text-align: center;
-      background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #dbeafe 100%);
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: ''; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
-      border-radius: 50%;
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: white; border: 1px solid var(--border); border-radius: 100px;
-      padding: 6px 16px 6px 8px; font-size: 13px; font-weight: 500; color: var(--text-light);
-      margin-bottom: 24px; box-shadow: var(--shadow);
-    }
-    .hero-badge-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .hero h1 {
-      font-size: clamp(36px, 5vw, 64px); font-weight: 900; line-height: 1.1;
-      color: var(--primary); margin-bottom: 20px; letter-spacing: -0.02em;
-    }
-    .hero h1 span { color: var(--accent); }
-    .hero p {
-      font-size: clamp(16px, 2vw, 20px); color: var(--text-light);
-      max-width: 640px; margin: 0 auto 36px; line-height: 1.7;
-    }
-    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 28px; border-radius: 10px; font-size: 16px;
-      font-weight: 600; text-decoration: none; transition: all 0.2s;
-      cursor: pointer; border: none;
-    }
-    .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.5); }
-    .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--bg-alt); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-    .hero-stats {
-      display: flex; gap: 48px; justify-content: center; margin-top: 60px;
-      padding-top: 40px; border-top: 1px solid rgba(0,0,0,0.06);
-    }
-    .hero-stat { text-align: center; }
-    .hero-stat-value { font-size: 28px; font-weight: 800; color: var(--primary); }
-    .hero-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+/* FEATURES */
+.features{padding:100px 0;background:var(--bg-alt)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto}
+.feature-card{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:36px 32px;transition:all .3s;position:relative;overflow:hidden}
+.feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(59,130,246,.2)}
+.feature-icon{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.feature-card h3{font-size:17px;font-weight:700;color:var(--primary);margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--text-light);line-height:1.7}
 
-    /* ===== APP PREVIEW ===== */
-    .preview {
-      padding: 0 0 100px; margin-top: -20px; position: relative; z-index: 2;
-    }
-    .preview-frame {
-      max-width: 1000px; margin: 0 auto; background: var(--primary);
-      border-radius: 16px; padding: 4px; box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0,0,0,0.1);
-    }
-    .preview-titlebar {
-      display: flex; align-items: center; gap: 8px; padding: 12px 16px;
-      background: var(--primary-light); border-radius: 12px 12px 0 0;
-    }
-    .preview-dot { width: 12px; height: 12px; border-radius: 50%; }
-    .preview-dot.r { background: #ef4444; }
-    .preview-dot.y { background: #f59e0b; }
-    .preview-dot.g { background: #10b981; }
-    .preview-content {
-      background: white; border-radius: 0 0 12px 12px; overflow: hidden;
-      aspect-ratio: 16/10; display: flex;
-    }
-    .preview-sidebar {
-      width: 200px; background: var(--primary); padding: 16px 0; flex-shrink: 0;
-    }
-    .preview-nav-item {
-      padding: 8px 20px; color: rgba(255,255,255,0.5); font-size: 12px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .preview-nav-item.active { color: white; background: rgba(255,255,255,0.1); border-right: 3px solid var(--accent); }
-    .preview-main { flex: 1; padding: 20px; }
-    .preview-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-    .preview-card {
-      background: var(--bg-alt); border-radius: 8px; padding: 14px;
-      border: 1px solid var(--border);
-    }
-    .preview-card-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .preview-card-value { font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 4px; }
-    .preview-card-change { font-size: 11px; color: var(--success); margin-top: 2px; }
-    .preview-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .preview-table th { text-align: left; padding: 8px 12px; background: var(--bg-alt); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
-    .preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-    .preview-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 4px;
-      font-size: 10px; font-weight: 600;
-    }
-    .preview-badge.offen { background: #fef3c7; color: #92400e; }
-    .preview-badge.bezahlt { background: #d1fae5; color: #065f46; }
+/* MO! LEADS BANNER */
+.mo-banner{padding:0 0 100px;background:var(--bg-alt)}
+.mo-banner-inner{max-width:1000px;margin:0 auto;background:linear-gradient(135deg,#0f172a,#1e293b,#1e3a5f);border-radius:20px;padding:48px 44px;display:flex;align-items:center;gap:40px;position:relative;overflow:hidden}
+.mo-banner-inner::before{content:'';position:absolute;top:-50%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,.12) 0%,transparent 70%);border-radius:50%}
+.mo-banner-text{flex:1;position:relative;z-index:1}
+.mo-banner-text h3{font-size:28px;font-weight:800;color:#fff;margin-bottom:8px}
+.mo-banner-text p{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:20px}
+.mo-banner-btns{display:flex;gap:12px;flex-wrap:wrap}
 
-    /* ===== FEATURES ===== */
-    .features { padding: 100px 0; }
-    .section-header { text-align: center; margin-bottom: 60px; }
-    .section-label {
-      display: inline-block; font-size: 13px; font-weight: 600;
-      color: var(--accent); text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 12px;
-    }
-    .section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; color: var(--primary); margin-bottom: 16px; }
-    .section-desc { font-size: 18px; color: var(--text-light); max-width: 600px; margin: 0 auto; }
-    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
-    .feature-card {
-      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 32px; transition: all 0.3s; position: relative; overflow: hidden;
-    }
-    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); border-color: var(--accent); }
-    .feature-icon {
-      width: 56px; height: 56px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px; margin-bottom: 20px;
-    }
-    .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--primary); }
-    .feature-card p { font-size: 14px; color: var(--text-light); line-height: 1.7; }
-    .feature-tag {
-      position: absolute; top: 16px; right: 16px; font-size: 11px;
-      font-weight: 600; padding: 3px 10px; border-radius: 100px;
-      background: var(--accent-light); color: var(--accent);
-    }
+/* CTA */
+.cta{padding:100px 0 120px}
+.cta-inner{background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:24px;padding:80px 40px;text-align:center;position:relative;overflow:hidden}
+.cta-inner::before{content:'';position:absolute;top:-50%;right:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+.cta-inner h2{font-size:clamp(24px,3.5vw,40px);font-weight:900;color:#fff;margin-bottom:16px}
+.cta-inner p{color:rgba(255,255,255,.7);font-size:18px;margin-bottom:36px;max-width:480px;margin-left:auto;margin-right:auto}
+.cta-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 
-    /* ===== DETAILS ===== */
-    .details { padding: 100px 0; background: var(--bg-alt); }
-    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-    .details-content h2 { font-size: 36px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
-    .details-content p { font-size: 16px; color: var(--text-light); margin-bottom: 24px; line-height: 1.8; }
-    .details-list { list-style: none; }
-    .details-list li {
-      display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
-      font-size: 15px; color: var(--text);
-    }
-    .details-list li::before { content: '✓'; color: var(--success); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-    .details-visual {
-      background: white; border-radius: 16px; padding: 32px;
-      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
-    }
-    .details-visual-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
-    .details-visual-row:last-child { border: none; }
-    .details-visual-icon { font-size: 24px; flex-shrink: 0; }
-    .details-visual-text strong { display: block; font-size: 14px; color: var(--primary); }
-    .details-visual-text span { font-size: 13px; color: var(--text-muted); }
+/* FOOTER */
+footer{background:var(--bg-dark);color:rgba(255,255,255,.5);text-align:center;padding:32px 24px;font-size:14px}
+footer a{color:rgba(255,255,255,.7)}
+footer a:hover{color:#fff}
 
-    /* ===== PRICING ===== */
-    /* ===== COMPARISON ===== */
-    .comparison { padding: 100px 0; background: var(--bg-alt); }
-    .comparison-table {
-      width: 100%; max-width: 900px; margin: 0 auto; border-collapse: separate;
-      border-spacing: 0; border-radius: 16px; overflow: hidden;
-      box-shadow: var(--shadow-lg); background: var(--bg);
-    }
-    .comparison-table thead th {
-      padding: 20px 24px; font-size: 15px; font-weight: 700;
-      text-align: center; color: var(--bg); border-bottom: none;
-    }
-    .comparison-table thead th:first-child { text-align: left; background: var(--primary-light); }
-    .comparison-table thead th.us { background: var(--accent); color: white; }
-    .comparison-table thead th.comp { background: #4b5563; }
-    .comparison-table tbody td {
-      padding: 14px 24px; font-size: 14px; color: var(--text);
-      border-bottom: 1px solid var(--border); text-align: center;
-    }
-    .comparison-table tbody td:first-child { text-align: left; font-weight: 500; }
-    .comparison-table tbody tr:last-child td { border-bottom: none; }
-    .comparison-table tbody tr:hover { background: var(--bg-alt); }
-    .comparison-table .check { color: var(--success); font-weight: 700; font-size: 18px; }
-    .comparison-table .cross { color: #ef4444; font-weight: 700; font-size: 18px; }
-    .comparison-table .price-cell { font-weight: 700; color: var(--primary); white-space: nowrap; }
-    .comparison-table .us-price { color: var(--accent); font-weight: 800; }
-    .comparison-note {
-      max-width: 700px; margin: 32px auto 0; text-align: center;
-      font-size: 14px; color: var(--text-muted); line-height: 1.7;
-    }
-    @media (max-width: 768px) {
-      .comparison-table { font-size: 12px; }
-      .comparison-table thead th, .comparison-table tbody td { padding: 10px 12px; }
-    }
-
-    /* ===== PRICING ===== */
-    .pricing { padding: 100px 0; }
-    .pricing-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
-      max-width: 1000px; margin: 0 auto;
-    }
-    .pricing-card {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 16px;
-      padding: 40px 32px; position: relative; text-align: center;
-      box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .pricing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
-    .pricing-card.featured { border-color: var(--accent); box-shadow: 0 20px 60px rgba(59,130,246,0.15); }
-    .pricing-badge {
-      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-      background: var(--accent); color: white; padding: 6px 20px;
-      border-radius: 100px; font-size: 13px; font-weight: 600;
-    }
-    .pricing-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
-    .pricing-card .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
-    .pricing-amount { font-size: 44px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
-    .pricing-amount span { font-size: 16px; font-weight: 500; color: var(--text-muted); }
-    .pricing-period { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
-    .pricing-features { list-style: none; text-align: left; margin-bottom: 32px; }
-    .pricing-features li {
-      display: flex; align-items: center; gap: 10px; padding: 7px 0;
-      font-size: 14px; color: var(--text); border-bottom: 1px solid var(--border);
-    }
-    .pricing-features li:last-child { border: none; }
-    .pricing-features li::before { content: '✓'; color: var(--success); font-weight: 700; }
-    .pricing-note { font-size: 13px; color: var(--text-muted); margin-top: 16px; }
-    .pricing-usp {
-      max-width: 800px; margin: 48px auto 0; text-align: center;
-      background: var(--bg-alt); border-radius: 12px; padding: 32px;
-      border: 1px solid var(--border);
-    }
-    .pricing-usp h4 { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
-    .pricing-usp p { font-size: 15px; color: var(--text-light); line-height: 1.7; }
-    @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
-
-    /* ===== FAQ ===== */
-    .faq { padding: 100px 0; background: var(--bg-alt); }
-    .faq-list { max-width: 720px; margin: 0 auto; }
-    .faq-item {
-      background: white; border: 1px solid var(--border); border-radius: var(--radius);
-      margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.2s;
-    }
-    .faq-item:hover { box-shadow: var(--shadow); }
-    .faq-question {
-      width: 100%; padding: 20px 24px; background: none; border: none;
-      font-size: 16px; font-weight: 600; color: var(--primary); text-align: left;
-      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-      font-family: inherit;
-    }
-    .faq-question::after { content: '+'; font-size: 24px; color: var(--accent); transition: transform 0.3s; }
-    .faq-item.open .faq-question::after { transform: rotate(45deg); }
-    .faq-answer {
-      max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s;
-      font-size: 15px; color: var(--text-light); line-height: 1.7;
-    }
-    .faq-item.open .faq-answer { max-height: 300px; padding: 0 24px 20px; }
-
-    /* ===== CTA ===== */
-    .cta {
-      padding: 100px 0; text-align: center;
-      background: linear-gradient(135deg, var(--primary) 0%, #0f172a 100%);
-      color: white; position: relative; overflow: hidden;
-    }
-    .cta::before {
-      content: ''; position: absolute; top: -100px; right: -100px;
-      width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
-      border-radius: 50%;
-    }
-    .cta h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 16px; }
-    .cta p { font-size: 18px; color: rgba(255,255,255,0.7); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; }
-    .btn-cta { background: var(--accent); color: white; padding: 16px 36px; font-size: 18px; }
-    .btn-cta:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.4); }
-
-    /* ===== FOOTER ===== */
-    footer { padding: 60px 0 40px; background: var(--bg-dark); color: rgba(255,255,255,0.6); }
-    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
-    .footer-brand p { font-size: 14px; margin-top: 12px; line-height: 1.7; }
-    .footer-col h4 { color: white; font-size: 14px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .footer-col a { display: block; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 14px; padding: 4px 0; transition: color 0.2s; }
-    .footer-col a:hover { color: var(--accent); }
-    .footer-bottom {
-      padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; flex-wrap: wrap; gap: 12px;
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-      .nav-links { display: none; }
-      .nav-mobile { display: block; }
-      .nav-links.open {
-        display: flex; flex-direction: column; position: absolute;
-        top: 72px; left: 0; right: 0; background: white;
-        padding: 24px; border-bottom: 1px solid var(--border);
-        box-shadow: var(--shadow-lg); gap: 16px;
-      }
-      .hero-stats { flex-direction: column; gap: 24px; }
-      .preview-sidebar { display: none; }
-      .preview-cards { grid-template-columns: 1fr; }
-      .features-grid { grid-template-columns: 1fr; }
-      .details-grid { grid-template-columns: 1fr; gap: 40px; }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-    }
-
-    /* ===== ANIMATIONS ===== */
-    .fade-up {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
-  </style>
+/* RESPONSIVE */
+@media(max-width:900px){
+  .products-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr}
+  .mo-banner-inner{flex-direction:column;text-align:center}
+  .mo-banner-btns{justify-content:center}
+}
+@media(max-width:768px){
+  .hero{padding:120px 0 70px}
+  .hero-stats{flex-direction:column;gap:20px}
+  .nav-links{display:none}
+  .cta-inner{padding:60px 24px}
+  .hero-buttons,.cta-buttons{flex-direction:column;align-items:center}
+  .btn{width:100%;max-width:300px;justify-content:center}
+}
+@media(max-width:480px){
+  .hero h1{font-size:32px}
+  .product-card{padding:32px 24px}
+  .mo-banner-inner{padding:32px 24px}
+}
+</style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav id="navbar">
-    <div class="nav-inner">
-      <a href="#" class="nav-brand">
-        <img src="intrasaar_logo.jpg" alt="intrasaar media" class="nav-logo">
-      </a>
-      <div class="nav-links" id="navLinks">
-        <a href="#features">Funktionen</a>
-        <a href="#details">Mehr dazu</a>
-        <a href="#vergleich">Vergleich</a>
-        <a href="#pricing">Preise</a>
-        <a href="#faq">FAQ</a>
-        <a href="#download" class="nav-cta">Download</a>
-      </div>
-      <button class="nav-mobile" id="navMobile" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-top">
+      <a href="https://intrasaar.de/" class="nav-brand"><img src="intrasaar_logo.jpg" alt="intrasaar media"></a>
     </div>
-  </nav>
-
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-badge">
-        <span class="hero-badge-dot"></span>
-        Version 2.3.5 — Jetzt mit Monteur-Rapport-Sync & Rapport-Import
-      </div>
-      <h1>Die <span>Handwerker-Software</span><br>für Ihr ganzes Geschäft</h1>
-      <p>Angebote erstellen, Rechnungen versenden, Buchhaltung führen, Termine planen und Lager verwalten — alles in einer einzigen Desktop-App.</p>
-      <div class="hero-buttons">
-        <a href="checkout.html" class="btn btn-primary">Jetzt kaufen</a>
-        <a href="demo.html" class="btn btn-secondary">🖥️ Online-Demo testen</a>
-        <a href="docs/bedienerhandbuch.html" class="btn btn-secondary">📖 Bedienungsanleitung</a>
-        <a href="#features" class="btn btn-secondary">Alle Funktionen ansehen</a>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <div class="hero-stat-value">30+</div>
-          <div class="hero-stat-label">Funktionen</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-value">100%</div>
-          <div class="hero-stat-label">Offline-fähig</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-value">Made in</div>
-          <div class="hero-stat-label">Germany</div>
-        </div>
-      </div>
+    <div class="nav-links">
+      <a href="#produkte">Produkte</a>
+      <a href="#features">Warum wir?</a>
+      <a href="#kontakt">Kontakt</a>
+      <a href="https://intrasaar.de/" class="nav-cta">intrasaar.de</a>
     </div>
-  </section>
+  </div>
+</nav>
 
-  <!-- App Preview -->
-  <section class="preview">
-    <div class="container">
-      <div class="preview-frame fade-up">
-        <div class="preview-titlebar">
-          <div class="preview-dot r"></div>
-          <div class="preview-dot y"></div>
-          <div class="preview-dot g"></div>
+<div class="hero">
+  <div class="hero-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="container" style="position:relative;z-index:1">
+    <div class="hero-badge"><span class="hero-badge-dot"></span> Software-Lösungen</div>
+    <h1>Software die<br><span class="highlight">funktioniert.</span></h1>
+    <p>Desktop-Apps, Web-Anwendungen und B2B-Tools — entwickelt im Saarland. Keine Cloud-Zwänge, keine Abo-Fallen.</p>
+    <div class="hero-buttons">
+      <a href="#produkte" class="btn btn-primary">Produkte ansehen →</a>
+      <a href="#kontakt" class="btn btn-outline">Kontakt aufnehmen</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-value">3</div><div class="hero-stat-label">Produkte</div></div>
+      <div class="hero-stat"><div class="hero-stat-value">25+</div><div class="hero-stat-label">Jahre Erfahrung</div></div>
+      <div class="hero-stat"><div class="hero-stat-value">100%</div><div class="hero-stat-label">DSGVO-konform</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="products" id="produkte">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Unsere Produkte</div>
+      <h2 class="section-title">Für jeden das richtige Tool</h2>
+      <p class="section-desc">Entwickelt für die Praxis — einfach, zuverlässig, ohne versteckte Kosten.</p>
+    </div>
+    <div class="products-grid">
+      <div class="product-card imhws">
+        <div class="product-icon" style="background:var(--accent-light)">🔧</div>
+        <h3>IMHWS</h3>
+        <div class="product-subtitle">Handwerker-Software — Desktop-App</div>
+        <ul>
+          <li>Angebote &amp; Rechnungen in 2 Minuten</li>
+          <li>PDF-Export mit Briefkopf</li>
+          <li>Automatisches Mahnwesen</li>
+          <li>Terminplanung für Montagetouren</li>
+          <li>Lagerverwaltung mit Barcode</li>
+          <li>Einfache Buchhaltung</li>
+          <li>Windows &amp; macOS</li>
+        </ul>
+        <div class="product-price">249 € <span style="font-size:16px;font-weight:500;color:var(--text-muted)">einmalig</span></div>
+        <div class="product-price-note">Kein Abo. Keine Cloud. Für immer.</div>
+        <div class="product-buttons">
+          <a href="/IMHWS/" class="btn btn-primary btn-sm">Mehr erfahren</a>
+          <a href="/IMHWS/#download" class="btn btn-outline btn-sm" style="color:var(--text);border-color:var(--border)">Download</a>
         </div>
-        <div class="preview-content">
-          <div class="preview-sidebar">
-            <div class="preview-nav-item active">📊 Dashboard</div>
-            <div class="preview-nav-item">👤 Kunden</div>
-            <div class="preview-nav-item">📋 Angebote</div>
-            <div class="preview-nav-item">🧾 Rechnungen</div>
-            <div class="preview-nav-item">💰 Einnahmen</div>
-            <div class="preview-nav-item">📅 Termine</div>
-            <div class="preview-nav-item">📦 Warenwirtschaft</div>
-            <div class="preview-nav-item">⚙️ Einstellungen</div>
-          </div>
-          <div class="preview-main">
-            <div class="preview-cards">
-              <div class="preview-card">
-                <div class="preview-card-label">Umsatz diesen Monat</div>
-                <div class="preview-card-value">12.480 €</div>
-                <div class="preview-card-change">↑ 18% zum Vormonat</div>
-              </div>
-              <div class="preview-card">
-                <div class="preview-card-label">Offene Rechnungen</div>
-                <div class="preview-card-value">3.250 €</div>
-                <div class="preview-card-change" style="color: var(--warning);">5 Rechnungen offen</div>
-              </div>
-              <div class="preview-card">
-                <div class="preview-card-label">Termine diese Woche</div>
-                <div class="preview-card-value">8</div>
-                <div class="preview-card-change">2 heute</div>
-              </div>
-            </div>
-            <table class="preview-table">
-              <thead>
-                <tr><th>Nr.</th><th>Kunde</th><th>Betrag</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>RE-48291</td><td>Müller GmbH</td><td>2.450,00 €</td><td><span class="preview-badge offen">Offen</span></td></tr>
-                <tr><td>RE-48285</td><td>Meister Bau</td><td>890,00 €</td><td><span class="preview-badge bezahlt">Bezahlt</span></td></tr>
-                <tr><td>RE-48280</td><td>Sanitär Peters</td><td>1.120,00 €</td><td><span class="preview-badge offen">Offen</span></td></tr>
-              </tbody>
-            </table>
-          </div>
+      </div>
+      <div class="product-card ismbs">
+        <div class="product-icon" style="background:#d1fae5">📊</div>
+        <h3>Buchhaltungssystem</h3>
+        <div class="product-subtitle">ISMBS — Browser-App</div>
+        <ul>
+          <li>E-Rechnung (XRechnung) ab Tag 1</li>
+          <li>SKR04-Kontenrahmen</li>
+          <li>DATEV-Export</li>
+          <li>Doppelte Buchführung</li>
+          <li>Eingangsrechnungen &amp; Lieferanten</li>
+          <li>Kundenportal</li>
+          <li>Self-Hosted, DSGVO-konform</li>
+        </ul>
+        <div class="product-price">Ab 149 € <span style="font-size:16px;font-weight:500;color:var(--text-muted)">einmalig</span></div>
+        <div class="product-price-note">3 Tiers: Starter, Professional, Enterprise.</div>
+        <div class="product-buttons">
+          <a href="/buchhaltung.html" class="btn btn-primary btn-sm">Mehr erfahren</a>
+          <a href="/buchhaltung.html" class="btn btn-outline btn-sm" style="color:var(--text);border-color:var(--border)">Preise ansehen</a>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- Features -->
-  <section class="features" id="features">
-    <div class="container">
-      <div class="section-header fade-up">
-        <div class="section-label">Funktionen</div>
-        <h2 class="section-title">Alles was Sie brauchen —<br>nichts was Sie nicht brauchen</h2>
-        <p class="section-desc">Vom Angebot bis zur Buchführung — IMHWS begleitet Sie durch den gesamten Geschäftsprozess.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #dbeafe;">📋</div>
-          <h3>Angebote erstellen</h3>
-          <p>Professionelle Angebote mit Positionen, Rabatten und PDF-Export. Per E-Mail direkt an den Kunden versenden.</p>
-          <div class="feature-tag">Kernfunktion</div>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #d1fae5;">🧾</div>
-          <h3>Rechnungen & Mahnungen</h3>
-          <p>Rechnungen mit Briefkopf erstellen, als PDF exportieren und versenden. Automatisiertes Mahnwesen mit Stufen.</p>
-          <div class="feature-tag">Kernfunktion</div>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #fef3c7;">📊</div>
-          <h3>Dashboard</h3>
-          <p>Umsatz, offene Rechnungen, Termine und Aufgaben — alles auf einen Blick in Ihrem persönlichen Dashboard.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #ede9fe;">📑</div>
-          <h3>Einfache & doppelte Buchführung</h3>
-          <p>Soll/Haben-Buchungen mit Kontenrahmen nach SKR03/04. USt-Voranmeldung und DATEV-Export inklusive.</p>
-          <div class="feature-tag">Buchhaltung</div>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #fce7f3;">📅</div>
-          <h3>Kalender & Termine</h3>
-          <p>Termine verwalten, Kunden zuweisen, ICS-Export für Google Calendar und Outlook. Nie wieder einen Termin vergessen.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #e0e7ff;">📦</div>
-          <h3>Warenwirtschaft</h3>
-          <p>Artikel verwalten, Lagerbestände tracken, Mindestbestand-Warnungen und automatische Bestellvorschläge.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #ccfbf1;">📄</div>
-          <h3>E-Rechnungen & ZUGFeRD</h3>
-          <p>E-Rechnungen im XRechnung-Format und ZUGFeRD-konforme PDFs für die EU-weite Rechnungsstellung.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #fef9c3;">🏦</div>
-          <h3>SEPA-Export</h3>
-          <p>SEPA-Überweisungen und Lastschriften als CSV exportieren — direkt importierbar in Ihr Banking.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #dbeafe;">🎨</div>
-          <h3>Briefkopf-Gestaltung</h3>
-          <p>Eigenes Logo, Firmenfarbe, Kopfzeile und Fußzeile — Ihr Corporate Design auf jedem Dokument.</p>
-          <div class="feature-tag">Neu</div>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #d1fae5;">📊</div>
-          <h3>Kassenbuch</h3>
-          <p>Bargeldbewegungen erfassen, Tagesabschlüsse machen und Kassensturz durchführen.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #ede9fe;">🔧</div>
-          <h3>Aufmaß & Unternehmer</h3>
-          <p>Aufmaße erfassen, Subunternehmer-Einsätze verwalten und Leistungen nachzeichnen.</p>
-        </div>
-          <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #fce7f3;">🔄</div>
-          <h3>Automatisierung & Regeln</h3>
-          <p>Eigene Regeln erstellen, CSV-Import, DATANORM/BMEcat-Schnittstellen und GAEB-Import/Export.</p>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #dcfce7;">🔒</div>
-          <h3>Security-Hardening</h3>
-          <p>SQL-Injection-Schutz, XSS-Sanitization, XML-Injection-Prävention, Lizenz-Obfuskation und Server-Hardening mit CORS und Rate-Limiting.</p>
-          <div class="feature-tag">Sicherheit</div>
-        </div>
-        <div class="feature-card fade-up">
-          <div class="feature-icon" style="background: #fef3c7;">📸</div>
-          <h3>Fotos-Lightbox & Rapport-Import</h3>
-          <p>Fotos in Rapporten vergrößern, Rapporte direkt in Rechnungen importieren — inkl. automatischer Summenberechnung.</p>
-          <div class="feature-tag">Neu</div>
-        </div>
-        <div class="feature-card fade-up" style="grid-column: 1 / -1; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6;">
-          <div style="display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 280px;">
-              <div class="feature-icon" style="background: #3b82f6; color: white; width: 48px; height: 48px; font-size: 22px;">📱</div>
-              <h3 style="margin-top: 12px;">Monteur-App für Android</h3>
-              <p>Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften — direkt auf dem Bau. Daten synchronisieren sich automatisch mit der Desktop-Software und Rapporte werden direkt in Rechnungen importiert.</p>
-              <div class="feature-tag" style="background: #3b82f6; color: white;">Neu — Inklusive</div>
-            </div>
-            <div style="flex: 1; min-width: 280px;">
-              <ul style="list-style: none; font-size: 14px; color: var(--text-light);">
-                <li style="padding: 4px 0;">⏱️ Zeiterfassung mit Timer</li>
-                <li style="padding: 4px 0;">📋 Rapporte & Berichte</li>
-                <li style="padding: 4px 0;">📐 Aufmaße mit Kamera</li>
-                <li style="padding: 4px 0;">📦 Inventur & Lieferscheine</li>
-                <li style="padding: 4px 0;">✍️ Unterschriften erfassen</li>
-                <li style="padding: 4px 0;">🔄 Sync mit Desktop-App</li>
-              </ul>
-            </div>
-          </div>
+<div class="mo-banner">
+  <div class="container">
+    <div class="mo-banner-inner">
+      <div class="mo-banner-text">
+        <h3>MO! Leads</h3>
+        <p>B2B Lead-Generierung — automatisch potenzielle Kunden in Ihrer Branche finden. Self-Hosted, DSGVO-konform, ab 149 € einmalig.</p>
+        <div class="mo-banner-btns">
+          <a href="/mo-leads.html" class="btn btn-primary btn-sm">Mehr erfahren</a>
+          <a href="/mo-leads/" class="btn btn-outline btn-sm" style="border-color:rgba(255,255,255,.25)">Demo ansehen</a>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- Details -->
-  <section class="details" id="details">
-    <div class="container">
-      <div class="details-grid">
-        <div class="details-content fade-up">
-          <div class="section-label">Warum IMHWS?</div>
-          <h2>Für Handwerker gemacht,<br>nicht für Bürokraten</h2>
-          <p>IMHWS wurde speziell für die Bedürfnisse von Handwerkern, Kleinunternehmen und Freiberuflern entwickelt. Kein over-engineered ERP-System, sondern genau das was Sie brauchen.</p>
-          <ul class="details-list">
-            <li>Desktop-App — Ihre Daten bleiben auf Ihrem Computer</li>
-            <li>Keine monatlichen Kosten, kein Abo, kein Abo-Falle</li>
-            <li>Funktioniert komplett offline — kein Internet nötig</li>
-            <li>SQLite-Datenbank — robust, schnell, portabel</li>
-            <li>Windows, macOS (Intel + Apple Silicon)</li>
-            <li>Export nach PDF, DATEV, CSV, ICS, SEPA, XRechnung</li>
-            <li>Import aus DATANORM, BMEcat, GAEB, CSV</li>
-            <li>Automatische Updates — immer aktuell</li>
-            <li>Monteur-Rapporte syncen & direkt in Rechnungen importieren</li>
-            <li>Sicherheit: SQL-Injection-Schutz, XSS-Sanitization, Server-Hardening</li>
-            <li>GitHub Actions CI/CD — automatische Builds für alle Plattformen</li>
-          </ul>
-        </div>
-        <div class="details-visual fade-up">
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🔒</div>
-            <div class="details-visual-text">
-              <strong>Ihre Daten, Ihr Computer</strong>
-              <span>Keine Cloud-Zwang, kein Server-Setup nötig</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">⚡</div>
-            <div class="details-visual-text">
-              <strong>Blitzschnell</strong>
-              <span>SQLite — keine Wartezeiten, kein Internet nötig</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">💰</div>
-            <div class="details-visual-text">
-              <strong>Einmalzahlung</strong>
-              <span>Kein Abo, keine versteckten Kosten</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🇩🇪</div>
-            <div class="details-visual-text">
-              <strong>Made in Germany</strong>
-              <span>DSGVO-konform, deutsche Steuervorgaben</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🔄</div>
-            <div class="details-visual-text">
-              <strong>Kostenlose Updates</strong>
-              <span>Neue Funktionen und Verbesserungen inklusive</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🖥️</div>
-            <div class="details-visual-text">
-              <strong>Windows & macOS</strong>
-              <span>Intel und Apple Silicon unterstützt</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🔄</div>
-            <div class="details-visual-text">
-              <strong>Optionale Server-Synchronisation</strong>
-              <span>Mehrere Geräte, VPN, DynDNS — Ihre Daten, Ihr Server</span>
-            </div>
-          </div>
-          <div class="details-visual-row">
-            <div class="details-visual-icon">🛡️</div>
-            <div class="details-visual-text">
-              <strong>Security-Hardening</strong>
-              <span>SQL-Injection-Schutz, XSS, Rate-Limiting, CORS</span>
-            </div>
-          </div>
-        </div>
+<div class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Vorteile</div>
+      <h2 class="section-title">Warum intrasaar media?</h2>
+      <p class="section-desc">Moderne Technologie, faire Preise, persönlicher Service.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-light)">🖥️</div>
+        <h3>Desktop &amp; Browser</h3>
+        <p>Native Apps für Windows und macOS. Web-Apps für überall — flexibel einsetzbar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fef3c7">🔒</div>
+        <h3>DSGVO-konform</h3>
+        <p>Keine Cloud, keine Datenabgabe. Alles bleibt auf Ihrem Rechner oder Server.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#d1fae5">⚡</div>
+        <h3>Schnell &amp; einfach</h3>
+        <p>In 2 Minuten ein Angebot erstellt. Keine monatlichen Kosten, kein Abo.</p>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- Comparison -->
-  <section class="comparison" id="vergleich">
-    <div class="container">
-      <div class="section-header fade-up">
-        <div class="section-label">Vergleich</div>
-        <h2 class="section-title">IMHWS vs. Cloud-Lösungen</h2>
-        <p class="section-desc">Was Sie bei anderen Anbietern zahlen — und was bei uns anders ist.</p>
-      </div>
-      <table class="comparison-table fade-up">
-        <thead>
-          <tr>
-            <th></th>
-            <th class="us">IMHWS</th>
-            <th class="comp">Sage Handwerk</th>
-            <th class="comp">Lexware</th>
-            <th class="comp">plancraft</th>
-            <th class="comp">ToolTime</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Kosten pro Jahr</td>
-            <td class="price-cell us-price">249–649 € einmalig</td>
-            <td class="price-cell">ab 540 €/Jahr</td>
-            <td class="price-cell">ab 384 €/Jahr</td>
-            <td class="price-cell">ab 479 €/Jahr</td>
-            <td class="price-cell">ab 948 €/Jahr</td>
-          </tr>
-          <tr>
-            <td>Nach 5 Jahren gezahlt</td>
-            <td class="price-cell us-price">249–649 €</td>
-            <td class="price-cell">2.700+ €</td>
-            <td class="price-cell">1.920+ €</td>
-            <td class="price-cell">2.395+ €</td>
-            <td class="price-cell">4.740+ €</td>
-          </tr>
-          <tr>
-            <td>Lauflende Kosten</td>
-            <td class="check">Nie</td>
-            <td class="cross">Jeden Monat</td>
-            <td class="cross">Jeden Monat</td>
-            <td class="cross">Jeden Monat</td>
-            <td class="cross">Jeden Monat</td>
-          </tr>
-          <tr>
-            <td>Daten lokal gespeichert</td>
-            <td class="check">✓</td>
-            <td class="cross">✗ Cloud</td>
-            <td class="cross">✗ Cloud</td>
-            <td class="cross">✗ Cloud</td>
-            <td class="cross">✗ Cloud</td>
-          </tr>
-          <tr>
-            <td>Offline nutzbar</td>
-            <td class="check">✓</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-          </tr>
-          <tr>
-            <td>Kein Internet nötig</td>
-            <td class="check">✓</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-            <td class="cross">✗</td>
-          </tr>
-          <tr>
-            <td>Kostenlose Updates</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-          </tr>
-          <tr>
-            <td>DSGVO-konform (kein US-Server)</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-          </tr>
-          <tr>
-            <td>Buchhaltung inklusive</td>
-            <td class="check">✓</td>
-            <td class="cross">✗ extra</td>
-            <td class="check">✓</td>
-            <td class="cross">✗ extra</td>
-            <td class="cross">✗ extra</td>
-          </tr>
-          <tr>
-            <td>DATEV-Export</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-          </tr>
-          <tr>
-            <td>E-Rechnungen (XRechnung)</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-          </tr>
-          <tr>
-            <td>Lizenzübertragung bei Rechnerwechsel</td>
-            <td class="check">✓ einmalig</td>
-            <td class="cross">Nein — neu mieten</td>
-            <td class="cross">Nein — neu mieten</td>
-            <td class="cross">Nein — neu mieten</td>
-            <td class="cross">Nein — neu mieten</td>
-          </tr>
-          <tr>
-            <td>Mobile Monteur-App</td>
-            <td class="check">✓ inklusive</td>
-            <td class="check">✓</td>
-            <td class="cross">✗</td>
-            <td class="check">✓</td>
-            <td class="check">✓</td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="comparison-note">* Alle Cloud-Preise basieren auf den günstigsten Tarifen mit 1 Nutzer (Stand Juli 2026). Bei steigender Nutzerzahl verdoppeln sich die Kosten bei Cloud-Anbietern — bei IMHWS bleibt der Preis gleich. Monteur-App ist bei IMHWS in allen Paketen inklusive.</p>
-    </div>
-  </section>
-
-  <!-- Pricing -->
-  <section class="pricing" id="pricing">
-    <div class="container">
-      <div class="section-header fade-up">
-        <div class="section-label">Preise</div>
-        <h2 class="section-title">Einmal zahlen, für immer nutzen</h2>
-        <p class="section-desc">Kein Abo, keine laufenden Kosten. Wählen Sie die Lizenz, die zu Ihrem Betrieb passt.</p>
-      </div>
-      <div class="pricing-grid fade-up">
-        <!-- Basis -->
-        <div class="pricing-card">
-          <h3>Basis</h3>
-          <div class="subtitle">Das Wichtigste für den Start</div>
-          <div class="pricing-amount">249 € <span>einmalig</span></div>
-          <div class="pricing-period">+ MwSt.</div>
-          <ul class="pricing-features">
-            <li>Angebote & Rechnungen</li>
-            <li>Kundenverwaltung</li>
-            <li>Mahnungen</li>
-            <li>Terminplanung</li>
-            <li>Aufgabenverwaltung</li>
-            <li>PDF-Export mit Briefkopf</li>
-            <li>📱 Monteur-App (Android)</li>
-            <li>Kostenlose Updates</li>
-          </ul>
-          <a href="checkout.html?plan=basis" class="btn btn-secondary" style="width: 100%; justify-content: center;">Auswählen</a>
-          <div class="pricing-note">14 Tage kostenlos testen</div>
-        </div>
-        <!-- Pro -->
-        <div class="pricing-card featured">
-          <div class="pricing-badge">Empfohlen</div>
-          <h3>Pro</h3>
-          <div class="subtitle">Für wachsende Betriebe</div>
-          <div class="pricing-amount">449 € <span>einmalig</span></div>
-          <div class="pricing-period">+ MwSt.</div>
-          <ul class="pricing-features">
-            <li>Alles aus Basis</li>
-            <li>Auftragsverwaltung</li>
-            <li>Aufmaße & Kalkulation</li>
-            <li>Artikel & Warenwirtschaft</li>
-            <li>Kassenbuch</li>
-            <li>Subunternehmer & Lieferanten</li>
-            <li>Eingangsrechnungen</li>
-            <li>E-Rechnungen & ZUGFeRD</li>
-            <li>📱 Monteur-App (Android)</li>
-          </ul>
-          <a href="checkout.html?plan=pro" class="btn btn-primary" style="width: 100%; justify-content: center;">Auswählen</a>
-          <div class="pricing-note">14 Tage kostenlos testen</div>
-        </div>
-        <!-- Komplett -->
-        <div class="pricing-card">
-          <h3>Komplett</h3>
-          <div class="subtitle">Volle Buchhaltung inklusive</div>
-          <div class="pricing-amount">649 € <span>einmalig</span></div>
-          <div class="pricing-period">+ MwSt.</div>
-          <ul class="pricing-features">
-            <li>Alles aus Pro</li>
-            <li>Einfache Buchführung</li>
-            <li>Doppelte Buchführung</li>
-            <li>Umsatzsteuer-Voranmeldung</li>
-            <li>DATEV-Export</li>
-            <li>SEPA-Export</li>
-            <li>📱 Monteur-App (Android)</li>
-            <li>Persönlicher Support</li>
-          </ul>
-          <a href="checkout.html?plan=komplett" class="btn btn-secondary" style="width: 100%; justify-content: center;">Auswählen</a>
-          <div class="pricing-note">14 Tage kostenlos testen</div>
-        </div>
-      </div>
-      <div class="pricing-usp fade-up">
-        <h4>Kein Abo. Keine Cloud. Volle Kontrolle.</h4>
-        <p>Während andere Anbieter 40–120 € pro Monat und Nutzer verlangen und Ihre Daten in der Cloud speichern, läuft IMHWS komplett auf Ihrem Computer. Einmal kaufen, für immer nutzen. Ihre Daten bleiben bei Ihnen.</p>
+<div class="cta" id="kontakt">
+  <div class="container">
+    <div class="cta-inner">
+      <h2>Fragen? Wir helfen gerne.</h2>
+      <p>Telefon: 0681 – 93872291<br>E-Mail: kontakt@intrasaar.de</p>
+      <div class="cta-buttons">
+        <a href="tel:068193872291" class="btn btn-primary">📞 0681 – 93872291</a>
+        <a href="mailto:kontakt@intrasaar.de" class="btn btn-outline">✉️ E-Mail schreiben</a>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- FAQ -->
-  <section class="faq" id="faq">
-    <div class="container">
-      <div class="section-header fade-up">
-        <div class="section-label">Häufige Fragen</div>
-        <h2 class="section-title">Alles was Sie wissen müssen</h2>
-      </div>
-      <div class="faq-list fade-up">
-        <div class="faq-item">
-          <button class="faq-question">Ist die Software auch für Mac nutzbar?</button>
-          <div class="faq-answer">Ja! IMHWS läuft auf Windows und macOS. Für macOS gibt es sowohl eine Version für Intel-Chips als auch für Apple Silicon (M1/M2/M3/M4).</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Brauche ich eine Internetverbindung?</button>
-          <div class="faq-answer">Nein. IMHWS läuft komplett offline. Ihre Daten werden lokal auf Ihrem Computer gespeichert. Internet wird nur für den Download und E-Mail-Versand benötigt.</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Kann ich meine bisherigen Daten importieren?</button>
-          <div class="faq-answer">Ja, Sie können Daten aus CSV-Dateien, DATANORM, BMEcat und GAEB importieren. Bei Bedarf helfen wir Ihnen auch beim Umstieg aus anderen Programmen.</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Kann ich später upgraden?</button>
-          <div class="faq-answer">Ja! Sie können jederzeit von Basis auf Pro oder Komplett upgraden. Sie zahlen nur die Differenz zum aktuellen Preis.</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Gibt es eine Testversion?</button>
-          <div class="faq-answer">Ja, Sie können IMHWS 14 Tage lang komplett kostenlos und unverbindlich testen. Keine Kreditkarte nötig.</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Unterstützt die Software E-Rechnungen?</button>
-          <div class="faq-answer">Ja, IMHWS unterstützt E-Rechnungen im XRechnung-Format sowie ZUGFeRD-konforme PDFs. Das ist ab 2025 für viele Unternehmen verpflichtend — IMHWS ist bereits jetzt bereit dafür.</div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question">Gibt es auch eine mobile App?</button>
-          <div class="faq-answer">Ja! Die Monteur-App für Android ist in allen Lizenzpaketen inklusive. Damit können Ihre Mitarbeiter vor Ort Zeiterfassung, Rapporte, Aufmaße mit Foto, Lieferscheine und Unterschriften erfassen — offline und synchronisiert mit der Desktop-Software.</div>
-        </div>
-      </div>
-    </div>
-  </section>
+<footer>
+  &copy; 2026 <a href="https://intrasaar.de/">intrasaar media</a> —
+  <a href="https://intrasaar.de/impressum/">Impressum</a> |
+  <a href="https://intrasaar.de/datenschutzerklaerung/">Datenschutz</a>
+</footer>
 
-  <!-- CTA -->
-  <section class="cta" id="download">
-    <div class="container">
-      <h2>Bereit loszulegen?</h2>
-      <p>Laden Sie IMHWS jetzt kostenlos herunter und testen Sie alle Funktionen 14 Tage lang ohne Verpflichtung.</p>
-      <div class="hero-buttons" style="justify-content: center; flex-wrap: wrap; gap: 12px;">
-        <a href="demo.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">🖥️ Online-Demo testen</a>
-        <a href="docs/bedienerhandbuch.html" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">📖 Bedienungsanleitung</a>
-        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software-2.3.5.dmg" class="btn btn-cta" target="_blank">⬇ macOS Intel herunterladen</a>
-        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software-2.3.5-arm64.dmg" class="btn btn-cta" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);" target="_blank">⬇ macOS Apple Silicon herunterladen</a>
-        <a href="https://github.com/intrasaar/handwerker-software/releases/download/v2.3.5/Handwerker-Software.Setup.2.3.5.exe" class="btn btn-secondary" style="background: transparent; color: white; border-color: rgba(255,255,255,0.3);" target="_blank">⬇ Windows herunterladen</a>
-      </div>
-    </div>
-  </section>
+<script>
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+});
 
-  <!-- Footer -->
-  <footer>
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="#" class="nav-brand" style="margin-bottom: 8px;">
-            <img src="intrasaar_logo.jpg" alt="intrasaar media" style="height: 40px; width: auto;">
-          </a>
-          <p>Die komplette Desktop-Software für Handwerker.<br>Entwickelt von intrasaar media.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Produkt</h4>
-          <a href="#features">Funktionen</a>
-          <a href="#vergleich">Vergleich</a>
-          <a href="#pricing">Preise</a>
-          <a href="#download">Download</a>
-          <a href="#faq">FAQ</a>
-          <a href="docs/bedienerhandbuch.html">Bedienungsanleitung</a>
-        </div>
-        <div class="footer-col">
-          <h4>Unternehmen</h4>
-          <a href="https://intrasaar.de" target="_blank">intrasaar.de</a>
-          <a href="impressum.html">Impressum</a>
-          <a href="datenschutz.html">Datenschutz</a>
-          <a href="agb.html">AGB</a>
-        </div>
-        <div class="footer-col">
-          <h4>Support</h4>
-          <a href="mailto:kontakt@intrasaar.de">kontakt@intrasaar.de</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>&copy; 2026 intrasaar media. Alle Rechte vorbehalten.</span>
-        <span>Handwerker-Software v2.3.5</span>
-      </div>
-    </div>
-  </footer>
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
 
-  <script>
-    // Navbar scroll effect
-    const navbar = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-      navbar.classList.toggle('scrolled', window.scrollY > 20);
-    });
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
 
-    // Mobile menu
-    const navMobile = document.getElementById('navMobile');
-    const navLinks = document.getElementById('navLinks');
-    navMobile.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
-    });
-
-    // Close mobile menu on link click
-    navLinks.querySelectorAll('a').forEach(a => {
-      a.addEventListener('click', () => navLinks.classList.remove('open'));
-    });
-
-    // FAQ accordion
-    document.querySelectorAll('.faq-question').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.parentElement;
-        const wasOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-        if (!wasOpen) item.classList.add('open');
-      });
-    });
-
-    // Scroll animations
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
-  </script>
+document.querySelectorAll('.product-card, .feature-card, .mo-banner-inner').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(30px)';
+  el.style.transition = 'opacity .6s ease, transform .6s ease';
+  observer.observe(el);
+});
+</script>
 </body>
 </html>

@@ -104,6 +104,13 @@
       .content { padding: 16px; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
     }
+    .lightbox-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500; align-items:center; justify-content:center; cursor:pointer; }
+    .lightbox-overlay.open { display:flex; }
+    .lightbox-overlay img { max-width:90vw; max-height:85vh; border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+    .lightbox-close { position:absolute; top:20px; right:24px; color:white; font-size:32px; cursor:pointer; z-index:501; }
+    .rapport-fotos { display:flex; gap:6px; flex-wrap:wrap; }
+    .rapport-foto-thumb { width:40px; height:40px; border-radius:6px; object-fit:cover; cursor:pointer; border:2px solid var(--border); }
+    .rapport-foto-thumb:hover { border-color:var(--primary); }
   </style>
 </head>
 <body>
@@ -138,6 +145,9 @@
     <div class="nav-item" data-page="termine"><span class="nav-icon">📅</span> Termine</div>
     <div class="nav-item" data-page="aufgaben"><span class="nav-icon">✅</span> Aufgaben</div>
 
+    <div class="nav-group-label">Monteur</div>
+    <div class="nav-item" data-page="rapporte"><span class="nav-icon">📋</span> Monteur-Rapporte</div>
+
     <div class="nav-group-label">Warenwirtschaft</div>
     <div class="nav-item" data-page="artikel"><span class="nav-icon">📦</span> Artikel</div>
     <div class="nav-item" data-page="kasse"><span class="nav-icon">💶</span> Kasse</div>
@@ -156,6 +166,7 @@
     <div class="nav-item" data-page="einstellungen"><span class="nav-icon">⚙️</span> Einstellungen</div>
   </div>
   <div class="sidebar-footer">
+    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:8px;">IMHWS v2.3.5 Demo</div>
     <div class="nav-item" onclick="resetDemo()">🔄 Demo zurücksetzen</div>
   </div>
 </div>
@@ -290,6 +301,17 @@
           <table>
             <thead><tr><th>Aufgabe</th><th>Zugewiesen</th><th>Fällig</th><th>Priorität</th><th>Status</th><th>Aktionen</th></tr></thead>
             <tbody id="aufgabenTabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-rapporte">
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nr.</th><th>Monteur</th><th>Auftrag</th><th>Datum</th><th>Stunden</th><th>Fotos</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="rapporteTabelle"></tbody>
           </table>
         </div>
       </div>
@@ -757,6 +779,32 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalRapport">
+  <div class="modal">
+    <h2 id="modalRapportTitle">Neuer Rapport</h2>
+    <input type="hidden" id="rapId">
+    <div class="form-row">
+      <div class="form-group"><label>Monteur</label><input type="text" id="rapMonteur"></div>
+      <div class="form-group"><label>Auftrag</label><select id="rapAuftrag"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Datum</label><input type="date" id="rapDatum"></div>
+      <div class="form-group"><label>Stunden</label><input type="number" id="rapStunden" step="0.5"></div>
+    </div>
+    <div class="form-group"><label>Tätigkeit</label><input type="text" id="rapTaetigkeit"></div>
+    <div class="form-group"><label>Bemerkung</label><input type="text" id="rapBemerkung"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalRapport')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRapport()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightboxImg" src="" alt="Foto">
+</div>
+
 <script>
 var DEMO_DATA = {
   kunden: [
@@ -876,6 +924,12 @@ var DEMO_DATA = {
     { id:2, name:'Mietkosten', bedingung:'Beschreibung enthält „Miete"', zuordnung:'Konto 3800 - Miete', aktiv:true },
     { id:3, name:'Material', bedingung:'Konto ist 3400', zuordnung:'Kategorie: Material', aktiv:true },
     { id:4, name:'Lohnkosten', bedingung:'Beschreibung enthält „Lohn" oder „Gehalt"', zuordnung:'Konto 3600 - Löhne', aktiv:false }
+  ],
+  rapporte: [
+    { id:1, monteur:'Herr Schmidt', auftragId:1, datum:'2026-07-14', stunden:8.5, taetigkeit:'Dachziegel verlegt, 120 m²', fotos:['https://placehold.co/400x300/2563eb/ffffff?text=Dach+1','https://placehold.co/400x300/2563eb/ffffff?text=Dach+2','https://placehold.co/400x300/2563eb/ffffff?text=Dach+3'], status:'synced', bemerkung:'Wetter war gut, Material reichte genau' },
+    { id:2, monteur:'Herr Wagner', auftragId:2, datum:'2026-07-15', stunden:6.0, taetigkeit:'Kabelverlegung Erdgeschoss, 250m NYM-J', fotos:['https://placehold.co/400x300/10b981/ffffff?text=Kabel+1','https://placehold.co/400x300/10b981/ffffff?text=Kabel+2'], status:'synced', bemerkung:'Alles verlegt, Prüfung ausstehend' },
+    { id:3, monteur:'Herr Fischer', auftragId:3, datum:'2026-07-16', stunden:7.5, taetigkeit:'Küchenmontage, Schränke aufgebaut', fotos:['https://placehold.co/400x300/f59e0b/ffffff?text=Küche+1'], status:'synced', bemerkung:'Küche steht, Anschluss morgen' },
+    { id:4, monteur:'Herr Schmidt', auftragId:1, datum:'2026-07-17', stunden:4.0, taetigkeit:'Dachrinne montiert, 18m', fotos:[], status:'entwurf', bemerkung:'Halbtags gearbeitet' }
   ],
   datevExports: [
     { id:1, datum:'2026-07-01', zeitraum:'Juni 2026', anzahl:14, format:'CSV' }
@@ -1001,7 +1055,8 @@ function updateActions(page) {
     subunternehmer: '<button class="btn btn-primary" onclick="openNewSub()">+ Neuer Subunternehmer</button>',
     buchungen: '<button class="btn btn-primary" onclick="openNewBuchung()">+ Neue Buchung</button>',
     branchen: '<button class="btn btn-primary" onclick="openNewBranche()">+ Neue Branche</button>',
-    regeln: '<button class="btn btn-primary" onclick="openNewRegel()">+ Neue Regel</button>'
+    regeln: '<button class="btn btn-primary" onclick="openNewRegel()">+ Neue Regel</button>',
+    rapporte: '<button class="btn btn-primary" onclick="openNewRapport()">+ Neuer Rapport</button>'
   };
   el.innerHTML = actions[page] || '';
 }
@@ -1018,6 +1073,7 @@ function renderAll() {
   renderAuftraege();
   renderAufmasse();
   renderAufgaben();
+  renderRapporte();
   renderArtikel();
   renderKasse();
   renderSubunternehmer();
@@ -1424,8 +1480,47 @@ function saveRegel() {
 }
 function deleteRegel(id) { if (!confirm('Regel wirklich löschen?')) return; data.regeln = data.regeln.filter(function(r) { return r.id !== id; }); saveData(data); renderAll(); }
 
+function renderRapporte() {
+  var tbody = document.getElementById('rapporteTabelle');
+  tbody.innerHTML = data.rapporte.map(function(r) {
+    var fotoHtml = r.fotos.length > 0 ? r.fotos.map(function(f,i) { return '<img class="rapport-foto-thumb" src="' + f + '" onclick="event.stopPropagation();openLightbox(\'' + f + '\')" alt="Foto ' + (i+1) + '">'; }).join('') : '<span style="color:var(--text-muted);">—</span>';
+    var statusBadge = r.status === 'synced' ? '<span class="badge badge-green">Synchronisiert</span>' : '<span class="badge badge-yellow">Entwurf</span>';
+    var importBtn = r.status === 'synced' ? ' <button class="btn btn-success btn-sm" onclick="importRapportInRechnung(' + r.id + ')">→ In Rechnung</button>' : '';
+    return '<tr><td>RA-' + String(r.id).padStart(4,'0') + '</td><td>' + esc(r.monteur) + '</td><td>' + getAuftragBezeichnung(r.auftragId) + '</td><td>' + fmtDate(r.datum) + '</td><td>' + r.stunden + ' h</td><td><div class="rapport-fotos">' + fotoHtml + '</div></td><td>' + statusBadge + '</td><td><button class="btn btn-secondary btn-sm" onclick="editRapport(' + r.id + ')">Bearbeiten</button> ' + importBtn + '<button class="btn btn-danger btn-sm" onclick="deleteRapport(' + r.id + ')">Löschen</button></td></tr>';
+  }).join('');
+}
+
+function openNewRapport() { clearForm(['rapId','rapMonteur','rapDatum','rapStunden','rapTaetigkeit','rapBemerkung']); populateAuftraegeSelect('rapAuftrag'); document.getElementById('modalRapportTitle').textContent = 'Neuer Rapport'; openModal('modalRapport'); }
+function editRapport(id) { var r = data.rapporte.find(function(x) { return x.id === id; }); if (!r) return; populateAuftraegeSelect('rapAuftrag'); document.getElementById('rapId').value = r.id; document.getElementById('rapMonteur').value = r.monteur; document.getElementById('rapAuftrag').value = r.auftragId; document.getElementById('rapDatum').value = r.datum; document.getElementById('rapStunden').value = r.stunden; document.getElementById('rapTaetigkeit').value = r.taetigkeit; document.getElementById('rapBemerkung').value = r.bemerkung; document.getElementById('modalRapportTitle').textContent = 'Rapport bearbeiten'; openModal('modalRapport'); }
+function saveRapport() {
+  var id = document.getElementById('rapId').value;
+  var obj = { monteur: document.getElementById('rapMonteur').value, auftragId: Number(document.getElementById('rapAuftrag').value), datum: document.getElementById('rapDatum').value, stunden: Number(document.getElementById('rapStunden').value), taetigkeit: document.getElementById('rapTaetigkeit').value, bemerkung: document.getElementById('rapBemerkung').value };
+  if (id) { var idx = data.rapporte.findIndex(function(r) { return r.id === Number(id); }); if (idx !== -1) { obj.fotos = data.rapporte[idx].fotos; obj.status = data.rapporte[idx].status; data.rapporte[idx] = Object.assign(data.rapporte[idx], obj); } }
+  else { obj.id = data.nextId++; obj.fotos = []; obj.status = 'entwurf'; data.rapporte.push(obj); }
+  saveData(data); closeModal('modalRapport'); renderAll();
+}
+function deleteRapport(id) { if (!confirm('Rapport wirklich löschen?')) return; data.rapporte = data.rapporte.filter(function(r) { return r.id !== id; }); saveData(data); renderAll(); }
+
+function importRapportInRechnung(rapId) {
+  var r = data.rapporte.find(function(x) { return x.id === rapId; });
+  if (!r) return;
+  var auftrag = data.auftraege.find(function(a) { return a.id === r.auftragId; });
+  var kundenId = auftrag ? auftrag.kundenId : 0;
+  var netto = r.stunden * 75;
+  var beschreibung = 'Monteur-Rapport RA-' + String(r.id).padStart(4,'0') + ': ' + r.taetigkeit + ' (' + r.stunden + 'h)';
+  var re = { id: data.nextId++, kundenId: kundenId, datum: r.datum, beschreibung: beschreibung, netto: netto, mwst: 19, status: 'offen' };
+  data.rechnungen.push(re);
+  saveData(data);
+  alert('Rechnung RE-' + String(re.id).padStart(4,'0') + ' erstellt (' + fmt(netto) + ' € netto)');
+}
+
+function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
 updateActions('dashboard');
 renderAll();
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
 </script>
 </body>
 </html>

@@ -483,6 +483,22 @@ function initDatabase() {
       sync_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  try {
+    db.exec(`ALTER TABLE kunden ADD COLUMN website TEXT DEFAULT ''`);
+    db.exec(`ALTER TABLE kunden ADD COLUMN branche TEXT DEFAULT ''`);
+    db.exec(`ALTER TABLE kunden ADD COLUMN lead_status TEXT DEFAULT ''`);
+    db.exec(`ALTER TABLE kunden ADD COLUMN lead_quelle TEXT DEFAULT ''`);
+    db.exec(`ALTER TABLE kunden ADD COLUMN lead_id INTEGER DEFAULT NULL`);
+    db.exec(`ALTER TABLE kunden ADD COLUMN lead_sync_datum DATETIME DEFAULT NULL`);
+  } catch (e) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
 }
 
 function createMenu() {
@@ -681,20 +697,48 @@ ipcMain.handle('get-kunde', (event, id) => {
   return db.prepare('SELECT * FROM kunden WHERE id = ?').get(id);
 });
 
-ipcMain.handle('save-kunde', (event, kunde) => {
-  if (kunde.id) {
-    db.prepare('UPDATE kunden SET name=?, ansprechpartner=?, strasse=?, plz=?, ort=?, telefon=?, email=?, notizen=? WHERE id=?')
-      .run(kunde.name, kunde.ansprechpartner, kunde.strasse, kunde.plz, kunde.ort, kunde.telefon, kunde.email, kunde.notizen, kunde.id);
-    return kunde.id;
-  } else {
-    const result = db.prepare('INSERT INTO kunden (name, ansprechpartner, strasse, plz, ort, telefon, email, notizen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(kunde.name, kunde.ansprechpartner, kunde.strasse, kunde.plz, kunde.ort, kunde.telefon, kunde.email, kunde.notizen);
-    return result.lastInsertRowid;
-  }
-});
+  ipcMain.handle('save-kunde', (event, kunde) => {
+    if (kunde.id) {
+      db.prepare('UPDATE kunden SET name=?, ansprechpartner=?, strasse=?, plz=?, ort=?, telefon=?, email=?, notizen=?, website=?, branche=?, lead_status=?, lead_quelle=?, lead_id=? WHERE id=?')
+        .run(kunde.name, kunde.ansprechpartner, kunde.strasse, kunde.plz, kunde.ort, kunde.telefon, kunde.email, kunde.notizen, kunde.website || '', kunde.branche || '', kunde.lead_status || '', kunde.lead_quelle || '', kunde.lead_id || null, kunde.id);
+      return kunde.id;
+    } else {
+      const result = db.prepare('INSERT INTO kunden (name, ansprechpartner, strasse, plz, ort, telefon, email, notizen, website, branche, lead_status, lead_quelle, lead_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(kunde.name, kunde.ansprechpartner, kunde.strasse, kunde.plz, kunde.ort, kunde.telefon, kunde.email, kunde.notizen, kunde.website || '', kunde.branche || '', kunde.lead_status || '', kunde.lead_quelle || '', kunde.lead_id || null);
+      return result.lastInsertRowid;
+    }
+  });
 
 ipcMain.handle('delete-kunde', (event, id) => {
   db.prepare('DELETE FROM kunden WHERE id = ?').run(id);
+  return true;
+});
+
+// ============ Lead-Import (MO! Leads) ============
+
+ipcMain.handle('get-lead-config', () => {
+  const url = db.prepare("SELECT value FROM app_settings WHERE key = 'mo_leads_url'").get();
+  const key = db.prepare("SELECT value FROM app_settings WHERE key = 'mo_leads_sync_key'").get();
+  const since = db.prepare("SELECT value FROM app_settings WHERE key = 'mo_leads_last_sync'").get();
+  return {
+    url: url ? url.value : '',
+    syncKey: key ? key.value : '',
+    lastSync: since ? since.value : null
+  };
+});
+
+ipcMain.handle('save-lead-config', (event, config) => {
+  const upsert = (k, v) => {
+    db.prepare('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)').run(k, v);
+  };
+  upsert('mo_leads_url', config.url || '');
+  upsert('mo_leads_sync_key', config.syncKey || '');
+  if (config.lastSync) upsert('mo_leads_last_sync', config.lastSync);
+  return true;
+});
+
+ipcMain.handle('update-lead-sync-time', (event, timestamp) => {
+  db.prepare('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)').run('mo_leads_last_sync', timestamp);
   return true;
 });
 

@@ -105,6 +105,10 @@
           <span class="nav-icon">📥</span>
           <span class="nav-text">CSV-Import</span>
         </li>
+        <li class="nav-item" data-page="leadimport">
+          <span class="nav-icon">🎯</span>
+          <span class="nav-text">Lead-Import</span>
+        </li>
       </ul>
       <div class="sidebar-footer">
         <div class="copyright">&copy; <span id="copyright-year"></span> Handwerker Software</div>
@@ -996,6 +1000,46 @@
           <button class="btn btn-primary" onclick="bestellungErstellen()" style="margin-top:16px;">🛒 Bestellung erstellen</button>
         </div>
       </div>
+
+      <!-- Lead-Import (MO! Leads) -->
+      <div class="page" id="page-leadimport">
+        <div class="page-header">
+          <h1>🎯 MO! Leads — Gewonnene Leads importieren</h1>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; align-items:end;">
+            <div class="form-group" style="margin:0;">
+              <label>MO! Leads URL</label>
+              <input type="text" id="mo-url" placeholder="https://meine-mo-leads-domain.de" style="width:100%;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Sync-Key</label>
+              <input type="text" id="mo-sync-key" placeholder="Sync-Key aus MO! Leads Einstellungen" style="width:100%;">
+            </div>
+            <button class="btn btn-secondary" onclick="saveLeadConfig()" style="white-space:nowrap;">Speichern</button>
+          </div>
+          <div id="mo-sync-status" style="margin-top:8px; font-size:13px; display:none;"></div>
+        </div>
+
+        <div class="card" style="text-align:center; padding:40px;">
+          <div id="mo-import-state">
+            <div style="font-size:48px; margin-bottom:16px;">🏆</div>
+            <h3>Gewonnene Leads automatisch importieren</h3>
+            <p style="color:var(--text-secondary); margin-bottom:24px;">
+              Als <strong>"Gewonnen"</strong> markierte Leads aus MO! Leads werden automatisch als Kunde in IMHWS übernommen.
+            </p>
+            <button class="btn btn-primary btn-large" onclick="syncGewonneneLeads()">
+              🔄 Jetzt importieren
+            </button>
+            <p style="margin-top:12px; font-size:13px; color:var(--text-secondary);">
+              Letzter Import: <span id="mo-last-sync" style="font-weight:600;">nie</span>
+            </p>
+          </div>
+          <div id="mo-import-result" style="display:none; padding:20px; border-radius:var(--radius-sm);"></div>
+        </div>
+      </div>
+
     </main>
   </div>
 
