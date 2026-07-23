@@ -83,7 +83,7 @@ async function loadKunden() {
       <td>${escHtml(k.strasse || '')} ${escHtml(k.plz || '')} ${escHtml(k.ort || '')}</td>
       <td>${escHtml(k.telefon || '-')}</td>
       <td>${escHtml(k.email || '-')}</td>
-      <td>${count > 0 ? `<a href="#" onclick="showKundenRapporte('${escHtml(k.name).replace(/'/g, "\\'")}')">${count} Rapport(e)</a>` : '-'}</td>
+      <td>${count > 0 ? `<a href="#" onclick="showKundenRapporteById(${k.id})">${count} Rapport(e)</a>` : '-'}</td>
       <td>
         <div class="btn-group">
           <button class="btn btn-secondary btn-small" onclick="editKunde(${k.id})">✏️</button>
@@ -202,6 +202,11 @@ async function showKundenRapporte(kundenName) {
     document.getElementById('kunden-rapport-content').innerHTML = html;
     document.getElementById('kunden-rapport-detail').style.display = 'block';
   } catch(e) { console.error('showKundenRapporte:', e.message); }
+}
+
+async function showKundenRapporteById(kundenId) {
+  const k = kundenListe.find(k => k.id === kundenId);
+  if (k) showKundenRapporte(k.name);
 }
 
 // ============ Angebote ============
@@ -348,9 +353,10 @@ async function angebotAkzeptiert(id) {
 
 async function angebotZuRechnung(id) {
   try {
-    const rechnungId = await api.angebotZuRechnung(id);
-    if (rechnungId) {
-      alert('Rechnung erstellt! Nummer: RE-' + String(Date.now()).slice(-6));
+    const result = await api.angebotZuRechnung(id);
+    if (result) {
+      const nummer = typeof result === 'object' ? result.nummer : 'RE-???';
+      alert('Rechnung erstellt! Nummer: ' + nummer);
       navigateTo('rechnungen');
     } else {
       alert('Fehler: Angebot nicht gefunden oder bereits umgewandelt.');
@@ -1231,7 +1237,7 @@ async function pruefeUpdates() {
       msg.textContent = `📥 Update verfügbar: v${remoteVersion}`;
       icon.textContent = '📥';
 
-      const platform = navigator.platform.toLowerCase();
+      const platform = (window.api.platform || navigator.platform).toLowerCase();
       let assetName;
       if (platform.includes('win')) {
         assetName = release.assets?.find(a => a.name.endsWith('.exe'));
@@ -1454,8 +1460,12 @@ function showFormModal(titel, bodyHtml, onSave) {
   `;
   openModal();
   document.getElementById('modal-save-btn').onclick = async () => {
-    await onSave();
-    closeModal();
+    try {
+      const result = await onSave();
+      if (result !== false) closeModal();
+    } catch (e) {
+      console.error('Speichern fehlgeschlagen:', e);
+    }
   };
 }
 
@@ -1702,12 +1712,6 @@ function nextUstMonth() {
 }
 
 // ============ E-Rechnung ============
-async function exportEREchnung(rechnungId) {
-  const result = await api.exportEREchnung(rechnungId);
-  if (result) {
-    alert('E-Rechnung als XML exportiert!');
-  }
-}
 
 // ============ CSV Import ============
 async function importCsv() {
@@ -1756,6 +1760,13 @@ async function rechnungZuBuchung(rechnungId) {
 
 // ============ Copyright ============
 document.getElementById('copyright-year').textContent = new Date().getFullYear();
+(async () => {
+  try {
+    const v = await api.getAppVersion();
+    const el = document.getElementById('app-version');
+    if (el && v) el.textContent = 'v' + v;
+  } catch(e) {}
+})();
 
 // ============ Lizenz-System ============
 async function checkLicenseOnStartup() {
@@ -1989,7 +2000,7 @@ async function loadMahnungen() {
       <td><span class="status-badge status-${m.status}">${m.status}</span></td>
       <td>
         ${m.status !== 'bezahlt' ? `<button class="btn btn-success btn-small" onclick="mahnungBezahlt(${m.id})">✅ Bezahlt</button>` : ''}
-        ${m.status !== 'bezahlt' ? `<button class="btn btn-primary btn-small" onclick="sendeMahnungPerMail(${m.rechnung_id})">📧</button>` : ''}
+        ${m.status !== 'bezahlt' ? `<button class="btn btn-primary btn-small" onclick="sendeMahnungPerMail(${m.rechnungen_id})">📧</button>` : ''}
         <button class="btn btn-secondary btn-small" onclick="previewMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">👁</button>
         <button class="btn btn-secondary btn-small" onclick="printMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">🖨</button>
         <button class="btn btn-secondary btn-small" onclick="exportMahnungPdf(${m.rechnung_id}, ${m.mahnstufe}, ${m.betrag}, ${m.gebuehr}, '${m.faellig_bis || ''}')">💾</button>
@@ -2013,7 +2024,7 @@ function getMahnungPdfData(r, stufe, betrag, gebuehr, faelligBis) {
     kunden_ort: r.ort,
     beschreibung: `Gezahlter Betrag: ${formatEuro(betrag)}${gebuehr > 0 ? '\nMahngebühr: ' + formatEuro(gebuehr) : ''}\nOffener Gesamtbetrag: ${formatEuro(betrag + gebuehr)}`,
     positionen: [],
-    betrag_netto: betrag / 1.19,
+    betrag_netto: betrag / (1 + (r.mwst_satz || 19) / 100),
     mwst_satz: r.mwst_satz,
     betrag_brutto: betrag + gebuehr
   };
@@ -2745,13 +2756,19 @@ async function exportGaeb85() {
 async function loadIDSConnect() {
   const kataloge = await api.lieferantenKataloge();
   const katContainer = document.getElementById('ids-kataloge');
-  katContainer.innerHTML = kataloge.map(k => `
-    <button class="btn btn-secondary btn-small" onclick="loadArtikelKatalog('${escHtml(k.name)}')">${escHtml(k.name)}</button>
+  katContainer.innerHTML = kataloge.map((k, i) => `
+    <button class="btn btn-secondary btn-small" onclick="loadArtikelKatalogByIdx(${i})">${escHtml(k.name)}</button>
   `).join('') || '<span style="color:var(--text-light);">Keine Kataloge vorhanden. Zuerst BMEcat importieren.</span>';
+  window._katalogeNames = kataloge.map(k => k.name);
 
   const lieferanten = await api.getLieferanten();
   const sel = document.getElementById('ids-lieferant');
   sel.innerHTML = lieferanten.map(l => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('');
+}
+
+async function loadArtikelKatalogByIdx(idx) {
+  const name = window._katalogeNames?.[idx];
+  if (name) loadArtikelKatalog(name);
 }
 
 async function loadArtikelKatalog(kategorie) {
@@ -2831,8 +2848,8 @@ async function ladeAufgaben() {
       <td><span style="background:${statusColors[a.status] || '#999'}; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px;">${a.status}</span></td>
       <td>${a.quelle || 'manuell'}</td>
       <td>
-        <button class="btn btn-sm btn-secondary" onclick="editiereAufgabe(${a.id})">✏️</button>
-        <button class="btn btn-sm btn-secondary" onclick="loescheAufgabe(${a.id})" style="color:var(--danger);">✕</button>
+        <button class="btn btn-small btn-secondary" onclick="editiereAufgabe(${a.id})">✏️</button>
+        <button class="btn btn-small btn-secondary" onclick="loescheAufgabe(${a.id})" style="color:var(--danger);">✕</button>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="7" style="text-align:center; color:#999; padding:24px;">Keine Aufgaben vorhanden</td></tr>';
@@ -2941,8 +2958,8 @@ async function ladeBuchungenSH() {
       <td>${escHtml(b.beleg_nr) || '—'}</td>
       <td>${escHtml(b.buchungstitel) || '—'}</td>
       <td>
-        <button class="btn btn-sm btn-secondary" onclick="editiereBuchungSH(${b.id})">✏️</button>
-        <button class="btn btn-sm btn-secondary" onclick="loescheBuchungSH(${b.id})" style="color:var(--danger);">✕</button>
+        <button class="btn btn-small btn-secondary" onclick="editiereBuchungSH(${b.id})">✏️</button>
+        <button class="btn btn-small btn-secondary" onclick="loescheBuchungSH(${b.id})" style="color:var(--danger);">✕</button>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="8" style="text-align:center; color:#999; padding:24px;">Keine Buchungen vorhanden</td></tr>';

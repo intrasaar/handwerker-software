@@ -18,7 +18,10 @@ if (!fs.existsSync(TLS_DIR)) fs.mkdirSync(TLS_DIR, { recursive: true });
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/],
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 
 // ============ API-Key-Auth ============
@@ -376,7 +379,7 @@ const ALLOWED_TABLES = {
   kunden: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
   lieferanten: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
   subunternehmer: ['name', 'ansprechpartner', 'strasse', 'plz', 'ort', 'telefon', 'email', 'notizen'],
-  artikel: ['bezeichnung', 'einheit', 'einzelpreis', 'mwst_satz', 'kategorie', 'lagerbestand'],
+  artikel: ['name', 'sku', 'einheit', 'einkaufspreis', 'verkaufspreis', 'mwst_satz', 'bestand', 'mindestbestand', 'lagerplatz', 'barcode', 'kategorie', 'notizen'],
   kasse: ['typ', 'betrag', 'datum', 'beschreibung', 'beleg_nummer'],
   regeln: ['name', 'typ', 'bedingung', 'aktion']
 };
@@ -764,12 +767,22 @@ app.post('/api/monteur/sync', (req, res) => {
     return res.status(400).json({ error: `Ungültige Tabelle. Erlaubt: ${validTables.join(', ')}` });
   }
 
+  const monteurAllowedCols = {
+    rapporte: ['auftrags_id', 'kunden_name', 'adresse', 'datum', 'status', 'zusammenfassung'],
+    rapport_positionen: ['rapport_server_id', 'artikel_nr', 'bezeichnung', 'menge', 'einheit', 'preis'],
+    rapport_fotos: ['rapport_server_id', 'pfad', 'beschreibung', 'bild_base64'],
+    zeiterfassung: ['auftrags_id', 'mitarbeiter', 'start', 'ende', 'pause_minuten', 'tätigkeit', 'notizen'],
+    inventur: ['artikel_nr', 'bezeichnung', 'menge', 'einheit', 'lagerplatz', 'notizen']
+  };
+
   const serverTable = `monteur_${tabelle}`;
+  const allowedCols = monteurAllowedCols[tabelle] || [];
 
   try {
     if (aktion === 'insert') {
-      const cols = Object.keys(payload);
-      const vals = Object.values(payload);
+      const allCols = Object.keys(payload);
+      const cols = allCols.filter(c => allowedCols.includes(c));
+      const vals = cols.map(c => payload[c]);
       const placeholders = cols.map(() => '?').join(', ');
       const result = db.prepare(
         `INSERT INTO ${serverTable} (client_id, ${cols.join(', ')}) VALUES (?, ${placeholders})`
@@ -783,8 +796,9 @@ app.post('/api/monteur/sync', (req, res) => {
     }
 
     if (aktion === 'update' && payload && Object.keys(payload).length > 0) {
-      const cols = Object.keys(payload);
-      const vals = Object.values(payload);
+      const allCols = Object.keys(payload);
+      const cols = allCols.filter(c => allowedCols.includes(c));
+      const vals = cols.map(c => payload[c]);
       const set = cols.map(c => `${c} = ?`).join(', ');
 
       db.prepare(

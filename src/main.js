@@ -551,7 +551,7 @@ function createMenu() {
       label: 'Ansicht',
       submenu: [
         { label: 'Neu laden', accelerator: 'CmdOrCtrl+R', role: 'reload' },
-        { label: 'Entwickler-Tools', accelerator: 'F12', role: 'toggleDevTools' },
+        ...(app.isPackaged ? [] : [{ label: 'Entwickler-Tools', accelerator: 'F12', role: 'toggleDevTools' }]),
         { type: 'separator' },
         { label: 'Vergrößern', accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
         { label: 'Verkleinern', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
@@ -859,7 +859,7 @@ ipcMain.handle('angebot-zu-rechnung', (event, angebotId) => {
     }
 
     db.prepare("UPDATE angebote SET status = 'rechnung' WHERE id = ?").run(angebotId);
-    return rechnungId;
+    return { id: rechnungId, nummer };
   } catch (err) {
     console.error('angebot-zu-rechnung Fehler:', err.message);
     return null;
@@ -1455,15 +1455,15 @@ ipcMain.handle('export-erechnung', async (event, rechnungId) => {
 // ============ CSV Import ============
 
 ipcMain.handle('import-csv', async (event, options = {}) => {
-  const { filePath } = await dialog.showOpenDialog(mainWindow, {
+  const { filePaths } = await dialog.showOpenDialog(mainWindow, {
     title: 'CSV-Datei auswählen',
     filters: [{ name: 'CSV', extensions: ['csv'] }],
     properties: ['openFile']
   });
   
-  if (!filePath || filePath.length === 0) return null;
+  if (!filePaths || filePaths.length === 0) return null;
   
-  const content = fs.readFileSync(filePath[0], 'utf-8');
+  const content = fs.readFileSync(filePaths[0], 'utf-8');
   const lines = content.split('\n').filter(l => l.trim());
   
   if (lines.length < 2) return { error: 'CSV-Datei ist leer oder hat keine Datenzeilen' };
@@ -1870,7 +1870,7 @@ ipcMain.handle('mahnung-erstellen', (event, rechnungId) => {
 
   const result = db.prepare('INSERT INTO mahnungen (rechnungen_id, mahnstufe, datum, faellig_bis, betrag, gebuehr, status) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(rechnungId, neueStufe, now.toISOString().split('T')[0], faelligBis.toISOString().split('T')[0], rechnung.betrag_brutto, gebuehren[neueStufe], 'offen');
-  return result.lastInsertRowid;
+  return { mahnstufe: neueStufe, betrag: rechnung.betrag_brutto, gebuehr: gebuehren[neueStufe] };
 });
 
 ipcMain.handle('mahnung-bezahlen', (event, id) => {
@@ -2611,6 +2611,12 @@ async function pushToServer() {
         const serverItem = serverMap.get(item.id);
         if (!serverItem) {
           await serverRequest('POST', `/api/${table}`, item);
+        } else {
+          const localModified = item.updated_at || item.datum || '';
+          const serverModified = serverItem.updated_at || serverItem.datum || '';
+          if (localModified > serverModified) {
+            await serverRequest('PUT', `/api/${table}/${item.id}`, item);
+          }
         }
       }
     } catch (e) {
@@ -2682,15 +2688,19 @@ ipcMain.handle('get-sync-status', () => {
 });
 
 // Auto-Sync: Alle 60 Sekunden wenn Server-Modus aktiv
-setInterval(async () => {
+const autoSyncInterval = setInterval(async () => {
   const config = getServerConfig();
   if (config) {
     try {
       await pushToServer();
       await pullFromServer();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Auto-Sync Fehler:', e.message);
+    }
   }
 }, 60000);
+
+app.on('before-quit', () => clearInterval(autoSyncInterval));
 
 // ============ Integrierter Server ============
 
@@ -2785,6 +2795,11 @@ function startServer() {
 
   serverProcess.on('exit', (code) => {
     console.log('Server beendet mit Code:', code);
+    serverProcess = null;
+  });
+
+  serverProcess.on('error', (err) => {
+    console.error('Server-Fehler:', err.message);
     serverProcess = null;
   });
 

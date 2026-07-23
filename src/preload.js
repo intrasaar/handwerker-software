@@ -151,6 +151,7 @@ contextBridge.exposeInMainWorld('api', {
   activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
   deactivateLicense: () => ipcRenderer.invoke('deactivate-license'),
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-info').then(info => info.version),
 
   // Aufgabenverwaltung
   getAufgaben: (filters) => ipcRenderer.invoke('get-aufgaben', filters),
@@ -200,5 +201,8 @@ contextBridge.exposeInMainWorld('api', {
   updateLeadSyncTime: (ts) => ipcRenderer.invoke('update-lead-sync-time', ts),
 
   // Shell
-  openExternal: (url) => ipcRenderer.invoke('open-external', url)
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // Platform
+  platform: process.platform
 });
