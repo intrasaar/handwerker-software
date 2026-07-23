@@ -313,6 +313,12 @@ body {
 .status-badge.status-akzeptiert { background: #dbeafe; color: #1e40af; }
 .status-badge.status-fertig { background: #d1fae5; color: #065f46; }
 .status-badge.status-offen-orange { background: #ffedd5; color: #9a3412; }
+.status-badge.status-neu { background: #e0e7ff; color: #3730a3; }
+.status-badge.status-kontaktiert { background: #fef3c7; color: #92400e; }
+.status-badge.status-interessiert { background: #dbeafe; color: #1e40af; }
+.status-badge.status-angebot { background: #f3e8ff; color: #6b21a8; }
+.status-badge.status-gewonnen { background: #d1fae5; color: #065f46; }
+.status-badge.status-verloren { background: #fee2e2; color: #991b1b; }
 
 /* Buttons */
 .btn {

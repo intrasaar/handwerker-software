@@ -45,6 +45,7 @@ function loadPage(page) {
     case 'doppelbuchfuehrung': ladeBuchungenSH(); ladeKontenrahmen(); break;
     case 'branchen': break;
     case 'import': break;
+    case 'leadimport': loadLeadImport(); break;
   }
 }
 
@@ -3055,6 +3056,108 @@ async function exportSepaUeberweisungen() {
 async function exportSepaLastschrift() {
   const pfad = await api.exportSepaLastschrift();
   if (pfad) alert(`SEPA-Lastschrift exportiert: ${pfad}`);
+}
+
+// ============ Lead-Import (MO! Leads) ============
+
+async function loadLeadImport() {
+  const config = await api.getLeadConfig();
+  document.getElementById('mo-url').value = config.url || '';
+  document.getElementById('mo-sync-key').value = config.syncKey || '';
+  document.getElementById('mo-last-sync').textContent = config.lastSync
+    ? new Date(config.lastSync).toLocaleString('de-DE')
+    : 'nie';
+  document.getElementById('mo-import-state').style.display = 'block';
+  document.getElementById('mo-import-result').style.display = 'none';
+}
+
+async function saveLeadConfig() {
+  await api.saveLeadConfig({
+    url: document.getElementById('mo-url').value,
+    syncKey: document.getElementById('mo-sync-key').value
+  });
+  showMoStatus('✅ Konfiguration gespeichert', '#10b981');
+}
+
+async function syncGewonneneLeads() {
+  const url = document.getElementById('mo-url').value.replace(/\/+$/, '');
+  const syncKey = document.getElementById('mo-sync-key').value;
+  const config = await api.getLeadConfig();
+  const since = config.lastSync || '2020-01-01T00:00:00';
+
+  showMoStatus('🔄 Suche nach gewonnenen Leads...', '#3b82f6');
+
+  try {
+    const res = await fetch(
+      `${url}/api/leads/pull?since=${encodeURIComponent(since)}&status=Gewonnen`,
+      { headers: { 'x-sync-key': syncKey } }
+    );
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+    const data = await res.json();
+
+    const existingIds = (await api.getKunden()).filter(k => k.lead_id).map(k => k.lead_id);
+    const neueLeads = (data.leads || []).filter(l => !existingIds.includes(l.id));
+
+    if (neueLeads.length === 0) {
+      showMoResult('checkmark', '✅ Keine neuen gewonnenen Leads', '#10b981',
+        `Alle ${data.leads.length} gewonnenen Leads wurden bereits importiert.`);
+      await api.updateLeadSyncTime(new Date().toISOString());
+      document.getElementById('mo-last-sync').textContent = new Date().toLocaleString('de-DE');
+      return;
+    }
+
+    let imported = 0;
+    for (const lead of neueLeads) {
+      try {
+        await api.saveKunde({
+          name: lead.firmenname || lead.ansprechpartner || 'Unbekannt',
+          ansprechpartner: lead.ansprechpartner || '',
+          strasse: lead.strasse || '',
+          plz: lead.plz || '',
+          ort: lead.ort || '',
+          telefon: lead.telefon || '',
+          email: lead.email || '',
+          notizen: [lead.notizen, lead.branche ? `Branche: ${lead.branche}` : '', lead.website ? `Website: ${lead.website}` : ''].filter(Boolean).join('\n'),
+          website: lead.website || '',
+          branche: lead.branche || '',
+          lead_status: 'Gewonnen',
+          lead_quelle: lead.quelle || 'MO! Leads',
+          lead_id: lead.id
+        });
+        imported++;
+      } catch (e) { /* skip */ }
+    }
+
+    showMoResult('checkmark', `✅ ${imported} gewonnene Leads importiert`, '#10b981',
+      `${imported} neue Kunde(n) aus MO! Leads angelegt.`);
+    await api.updateLeadSyncTime(new Date().toISOString());
+    document.getElementById('mo-last-sync').textContent = new Date().toLocaleString('de-DE');
+
+  } catch (e) {
+    showMoResult('error', '❌ Verbindungsfehler', '#ef4444', e.message);
+  }
+}
+
+function showMoStatus(msg, color) {
+  const el = document.getElementById('mo-sync-status');
+  el.textContent = msg;
+  el.style.color = color || 'var(--text-secondary)';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function showMoResult(icon, title, color, detail) {
+  document.getElementById('mo-import-state').style.display = 'none';
+  const result = document.getElementById('mo-import-result');
+  result.style.display = 'block';
+  result.style.background = color + '15';
+  result.style.border = '1px solid ' + color + '40';
+  result.innerHTML = `
+    <div style="font-size:40px; margin-bottom:12px;">${icon === 'checkmark' ? '✅' : '⚠️'}</div>
+    <h3 style="margin:0 0 8px 0;">${title}</h3>
+    <p style="margin:0; color:var(--text-secondary); font-size:14px;">${detail}</p>
+    <button class="btn btn-secondary" style="margin-top:16px;" onclick="loadLeadImport()">Zurück</button>
+  `;
 }
 
 // ============ Startup ============

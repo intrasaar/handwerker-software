@@ -194,6 +194,11 @@ contextBridge.exposeInMainWorld('api', {
   onShowLicense: (callback) => ipcRenderer.on('show-license', () => callback()),
   onToggleSidebar: (callback) => ipcRenderer.on('toggle-sidebar', () => callback()),
 
+  // Lead-Import (MO! Leads)
+  getLeadConfig: () => ipcRenderer.invoke('get-lead-config'),
+  saveLeadConfig: (config) => ipcRenderer.invoke('save-lead-config', config),
+  updateLeadSyncTime: (ts) => ipcRenderer.invoke('update-lead-sync-time', ts),
+
   // Shell
   openExternal: (url) => ipcRenderer.invoke('open-external', url)
 });
